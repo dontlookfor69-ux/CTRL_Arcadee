@@ -1,0 +1,17 @@
+[Unit]
+Description=CTRL Arcade Godot Frontend
+After=network.target graphical.target
+Wants=graphical.target
+
+[Service]
+Type=simple
+User=ctrl
+Environment=DISPLAY=:0
+WorkingDirectory=/home/ctrl/CTRL_Arcade/frontend/godot_project
+# Run the auto-dependency checker and launcher
+ExecStart=/bin/bash start_arcade.sh
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=graphical.target

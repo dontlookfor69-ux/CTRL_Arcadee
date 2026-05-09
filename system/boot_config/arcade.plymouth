@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=CTRL Arcade
+Description=Custom boot animation for CTRL Arcade Machine
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/ctrl_arcade
+ScriptFile=/usr/share/plymouth/themes/ctrl_arcade/ctrl_arcade.script

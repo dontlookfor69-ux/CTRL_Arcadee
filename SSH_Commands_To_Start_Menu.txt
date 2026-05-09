@@ -1,0 +1,65 @@
+# SSH Commands to Manage the CTRL Arcade Main Menu
+
+## First Time Installation (Run this once!)
+Since you got a "Unit menu.service not found" error, the Raspberry Pi doesn't know about the service yet. Run these commands to install it (assuming your folder is on the Desktop):
+
+```bash
+# 1. Copy the service file to the Linux system folder
+sudo cp ~/Desktop/CTRL_Arcade/system/menu.service /etc/systemd/system/
+
+# 2. Fix the path in the service file since the folder is on the Desktop
+sudo sed -i 's|/home/ctrl/CTRL_Arcade/frontend/godot_project|/home/ctrl/Desktop/CTRL_Arcade/frontend/godot_project|g' /etc/systemd/system/menu.service
+
+# 3. Tell the system to load the new service
+sudo systemctl daemon-reload
+
+# 4. Make it run automatically on every boot
+sudo systemctl enable menu.service
+
+# 5. Start it now
+sudo systemctl start menu.service
+```
+
+---
+
+## Recommended Method (Using Systemd)
+Once installed, you can manage it anytime with these: 
+
+**Start the menu:**
+```bash
+sudo systemctl start menu.service
+```
+
+**Restart the menu (if you updated files or it froze):**
+```bash
+sudo systemctl restart menu.service
+```
+
+**Stop the menu:**
+```bash
+sudo systemctl stop menu.service
+```
+
+**Check if it's running (press 'q' to exit the status view):**
+```bash
+systemctl status menu.service
+```
+
+---
+
+## Manual Method (To see errors/logs in SSH)
+If you want to run the menu manually so you can see any error messages directly in your SSH terminal, run these commands in order:
+
+```bash
+# 1. Stop the background service so they don't conflict
+sudo systemctl stop menu.service
+
+# 2. Tell the SSH session to use the Arcade machine's screen
+export DISPLAY=:0
+
+# 3. Go to the project directory
+cd /home/ctrl/CTRL_Arcade/frontend/godot_project
+
+# 4. Run the frontend
+/usr/bin/godot3 --path .
+```
