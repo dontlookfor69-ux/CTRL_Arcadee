@@ -163,7 +163,7 @@ margin_top = 310.0
 margin_right = 752.0
 margin_bottom = 324.0
 custom_colors/font_color = Color( 0, 1, 0, 1 )
-text = "Type a song name to download and play via SpotDL"
+text = "Type a song name to search and download via yt-dlp"
 align = 1
 
 [node name="HBox" type="HBoxContainer" parent="WindowFrame/MainContent/VideoPanel/SearchBox"]

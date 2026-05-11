@@ -1,122 +1,124 @@
 extends Control
 
-onready var song_list = $WindowFrame/MainContent/PlaylistPanel/ColorRect/SongList
-onready var now_playing = $WindowFrame/MainContent/VideoPanel/SearchBox/NowPlayingLabel
-onready var status_label = $WindowFrame/StatusBar/StatusLabel
-onready var play_btn = $WindowFrame/ControlsBar/HBox/PlayPauseBtn
-onready var progress_bar = $WindowFrame/ControlsBar/HBox/ProgressBar
-onready var audio_player = $WindowFrame/MainContent/VideoPanel/AudioPlayer
-onready var search_input = $WindowFrame/MainContent/VideoPanel/SearchBox/HBox/SearchInput
-onready var search_btn = $WindowFrame/MainContent/VideoPanel/SearchBox/HBox/SearchBtn
+onready var audio_player = $AudioStreamPlayer
+onready var now_playing  = $WindowFrame/MainContent/VideoPanel/SearchBox/NowPlayingLabel
+onready var status_label = $WindowFrame/Footer/StatusLabel
+onready var play_btn     = $WindowFrame/MainContent/VideoPanel/Controls/PlayBtn
+onready var search_box   = $WindowFrame/MainContent/VideoPanel/SearchBox/HBox/SearchInput
+onready var playlist_ui  = $WindowFrame/MainContent/PlaylistPanel/ScrollContainer/VBoxContainer
 
-const PLAYLIST_FILE = "utilities/youtube_player/playlist.json"
-const DOWNLOAD_DIR = "user://downloads/"
-
+const PLAYLIST_FILE = "media_player_playlist.json"
 var playlist = []
-var current_index = -1
-var download_thread = null
 var last_query = ""
 
 func _ready():
-	var d = Directory.new()
-	if not d.dir_exists(DOWNLOAD_DIR):
-		d.make_dir(DOWNLOAD_DIR)
-		
-	# Apply Arcade Theme
-	var desktop_bg = get_node_or_null("DesktopBg")
-	if desktop_bg: desktop_bg.color = Color(0, 0, 0, 1)
-	
-	now_playing.add_color_override("font_color", Color(0, 1, 1, 1))
-	status_label.add_color_override("font_color", Color(0, 1, 0, 1))
-
 	_load_playlist()
-	audio_player.connect("finished", self, "_on_NextBtn_pressed")
-	search_btn.connect("pressed", self, "_on_SearchBtn_pressed")
-	search_input.connect("text_entered", self, "_on_SearchInput_entered")
+	status_label.text = "Ready — enter a song to download"
+	search_box.placeholder_text = "Search song..."
 
-func _on_SearchInput_entered(text):
-	_on_SearchBtn_pressed()
-
-func get_safe_name(name: String) -> String:
-	var out = ""
-	var allowed = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
-	for i in range(name.length()):
-		var c = name[i]
-		if allowed.find(c) != -1:
-			out += c
-		else:
-			out += "_"
-	return out
-
-func _on_SearchBtn_pressed():
-	var query = search_input.text.strip_edges()
-	if query == "": return
-	
-	audio_player.stop()
-	last_query = query
-	
-	var safe_name = get_safe_name(query) + ".mp3"
-	var local_path = DOWNLOAD_DIR + safe_name
-	var f = File.new()
-	if f.file_exists(local_path):
-		_play_local_file(local_path)
-		_maybe_save_to_playlist(query)
-		return
-
-	now_playing.text = "Fetching: " + query
-	status_label.text = "Downloading..."
-	
-	if download_thread != null and download_thread.is_active():
-		download_thread.wait_to_finish()
-		
-	download_thread = Thread.new()
-	download_thread.start(self, "_download_and_play", [query, local_path])
+func _get_playlist_path() -> String:
+	var p = ProjectSettings.globalize_path("res://")
+	p = p.rstrip("/").rstrip("\\")
+	var project_root = p.get_base_dir().get_base_dir()
+	return project_root.plus_file(PLAYLIST_FILE)
 
 func _load_playlist():
+	var path = _get_playlist_path()
 	var f = File.new()
-	var p = ProjectSettings.globalize_path("res://")
-	if p.ends_with("/") or p.ends_with("\\"): p = p.substr(0, p.length() - 1)
-	var project_root = p.get_base_dir().get_base_dir()
-	var path = project_root.plus_file(PLAYLIST_FILE)
-	
-	song_list.clear()
-	if f.open(path, File.READ) == OK:
-		var result = JSON.parse(f.get_as_text())
+	if f.file_exists(path):
+		f.open(path, File.READ)
+		var text = f.get_as_text()
 		f.close()
-		if result.error == OK:
-			playlist = result.result
-			for song in playlist:
-				song_list.add_item(song.get("title", "Unknown"))
-		else:
-			song_list.add_item("Error loading playlist")
-	else:
-		song_list.add_item("No playlist found")
+		var res = JSON.parse(text)
+		if res.error == OK:
+			playlist = res.result
+			_update_playlist_ui()
 
-func _play_index(index):
-	if index < 0 or index >= playlist.size(): return
-	current_index = index
-	search_input.text = playlist[index].get("title", "")
-	_on_SearchBtn_pressed()
+func _save_playlist():
+	var path = _get_playlist_path()
+	var f = File.new()
+	f.open(path, File.WRITE)
+	f.store_string(JSON.print(playlist))
+	f.close()
 
-func _download_and_play(args):
-	var query = args[0]
-	var local_path = ProjectSettings.globalize_path(args[1])
-	var search_str = "ytsearch1:" + query
-	var cmd_args = ["-x", "--audio-format", "mp3", "-o", local_path, search_str]
+func _update_playlist_ui():
+	for child in playlist_ui.get_children():
+		child.queue_free()
+	for song in playlist:
+		var btn = Button.new()
+		btn.text = song.name
+		btn.align = Button.ALIGN_LEFT
+		btn.connect("pressed", self, "_on_playlist_item_pressed", [song])
+		playlist_ui.add_child(btn)
+
+func _on_playlist_item_pressed(song):
+	last_query = song.name
+	_play_local_file(song.path)
+
+func _on_SearchBtn_pressed():
+	var query = search_box.text
+	if query == "": return
+	last_query = query
+	status_label.text = "Searching..."
+	var thread = Thread.new()
+	thread.start(self, "_do_download", query)
+
+func _do_download(query):
+	var dir = Directory.new()
+	if not dir.dir_exists("user://downloads"):
+		dir.make_dir("user://downloads")
+	
+	var download_path = ProjectSettings.globalize_path("user://downloads")
+	var output_template = download_path + "/%(title)s.%(ext)s"
+	
+	var args = [
+		"--extract-audio",
+		"--audio-format", "mp3",
+		"--noplaylist",
+		"--default-search", "ytsearch",
+		"-o", output_template,
+		query
+	]
+	
 	var output = []
-	OS.execute("yt-dlp", cmd_args, true, output)
-	call_deferred("_on_download_finished", args[1])
+	OS.execute("yt-dlp", args, true, output)
+	
+	# Find the downloaded file
+	var actual_file = ""
+	dir.open(download_path)
+	dir.list_dir_begin()
+	var file_name = dir.get_next()
+	var latest_time = 0
+	while file_name != "":
+		if not dir.current_is_dir() and file_name.ends_with(".mp3"):
+			var full_p = download_path + "/" + file_name
+			var f = File.new()
+			var t = f.get_modified_time(full_p)
+			if t > latest_time:
+				latest_time = t
+				actual_file = "user://downloads/" + file_name
+		file_name = dir.get_next()
+	
+	if actual_file != "":
+		call_deferred("_on_download_complete", actual_file)
+	else:
+		call_deferred("_on_download_failed")
 
-func _on_download_finished(local_path):
-	if download_thread:
-		download_thread.wait_to_finish()
-		download_thread = null
-	_play_local_file(local_path)
-	_maybe_save_to_playlist(last_query)
+func _on_download_complete(path):
+	playlist.append({"name": last_query, "path": path})
+	_save_playlist()
+	_update_playlist_ui()
+	_play_local_file(path)
+
+func _on_download_failed():
+	status_label.text = "Download Failed"
+	now_playing.text = "Error downloading song"
 
 func _play_local_file(path):
+	# Ensure we have an absolute path for File.open
+	var abs_path = ProjectSettings.globalize_path(path)
 	var f = File.new()
-	if f.open(path, File.READ) == OK:
+	if f.open(abs_path, File.READ) == OK:
 		var bytes = f.get_buffer(f.get_len())
 		f.close()
 		var stream = AudioStreamMP3.new()
@@ -125,47 +127,26 @@ func _play_local_file(path):
 		audio_player.play()
 		now_playing.text = "Now Playing:\n" + last_query
 		status_label.text = "Playing"
+		play_btn.text = "Pause"
 	else:
-		now_playing.text = "Error playing file"
-		status_label.text = "Error"
+		now_playing.text = "Error: Could not open audio file"
+		status_label.text = "Playback Error"
+		print("[MEDIA] Failed to open: ", abs_path)
 
-func _maybe_save_to_playlist(query):
-	for song in playlist:
-		if song.get("title", "").to_lower() == query.to_lower():
-			return
-	playlist.append({"title": query, "artist": "Downloaded"})
-	_save_playlist()
-	_load_playlist()
-
-func _save_playlist():
-	var f = File.new()
-	var p = ProjectSettings.globalize_path("res://")
-	if p.ends_with("/") or p.ends_with("\\"): p = p.substr(0, p.length() - 1)
-	var project_root = p.get_base_dir().get_base_dir()
-	var path = project_root.plus_file(PLAYLIST_FILE)
-	if f.open(path, File.WRITE) == OK:
-		f.store_string(JSON.print(playlist, "  "))
-		f.close()
-
-func _on_SongList_item_activated(index):
-	_play_index(index)
-
-func _on_PlayPauseBtn_pressed():
+func _on_PlayBtn_pressed():
 	if audio_player.playing:
 		audio_player.stream_paused = !audio_player.stream_paused
+		play_btn.text = "Resume" if audio_player.stream_paused else "Pause"
 		status_label.text = "Paused" if audio_player.stream_paused else "Playing"
-	elif audio_player.stream:
+	elif audio_player.stream != null:
 		audio_player.play()
+		play_btn.text = "Pause"
+		status_label.text = "Playing"
 
-func _on_PrevBtn_pressed(): _play_index(current_index - 1)
-func _on_NextBtn_pressed(): _play_index(current_index + 1)
-func _on_BackBtn_pressed():
+func _on_StopBtn_pressed():
 	audio_player.stop()
-	get_tree().change_scene("res://scenes/main_desktop.tscn")
+	play_btn.text = "Play"
+	status_label.text = "Stopped"
 
-func _process(_delta):
-	if audio_player.playing and not audio_player.stream_paused and audio_player.stream:
-		if audio_player.stream.get_length() > 0:
-			progress_bar.value = (audio_player.get_playback_position() / audio_player.stream.get_length()) * 100
-	if Input.is_action_just_pressed("ui_cancel"):
-		_on_BackBtn_pressed()
+func _on_HomeBtn_pressed():
+	get_tree().change_scene("res://scenes/main.tscn")
