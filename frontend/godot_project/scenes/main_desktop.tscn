@@ -1,4 +1,4 @@
-[gd_scene load_steps=2 format=2]
+[gd_scene load_steps=3 format=2]
 
 [ext_resource path="res://scripts/main.gd" type="Script" id=1]
 
@@ -7,7 +7,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 script = ExtResource( 1 )
 
-
 [node name="MainUI" type="Control" parent="."]
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -15,46 +14,76 @@ anchor_bottom = 1.0
 [node name="Background" type="ColorRect" parent="MainUI"]
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color( 0.05, 0.05, 0.1, 1 )
+color = Color( 0.2, 0, 0, 1 )
 
-[node name="Panel" type="Panel" parent="MainUI"]
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-margin_left = -800.0
-margin_top = -400.0
-margin_right = 800.0
-margin_bottom = 400.0
-
-[node name="TitleBar" type="ColorRect" parent="MainUI/Panel"]
-anchor_right = 1.0
-margin_bottom = 40.0
-color = Color( 0.1, 0.2, 0.4, 1 )
-
-[node name="TitleLabel" type="Label" parent="MainUI/Panel/TitleBar"]
-margin_left = 10.0
-margin_top = 10.0
-margin_right = 200.0
-margin_bottom = 30.0
-text = "CTRL Arcade Game Selection"
-
-[node name="GamesScroll" type="ScrollContainer" parent="MainUI/Panel"]
+[node name="Scanlines" type="GridContainer" parent="MainUI/Background"]
 anchor_right = 1.0
 anchor_bottom = 1.0
-margin_left = 20.0
-margin_top = 60.0
-margin_right = -20.0
-margin_bottom = -20.0
+custom_constants/vseparation = 2
+columns = 1
 
-[node name="GamesGrid" type="GridContainer" parent="MainUI/Panel/GamesScroll"]
+[node name="Header" type="ColorRect" parent="MainUI"]
+anchor_right = 1.0
+margin_bottom = 80.0
+color = Color( 0.05, 0.05, 0.05, 1 )
+
+[node name="HBox" type="HBoxContainer" parent="MainUI/Header"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 30.0
+margin_right = -30.0
+
+[node name="Logo" type="TextureRect" parent="MainUI/Header/HBox"]
+margin_right = 80.0
+margin_bottom = 80.0
+rect_min_size = Vector2( 80, 80 )
+expand = true
+stretch_mode = 6
+
+[node name="Title" type="Label" parent="MainUI/Header/HBox"]
+margin_left = 84.0
+margin_top = 33.0
+margin_right = 186.0
+margin_bottom = 47.0
+text = "CTRL ARCADE"
+valign = 1
+
+[node name="Spacer" type="Control" parent="MainUI/Header/HBox"]
+margin_left = 190.0
+margin_right = 1860.0
+margin_bottom = 80.0
 size_flags_horizontal = 3
-size_flags_vertical = 3
+
+[node name="ClockLabel" type="Label" parent="MainUI/Header/HBox"]
+margin_left = 1864.0
+margin_top = 33.0
+margin_right = 1864.0
+margin_bottom = 47.0
+valign = 1
+
+[node name="AboutButton" type="Button" parent="MainUI/Header/HBox"]
+margin_left = 1868.0
+margin_right = 1920.0
+margin_bottom = 80.0
+rect_min_size = Vector2( 60, 0 )
+text = "?"
+flat = true
+
+[node name="GamesCenter" type="CenterContainer" parent="MainUI"]
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+margin_top = -300.0
+margin_bottom = 400.0
+
+[node name="GamesGrid" type="GridContainer" parent="MainUI/GamesCenter"]
+margin_left = 960.0
+margin_top = 350.0
+margin_right = 960.0
+margin_bottom = 350.0
 columns = 4
-custom_constants/vseparation = 40
-custom_constants/hseparation = 40
-
-
+custom_constants/vseparation = 60
+custom_constants/hseparation = 60
 
 [node name="DebugMenu" type="Panel" parent="MainUI"]
 visible = false
@@ -94,10 +123,81 @@ margin_right = 280.0
 margin_bottom = 74.0
 text = "Close"
 
+[node name="InputDebugButton" type="Button" parent="MainUI/DebugMenu/VBoxContainer"]
+margin_top = 84.0
+margin_right = 280.0
+margin_bottom = 104.0
+text = "Input Debugger"
+
+[node name="InputDebugOverlay" type="ColorRect" parent="MainUI"]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color( 0, 0, 0, 0.8 )
+
+[node name="Scroll" type="ScrollContainer" parent="MainUI/InputDebugOverlay"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 50.0
+margin_top = 50.0
+margin_right = -50.0
+margin_bottom = -50.0
+
+[node name="LogLabel" type="Label" parent="MainUI/InputDebugOverlay/Scroll"]
+margin_right = 1820.0
+margin_bottom = 980.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_colors/font_color = Color( 0, 1, 0, 1 )
+text = "--- HARDWARE INPUT DEBUGGER ---
+Press any button, move any joystick, or trigger any switch to see its raw hardware ID.
+Press 'ESC' or Arcade Button 1 to exit.
+"
+autowrap = true
+
+[node name="LoadingOverlay" type="ColorRect" parent="MainUI"]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color( 0, 0, 0, 0.9 )
+
+[node name="Label" type="Label" parent="MainUI/LoadingOverlay"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -200.0
+margin_top = -50.0
+margin_right = 200.0
+margin_bottom = 50.0
+custom_colors/font_color = Color( 0, 1, 1, 1 )
+text = "LOADING..."
+align = 1
+valign = 1
+
+
 [node name="BootScreen" type="ColorRect" parent="."]
 anchor_right = 1.0
 anchor_bottom = 1.0
 color = Color( 0, 0, 0, 1 )
+
+[node name="CRTScreen" type="ColorRect" parent="BootScreen"]
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+margin_top = -540.0
+margin_bottom = 540.0
+color = Color( 0, 0, 0, 1 )
+
+[node name="BiosText" type="RichTextLabel" parent="BootScreen"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 0.0
+margin_top = 0.0
+margin_right = 0.0
+margin_bottom = 0.0
+custom_colors/default_color = Color( 0.2, 1, 0.2, 1 )
+bbcode_enabled = true
 
 [node name="BootLogo" type="TextureRect" parent="BootScreen"]
 anchor_left = 0.5

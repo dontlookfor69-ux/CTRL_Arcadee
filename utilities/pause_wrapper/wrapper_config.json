@@ -1,0 +1,4 @@
+{
+    "exit_event_type": "EV_KEY",
+    "exit_event_code": "KEY_ESC"
+}

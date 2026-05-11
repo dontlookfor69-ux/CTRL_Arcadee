@@ -9,7 +9,7 @@ echo "=== Arcade Master Boot Sequence Initiated ==="
 echo "Checking system dependencies..."
 
 # Define required apt packages
-APT_PACKAGES="python3-pip python3-tk dasm stella box64 chocolate-doom godot3"
+APT_PACKAGES="python3-pip python3-tk dasm stella box64 chocolate-doom godot3 mpv yt-dlp"
 MISSING_APT=""
 
 for pkg in $APT_PACKAGES; do
@@ -28,7 +28,7 @@ else
 fi
 
 # Define required pip packages
-PIP_PACKAGES="pynput tinytag keyboard"
+PIP_PACKAGES="pynput tinytag keyboard evdev"
 MISSING_PIP=""
 
 for pkg in $PIP_PACKAGES; do

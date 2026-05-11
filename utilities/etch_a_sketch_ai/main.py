@@ -1,200 +1,173 @@
 import os
 import sys
 import time
+import threading
+import traceback
 import pygame
 import cv2
 import numpy as np
 
-try:
-    import evdev
-    EVDEV_AVAILABLE = True
-except ImportError:
-    EVDEV_AVAILABLE = False
-    print("Warning: evdev not available. Spinners will not work on this OS.")
+# --- Configuration ---
+CANVAS_WIDTH, CANVAS_HEIGHT = 900, 500
+BG_COLOR = (5, 5, 10)
+FRAME_COLOR = (200, 0, 0)
+CANVAS_BG = (220, 225, 210)
+LINE_COLOR = (40, 40, 45)
+TEXT_COLOR = (0, 255, 200)
 
-try:
-    from rembg import remove
-    REMBG_AVAILABLE = True
-except ImportError:
-    REMBG_AVAILABLE = False
-    print("Warning: rembg not available. Background removal disabled.")
-
-# --- Constants ---
-WIDTH, HEIGHT = 800, 600
-FRAME_COLOR = (200, 30, 30) # Classic Red
-BG_COLOR = (200, 200, 200) # Gray canvas
-LINE_COLOR = (50, 50, 50)  # Dark gray line
-KNOB_COLOR = (240, 240, 240)
-TEXT_COLOR = (255, 255, 255)
-CURSOR_COLOR = (255, 0, 0)
-SPEED = 2
-
-# Drawing Area (Canvas)
-CANVAS_RECT = pygame.Rect(50, 50, 700, 400)
-
-def find_spinners():
-    """Find the evdev devices for the spinners (rotary encoders)."""
-    if not EVDEV_AVAILABLE:
-        return None, None
-    devices = [evdev.InputDevice(path) for path in evdev.list_devices()]
-    spinner_x = None
-    spinner_y = None
-    for dev in devices:
-        if "spinner" in dev.name.lower() or "mouse" in dev.name.lower():
-            if spinner_x is None:
-                spinner_x = dev
-            elif spinner_y is None:
-                spinner_y = dev
-    return spinner_x, spinner_y
-
-def capture_and_process():
-    """Capture webcam, remove background, extract edges."""
-    if not REMBG_AVAILABLE:
-        return None
+class MagicEtch:
+    def __init__(self):
+        pygame.init()
+        self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+        self.w, self.h = self.screen.get_size()
+        self.clock = pygame.time.Clock()
+        self.font = pygame.font.SysFont("monospace", 24, bold=True)
         
-    cap = cv2.VideoCapture(0)
-    # Let camera warm up
-    time.sleep(0.5)
-    ret, frame = cap.read()
-    cap.release()
-    if not ret:
-        print("Error: Could not read from webcam.")
-        return None
+        self.canvas_rect = pygame.Rect((self.w - CANVAS_WIDTH)//2, 60, CANVAS_WIDTH, CANVAS_HEIGHT)
+        self.canvas = pygame.Surface((CANVAS_WIDTH, CANVAS_HEIGHT))
+        self.canvas.fill(CANVAS_BG)
         
-    # Remove background
-    img_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    result = remove(img_rgb)
-    
-    # Convert to grayscale and get edges
-    gray = cv2.cvtColor(result, cv2.COLOR_RGB2GRAY)
-    edges = cv2.Canny(gray, 100, 200)
-    
-    # Resize edges to fit the drawing canvas
-    edges_resized = cv2.resize(edges, (CANVAS_RECT.width, CANVAS_RECT.height))
-    return edges_resized
+        self.points_to_draw = []
+        self.is_processing = False
+        self.status = "SYSTEM READY - PRESS SPACE TO CAPTURE"
+        
+        self.last_p = (CANVAS_WIDTH//2, CANVAS_HEIGHT//2)
+        
+    def log(self, msg):
+        print(f"[ETCH DEBUG] {msg}", flush=True)
+        self.status = msg.upper()
 
-def draw_frame(screen, font):
-    """Draws the red frame, white knobs, and HUD text."""
-    screen.fill(FRAME_COLOR)
-    
-    # Draw knobs (circles at bottom left and bottom right)
-    pygame.draw.circle(screen, KNOB_COLOR, (100, 520), 50)
-    pygame.draw.circle(screen, KNOB_COLOR, (700, 520), 50)
-    
-    # Draw HUD text
-    text1 = font.render("SPACE: Capture Photo", True, TEXT_COLOR)
-    text2 = font.render("C: Clear Canvas", True, TEXT_COLOR)
-    text3 = font.render("ESC: Exit", True, TEXT_COLOR)
-    
-    screen.blit(text1, (300, 470))
-    screen.blit(text2, (300, 500))
-    screen.blit(text3, (300, 530))
+    def process_image(self, source="camera"):
+        try:
+            self.is_processing = True
+            self.log("Initializing Neural Vision...")
+            
+            frame = None
+            if source == "camera":
+                cap = cv2.VideoCapture(0)
+                if not cap.isOpened():
+                    self.log("ERROR: Camera Offline")
+                    self.is_processing = False; return
+                time.sleep(1.0)
+                ret, frame = cap.read()
+                cap.release()
+                if not ret:
+                    self.log("ERROR: Frame Capture Failed")
+                    self.is_processing = False; return
+            else:
+                p = os.path.join(os.path.dirname(__file__), "image.png")
+                if not os.path.exists(p):
+                    self.log("ERROR: Missing image.png")
+                    self.is_processing = False; return
+                frame = cv2.imread(p)
 
-def main():
-    pygame.init()
-    screen = pygame.display.set_mode((WIDTH, HEIGHT))
-    pygame.display.set_caption("Etch A Sketch AI")
-    clock = pygame.time.Clock()
-    
-    try:
-        font = pygame.font.SysFont("arial", 20, bold=True)
-        large_font = pygame.font.SysFont("arial", 40, bold=True)
-    except:
-        font = pygame.font.Font(None, 30)
-        large_font = pygame.font.Font(None, 50)
-    
-    # Persistent surface for drawing
-    canvas = pygame.Surface((CANVAS_RECT.width, CANVAS_RECT.height))
-    canvas.fill(BG_COLOR)
-    
-    spinner_x, spinner_y = find_spinners()
-    
-    x, y = CANVAS_RECT.width // 2, CANVAS_RECT.height // 2
-    
-    running = True
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    running = False
-                elif event.key == pygame.K_c:
-                    canvas.fill(BG_COLOR)
-                elif event.key == pygame.K_SPACE:
-                    # Draw "Processing" overlay
-                    draw_frame(screen, font)
-                    screen.blit(canvas, CANVAS_RECT.topleft)
-                    
-                    overlay = pygame.Surface((CANVAS_RECT.width, CANVAS_RECT.height))
-                    overlay.set_alpha(150)
-                    overlay.fill((0, 0, 0))
-                    screen.blit(overlay, CANVAS_RECT.topleft)
-                    
-                    proc_text = large_font.render("PROCESSING IMAGE...", True, (255, 255, 255))
-                    text_rect = proc_text.get_rect(center=CANVAS_RECT.center)
-                    screen.blit(proc_text, text_rect)
-                    pygame.display.flip()
-                    
-                    # Capture and process
-                    edges = capture_and_process()
-                    if edges is not None:
-                        for row in range(CANVAS_RECT.height):
-                            for col in range(CANVAS_RECT.width):
-                                if edges[row, col] > 128:
-                                    pygame.draw.rect(canvas, LINE_COLOR, (col, row, 1, 1))
+            self.log("Extracting High-Fidelity Features...")
+            # Grayscale & Noise reduction
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            gray = cv2.GaussianBlur(gray, (5, 5), 0)
+            
+            # Skeletonization is the "secret sauce" for Etch-A-Sketch
+            # It turns thick edges into single-pixel lines
+            thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
+            
+            # Thinning/Skeletonization
+            kernel = np.ones((3,3), np.uint8)
+            eroded = cv2.erode(thresh, kernel, iterations=1)
+            # Use OpenCV's built-in thinning if available, otherwise manual skeleton
+            skeleton = cv2.ximgproc.thinning(eroded) if hasattr(cv2, 'ximgproc') else eroded
+            
+            # Resize skeleton to canvas
+            skeleton = cv2.resize(skeleton, (CANVAS_WIDTH, CANVAS_HEIGHT))
+            
+            self.log("Mapping Vector Coordinates...")
+            pts = np.column_stack(np.where(skeleton > 0))
+            if len(pts) == 0:
+                self.log("ERROR: No Geometry Detected")
+                self.is_processing = False; return
 
-        # Handle keyboard for testing
-        keys = pygame.key.get_pressed()
-        dx, dy = 0, 0
-        if keys[pygame.K_LEFT]: dx = -SPEED
-        if keys[pygame.K_RIGHT]: dx = SPEED
-        if keys[pygame.K_UP]: dy = -SPEED
-        if keys[pygame.K_DOWN]: dy = SPEED
-
-        # Handle evdev spinners
-        if spinner_x is not None:
-            try:
-                for event in spinner_x.read():
-                    if event.type == evdev.ecodes.EV_REL:
-                        if event.code == evdev.ecodes.REL_X:
-                            dx += event.value
-            except BlockingIOError:
-                pass
+            # OPTIMIZATION: Nearest Neighbor Pathing (Greedy TSP)
+            # This ensures we don't have "lines everywhere"
+            self.log("Optimizing Path Continuity...")
+            pts_list = pts.tolist()
+            sorted_pts = []
+            curr = np.array([0, 0]) # Start from top-left
+            
+            # Sub-sample for performance
+            if len(pts_list) > 2000:
+                step = len(pts_list) // 2000
+                pts_list = pts_list[::step]
+            
+            remaining = np.array(pts_list)
+            
+            # Use a slightly faster chunked sorting for large point sets
+            while len(remaining) > 0:
+                # Find closest point
+                dists = np.sum((remaining - curr)**2, axis=1)
+                idx = np.argmin(dists)
                 
-        if spinner_y is not None:
-            try:
-                for event in spinner_y.read():
-                    if event.type == evdev.ecodes.EV_REL:
-                        if event.code in (evdev.ecodes.REL_Y, evdev.ecodes.REL_X, evdev.ecodes.REL_WHEEL):
-                            dy += event.value
-            except BlockingIOError:
-                pass
+                # If the jump is too far, it's a new segment (handle Etch-A-Sketch "drag")
+                if dists[idx] > 2500: # Distance threshold squared
+                    pass # We just have to drag the pen, it's an etch-a-sketch!
+                
+                pt = remaining[idx]
+                sorted_pts.append((int(pt[1]), int(pt[0])))
+                curr = pt
+                remaining = np.delete(remaining, idx, axis=0)
+                
+                if len(sorted_pts) % 500 == 0:
+                    self.log(f"Tracing: {int((len(sorted_pts)/len(pts_list))*100)}%")
 
-        if dx != 0 or dy != 0:
-            new_x = max(0, min(CANVAS_RECT.width - 1, x + dx))
-            new_y = max(0, min(CANVAS_RECT.height - 1, y + dy))
-            pygame.draw.line(canvas, LINE_COLOR, (x, y), (new_x, new_y), 2)
-            x, y = new_x, new_y
+            self.points_to_draw = sorted_pts
+            self.log(f"READY: {len(sorted_pts)} Points")
+            self.is_processing = False
+            
+        except Exception as e:
+            self.log(f"CRITICAL SYSTEM ERROR: {str(e)}")
+            traceback.print_exc()
+            self.is_processing = False
 
-        # Render everything
-        draw_frame(screen, font)
-        
-        # Draw canvas border
-        pygame.draw.rect(screen, (0, 0, 0), CANVAS_RECT.inflate(4, 4), 4)
-        
-        # Blit canvas
-        screen.blit(canvas, CANVAS_RECT.topleft)
-        
-        # Draw cursor on canvas
-        cursor_pos = (CANVAS_RECT.left + int(x), CANVAS_RECT.top + int(y))
-        pygame.draw.circle(screen, CURSOR_COLOR, cursor_pos, 3)
-        
-        pygame.display.flip()
-        clock.tick(60)
+    def run(self):
+        running = True
+        while running:
+            self.screen.fill(BG_COLOR)
+            
+            # Draw Frame
+            pygame.draw.rect(self.screen, FRAME_COLOR, self.canvas_rect.inflate(100, 100), border_radius=40)
+            pygame.draw.rect(self.screen, (30, 30, 35), self.canvas_rect.inflate(20, 20), border_radius=10)
+            
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT: running = False
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE: running = False
+                    if not self.is_processing:
+                        if event.key == pygame.K_SPACE:
+                            threading.Thread(target=self.process_image, args=("camera",), daemon=True).start()
+                        if event.key == pygame.K_m:
+                            threading.Thread(target=self.process_image, args=("file",), daemon=True).start()
+                        if event.key == pygame.K_c:
+                            self.canvas.fill(CANVAS_BG); self.points_to_draw = []
 
-    pygame.quit()
-    sys.exit()
+            # Drawing Logic
+            if self.points_to_draw and not self.is_processing:
+                for _ in range(15):
+                    if not self.points_to_draw: break
+                    p = self.points_to_draw.pop(0)
+                    pygame.draw.line(self.canvas, LINE_COLOR, self.last_p, p, 2)
+                    self.last_p = p
+            
+            self.screen.blit(self.canvas, self.canvas_rect.topleft)
+            
+            # HUD
+            stat_surf = self.font.render(self.status, True, TEXT_COLOR)
+            self.screen.blit(stat_surf, (self.w//2 - stat_surf.get_width()//2, self.h - 110))
+            
+            # Knobs
+            pygame.draw.circle(self.screen, (255, 255, 255), (self.canvas_rect.left - 40, self.h - 100), 60)
+            pygame.draw.circle(self.screen, (255, 255, 255), (self.canvas_rect.right + 40, self.h - 100), 60)
+            
+            pygame.display.flip()
+            self.clock.tick(60)
+        pygame.quit()
 
 if __name__ == "__main__":
-    main()
+    MagicEtch().run()
