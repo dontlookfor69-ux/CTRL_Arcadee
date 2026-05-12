@@ -1,9 +1,23 @@
 #!/bin/bash
 cd "$(dirname "$0")"
 
+# ── NATIVE LINUX SUPPORT ──────────────────────────────────────────────
+# If native Linux files exist, use them directly (much faster than ISO + box64)
+if [ -f "./Undertale" ]; then
+    echo "Launching native Undertale..."
+    chmod +x ./Undertale
+    exec ./Undertale
+elif [ -f "./runner" ]; then
+    echo "Launching native Undertale (runner)..."
+    chmod +x ./runner
+    exec ./runner
+fi
+
+# ── ISO FALLBACK (LEGACY) ─────────────────────────────────────────────
 ISO_FILE=$(find . -name "*.iso" -print -quit 2>/dev/null)
 if [ -z "$ISO_FILE" ]; then
-    echo "ERROR: No .iso found. Place Undertale.iso in this directory."
+    echo "ERROR: No native binary or .iso found."
+    echo "Place 'Undertale' (Linux) or 'Undertale.iso' (Windows) in this directory."
     sleep 5; exit 1
 fi
 
@@ -40,7 +54,7 @@ if [ -z "$EXE" ]; then
     sleep 5; exit 1
 fi
 
-echo "Launching: $EXE"
+echo "Launching via box64: $EXE"
 cd "$(dirname "$EXE")"
 box64 "$(basename "$EXE")"
 EXIT_CODE=$?

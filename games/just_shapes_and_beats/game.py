@@ -27,14 +27,11 @@ class Player:
         self.dash_timer = 0
         self.dash_cooldown = 0
 
-    def move(self, keys):
+    def move(self, move_x, move_y, dash_pressed):
         if self.dash_cooldown > 0: self.dash_cooldown -= 1
         
-        move_x = keys[pygame.K_RIGHT] - keys[pygame.K_LEFT]
-        move_y = keys[pygame.K_DOWN] - keys[pygame.K_UP]
-        
         speed = self.speed
-        if keys[pygame.K_LSHIFT] and self.dash_cooldown == 0:
+        if dash_pressed and self.dash_cooldown == 0:
             self.dash_timer = 10
             self.dash_cooldown = 40
             self.invulnerable = True
@@ -121,6 +118,12 @@ def save_highscore(score):
 
 def main():
     pygame.init()
+    
+    # Joystick setup
+    pygame.joystick.init()
+    joysticks = [pygame.joystick.Joystick(i) for i in range(pygame.joystick.get_count())]
+    for j in joysticks: j.init()
+    
     screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
     clock = pygame.time.Clock()
     font_large = pygame.font.SysFont("monospace", 72, bold=True)
@@ -132,19 +135,42 @@ def main():
     highscore = load_highscore()
     game_over = False
     
-    # Music setup (dummy for now, path would need verification)
-    
     running = True
     while running:
         screen.fill(COLOR_BG)
         keys = pygame.key.get_pressed()
         
+        move_x = keys[pygame.K_RIGHT] - keys[pygame.K_LEFT]
+        move_y = keys[pygame.K_DOWN] - keys[pygame.K_UP]
+        dash_pressed = keys[pygame.K_LSHIFT] or keys[pygame.K_SPACE] or keys[pygame.K_x]
+        
+        # Add Joystick motion
+        for j in joysticks:
+            if j.get_numaxes() >= 2:
+                jx = j.get_axis(0)
+                jy = j.get_axis(1)
+                if abs(jx) > 0.2: move_x = jx
+                if abs(jy) > 0.2: move_y = jy
+            # D-pad (hats)
+            for h_idx in range(j.get_numhats()):
+                hat = j.get_hat(h_idx)
+                if hat[0] != 0: move_x = hat[0]
+                if hat[1] != 0: move_y = -hat[1]
+            # Buttons for dash
+            for b_idx in range(min(j.get_numbuttons(), 10)):
+                if j.get_button(b_idx): dash_pressed = True
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT: running = False
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE: running = False
                 if game_over and event.key == pygame.K_r:
                     player = Player(); obstacles = []; score = 0; game_over = False; highscore = load_highscore()
+            if event.type == pygame.JOYBUTTONDOWN:
+                if game_over:
+                    # Map button 0 to restart
+                    if event.button == 0:
+                         player = Player(); obstacles = []; score = 0; game_over = False; highscore = load_highscore()
 
         if not game_over:
             # CLEANUP OFFSCREEN
@@ -154,7 +180,7 @@ def main():
             if len(obstacles) < 25 and random.random() < 0.05:
                 obstacles.append(Obstacle(score))
                 
-            player.move(keys)
+            player.move(move_x, move_y, dash_pressed)
             
             for o in obstacles:
                 o.update()
@@ -185,7 +211,7 @@ def main():
             final_score = font_small.render(f"FINAL SCORE: {int(score)}", True, COLOR_TEXT)
             screen.blit(final_score, (SCREEN_WIDTH//2 - final_score.get_width()//2, SCREEN_HEIGHT//2))
             
-            retry = font_small.render("PRESS 'R' TO RESTART", True, COLOR_PLAYER)
+            retry = font_small.render("PRESS 'R' or Arcade Button 1 TO RESTART", True, COLOR_PLAYER)
             screen.blit(retry, (SCREEN_WIDTH//2 - retry.get_width()//2, SCREEN_HEIGHT//2 + 60))
             
         pygame.display.flip()

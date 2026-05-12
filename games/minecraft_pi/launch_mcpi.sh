@@ -3,10 +3,11 @@ cd "$(dirname "$0")"
 
 # Check if Minecraft Pi is downloaded
 if [ ! -d "mcpi" ]; then
-    echo "Minecraft Pi not found. Downloading..."
-    wget -qO- https://s3.amazonaws.com/assets.minecraft.net/pi/minecraft-pi-0.1.1.tar.gz | tar -xz
-    
-    # Optional: apply patches for mcpi-reborn or standard library
+    echo "ERROR: Minecraft Pi (mcpi/) not found in $(pwd)"
+    echo "The official download link is currently unavailable."
+    echo "Please manually place the 'mcpi' folder here to enable this game."
+    sleep 5
+    exit 1
 fi
 
 cd mcpi
