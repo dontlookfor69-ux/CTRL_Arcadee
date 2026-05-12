@@ -1,0 +1,42 @@
+{
+    "Pacman": {
+        "description": "The ultimate classic. Avoid ghosts. Eat pellets.",
+        "controls": "JOYSTICK: Move  A: Start",
+        "year": "1980"
+    },
+    "Tetris": {
+        "description": "Clear lines. Beat gravity. Classic.",
+        "controls": "JOYSTICK: Move  A: Rotate  B: Hard Drop",
+        "year": "1984"
+    },
+    "DOOM": {
+        "description": "They are rage, brutal, without mercy.",
+        "controls": "WASD: Move  MOUSE: Aim  SPACE: Shoot",
+        "year": "1993"
+    },
+    "Undertale": {
+        "description": "The RPG where you don't have to kill anyone.",
+        "controls": "JOYSTICK: Move  A: Confirm  B: Cancel",
+        "year": "2015"
+    },
+    "Just Shapes & Beats": {
+        "description": "Avoid the pink shapes. Survive the beat.",
+        "controls": "JOYSTICK: Move  SHIFT: Dash",
+        "year": "2018"
+    },
+    "Minecraft Pi": {
+        "description": "Building blocks for your imagination.",
+        "controls": "WASD: Move  CLICK: Interact",
+        "year": "2013"
+    },
+    "Etch A Sketch AI": {
+        "description": "Vision-powered digital sketching.",
+        "controls": "SPACE: Capture  C: Clear",
+        "year": "2025"
+    },
+    "Media Player": {
+        "description": "High-fidelity retro media management.",
+        "controls": "MOUSE: Interface",
+        "year": "2025"
+    }
+}

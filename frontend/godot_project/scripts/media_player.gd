@@ -1,26 +1,32 @@
 extends Control
 
-onready var audio_player = $AudioStreamPlayer
-onready var now_playing  = $WindowFrame/MainContent/VideoPanel/SearchBox/NowPlayingLabel
-onready var status_label = $WindowFrame/Footer/StatusLabel
-onready var play_btn     = $WindowFrame/MainContent/VideoPanel/Controls/PlayBtn
-onready var search_box   = $WindowFrame/MainContent/VideoPanel/SearchBox/HBox/SearchInput
-onready var playlist_ui  = $WindowFrame/MainContent/PlaylistPanel/ScrollContainer/VBoxContainer
+onready var audio_player  = $WindowFrame/MainContent/VideoPanel/AudioPlayer
+onready var status_label  = $WindowFrame/StatusBar/StatusLabel
+onready var play_btn      = $WindowFrame/ControlsBar/HBox/PlayPauseBtn
+onready var song_list     = $WindowFrame/MainContent/PlaylistPanel/ColorRect/SongList
+onready var search_input  = $WindowFrame/MainContent/VideoPanel/SearchBox/HBox/SearchInput
+onready var now_playing   = $WindowFrame/MainContent/VideoPanel/SearchBox/NowPlayingLabel
 
 const PLAYLIST_FILE = "media_player_playlist.json"
 var playlist = []
 var last_query = ""
+var _current_index = -1
 
 func _ready():
 	_load_playlist()
 	status_label.text = "Ready — enter a song to download"
-	search_box.placeholder_text = "Search song..."
+	search_input.placeholder_text = "Search song..."
+	
+	# Wire up SearchBtn as it's not connected in .tscn
+	var search_btn = $WindowFrame/MainContent/VideoPanel/SearchBox/HBox/SearchBtn
+	if search_btn:
+		search_btn.connect("pressed", self, "_on_SearchBtn_pressed")
 
 func _get_playlist_path() -> String:
-	var p = ProjectSettings.globalize_path("res://")
-	p = p.rstrip("/").rstrip("\\")
-	var project_root = p.get_base_dir().get_base_dir()
-	return project_root.plus_file(PLAYLIST_FILE)
+	var root = ProjectSettings.globalize_path("res://").rstrip("/")
+	# Go up two levels: godot_project → frontend → CTRL_Arcadee
+	root = root.get_base_dir().get_base_dir()
+	return root.plus_file(PLAYLIST_FILE)
 
 func _load_playlist():
 	var path = _get_playlist_path()
@@ -42,21 +48,15 @@ func _save_playlist():
 	f.close()
 
 func _update_playlist_ui():
-	for child in playlist_ui.get_children():
-		child.queue_free()
+	song_list.clear()
 	for song in playlist:
-		var btn = Button.new()
-		btn.text = song.name
-		btn.align = Button.ALIGN_LEFT
-		btn.connect("pressed", self, "_on_playlist_item_pressed", [song])
-		playlist_ui.add_child(btn)
+		song_list.add_item(song.name)
 
-func _on_playlist_item_pressed(song):
-	last_query = song.name
-	_play_local_file(song.path)
+func _on_SongList_item_activated(index):
+	_play_by_index(index)
 
 func _on_SearchBtn_pressed():
-	var query = search_box.text
+	var query = search_input.text
 	if query == "": return
 	last_query = query
 	status_label.text = "Searching..."
@@ -105,17 +105,24 @@ func _do_download(query):
 		call_deferred("_on_download_failed")
 
 func _on_download_complete(path):
-	playlist.append({"name": last_query, "path": path})
+	var song_data = {"name": last_query, "path": path}
+	playlist.append(song_data)
 	_save_playlist()
 	_update_playlist_ui()
-	_play_local_file(path)
+	_play_by_index(playlist.size() - 1)
 
 func _on_download_failed():
 	status_label.text = "Download Failed"
 	now_playing.text = "Error downloading song"
 
+func _play_by_index(index):
+	if index < 0 or index >= playlist.size(): return
+	_current_index = index
+	var song = playlist[index]
+	last_query = song.name
+	_play_local_file(song.path)
+
 func _play_local_file(path):
-	# Ensure we have an absolute path for File.open
 	var abs_path = ProjectSettings.globalize_path(path)
 	var f = File.new()
 	if f.open(abs_path, File.READ) == OK:
@@ -133,7 +140,7 @@ func _play_local_file(path):
 		status_label.text = "Playback Error"
 		print("[MEDIA] Failed to open: ", abs_path)
 
-func _on_PlayBtn_pressed():
+func _on_PlayPauseBtn_pressed():
 	if audio_player.playing:
 		audio_player.stream_paused = !audio_player.stream_paused
 		play_btn.text = "Resume" if audio_player.stream_paused else "Pause"
@@ -143,10 +150,14 @@ func _on_PlayBtn_pressed():
 		play_btn.text = "Pause"
 		status_label.text = "Playing"
 
-func _on_StopBtn_pressed():
-	audio_player.stop()
-	play_btn.text = "Play"
-	status_label.text = "Stopped"
+func _on_PrevBtn_pressed():
+	var idx = max(0, _current_index - 1)
+	if playlist.size() > 0: _play_by_index(idx)
 
-func _on_HomeBtn_pressed():
-	get_tree().change_scene("res://scenes/main.tscn")
+func _on_NextBtn_pressed():
+	var idx = (_current_index + 1) % playlist.size()
+	if playlist.size() > 0: _play_by_index(idx)
+
+func _on_BackBtn_pressed():
+	audio_player.stop()
+	get_tree().change_scene("res://scenes/main_desktop.tscn")

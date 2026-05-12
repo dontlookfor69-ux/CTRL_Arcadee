@@ -1,17 +1,20 @@
 [Unit]
 Description=CTRL Arcade Godot Frontend
-After=network.target graphical.target
-Wants=graphical.target
+After=network.target graphical-session.target display-manager.service
+Wants=graphical-session.target
 
 [Service]
 Type=simple
 User=ctrl
 Environment=DISPLAY=:0
-WorkingDirectory=/home/ctrl/CTRL_Arcade/frontend/godot_project
-# Run the auto-dependency checker and launcher
+Environment=XAUTHORITY=/home/ctrl/.Xauthority
+WorkingDirectory=/home/ctrl/Desktop/CTRL_Arcadee/frontend/godot_project
+ExecStartPre=/bin/bash -c 'until xset q &>/dev/null; do sleep 1; done'
 ExecStart=/bin/bash start_arcade.sh
-Restart=always
-RestartSec=3
+Restart=on-failure
+RestartSec=5
+StartLimitIntervalSec=60
+StartLimitBurst=5
 
 [Install]
-WantedBy=graphical.target
+WantedBy=graphical-session.target

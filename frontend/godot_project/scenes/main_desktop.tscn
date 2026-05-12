@@ -1,6 +1,18 @@
-[gd_scene load_steps=3 format=2]
+[gd_scene load_steps=7 format=2]
 
 [ext_resource path="res://scripts/main.gd" type="Script" id=1]
+[ext_resource path="res://shaders/barrel.shader" type="Shader" id=2]
+[ext_resource path="res://shaders/scanline.shader" type="Shader" id=3]
+
+[sub_resource type="ShaderMaterial" id=4]
+shader = ExtResource( 2 )
+shader_param/curvature = 0.08
+
+[sub_resource type="ShaderMaterial" id=5]
+shader = ExtResource( 3 )
+shader_param/scanline_count = 540.0
+shader_param/scanline_opacity = 0.18
+shader_param/flicker_speed = 8.0
 
 [node name="Desktop" type="Control"]
 anchor_right = 1.0
@@ -14,18 +26,17 @@ anchor_bottom = 1.0
 [node name="Background" type="ColorRect" parent="MainUI"]
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color( 0.2, 0, 0, 1 )
+color = Color( 0.05, 0, 0, 1 )
 
-[node name="Scanlines" type="GridContainer" parent="MainUI/Background"]
+[node name="Glow" type="ColorRect" parent="MainUI/Background"]
 anchor_right = 1.0
 anchor_bottom = 1.0
-custom_constants/vseparation = 2
-columns = 1
+color = Color( 0, 0.2, 0, 0.1 )
 
 [node name="Header" type="ColorRect" parent="MainUI"]
 anchor_right = 1.0
 margin_bottom = 80.0
-color = Color( 0.05, 0.05, 0.05, 1 )
+color = Color( 0, 0, 0, 1 )
 
 [node name="HBox" type="HBoxContainer" parent="MainUI/Header"]
 anchor_right = 1.0
@@ -161,20 +172,52 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 color = Color( 0, 0, 0, 0.9 )
 
-[node name="Label" type="Label" parent="MainUI/LoadingOverlay"]
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-margin_left = -200.0
-margin_top = -50.0
-margin_right = 200.0
-margin_bottom = 50.0
-custom_colors/font_color = Color( 0, 1, 1, 1 )
-text = "LOADING..."
-align = 1
-valign = 1
+[node name="AttractMode" type="ColorRect" parent="MainUI"]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color( 0, 0, 0, 0.85 )
 
+[node name="VBox" type="VBoxContainer" parent="MainUI/AttractMode"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 100.0
+margin_top = 100.0
+margin_right = -100.0
+margin_bottom = -100.0
+alignment = 1
+
+[node name="GameTitle" type="Label" parent="MainUI/AttractMode/VBox"]
+margin_top = 373.0
+margin_right = 1720.0
+margin_bottom = 387.0
+text = "GAME TITLE"
+align = 1
+
+[node name="Desc" type="Label" parent="MainUI/AttractMode/VBox"]
+margin_top = 407.0
+margin_right = 1720.0
+margin_bottom = 421.0
+text = "Description"
+align = 1
+
+[node name="Controls" type="Label" parent="MainUI/AttractMode/VBox"]
+margin_top = 441.0
+margin_right = 1720.0
+margin_bottom = 455.0
+text = "Controls"
+align = 1
+
+[node name="InsertCoin" type="Label" parent="MainUI/AttractMode"]
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+margin_left = -100.0
+margin_top = -100.0
+margin_right = 100.0
+text = "PRESS ANY BUTTON TO PLAY"
+align = 1
 
 [node name="BootScreen" type="ColorRect" parent="."]
 anchor_right = 1.0
@@ -192,10 +235,6 @@ color = Color( 0, 0, 0, 1 )
 [node name="BiosText" type="RichTextLabel" parent="BootScreen"]
 anchor_right = 1.0
 anchor_bottom = 1.0
-margin_left = 0.0
-margin_top = 0.0
-margin_right = 0.0
-margin_bottom = 0.0
 custom_colors/default_color = Color( 0.2, 1, 0.2, 1 )
 bbcode_enabled = true
 
@@ -213,5 +252,23 @@ expand = true
 stretch_mode = 6
 
 [node name="BootTween" type="Tween" parent="BootScreen"]
+
+[node name="CRT_Barrel" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="ShaderRect" type="ColorRect" parent="CRT_Barrel"]
+material = SubResource( 4 )
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="CRT_Scanlines" type="CanvasLayer" parent="."]
+layer = 11
+
+[node name="ShaderRect" type="ColorRect" parent="CRT_Scanlines"]
+material = SubResource( 5 )
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
 
 [connection signal="pressed" from="MainUI/DebugMenu/VBoxContainer/CloseButton" to="." method="_on_CloseDebugButton_pressed"]

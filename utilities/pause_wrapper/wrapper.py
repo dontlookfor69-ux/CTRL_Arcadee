@@ -11,6 +11,7 @@ import signal
 import time
 import threading
 import shlex
+import re
 
 READY_FLAG = "/tmp/arcade_ready"
 PAUSE_MENU_SCRIPT = os.path.join(os.path.dirname(__file__), "pause_menu.py")
@@ -22,6 +23,8 @@ class ArcadeWrapper:
         self.running = True
         self.is_paused = False
         self._pause_lock = threading.Lock()
+        self._last_esc_time = 0.0
+        self._ESC_DOUBLE_TAP_WINDOW = 0.4  # seconds
 
     def log(self, msg):
         print(f"[WRAPPER] {msg}", flush=True)
@@ -77,13 +80,19 @@ class ArcadeWrapper:
                 pass
 
     def _on_esc_pressed(self):
-        if not self.running:
-            return
-        with self._pause_lock:
-            if self.is_paused:
-                return  # already in pause menu
-            self.is_paused = True
-        self._show_pause_menu()
+        now = time.time()
+        if now - self._last_esc_time < self._ESC_DOUBLE_TAP_WINDOW:
+            self._last_esc_time = 0.0
+            # Double tap confirmed — show pause menu
+            if not self.running:
+                return
+            with self._pause_lock:
+                if self.is_paused:
+                    return
+                self.is_paused = True
+            self._show_pause_menu()
+        else:
+            self._last_esc_time = now
 
     # ── Pause menu ─────────────────────────────────────────────────────────
     def _show_pause_menu(self):
@@ -154,63 +163,52 @@ class ArcadeWrapper:
 
     # ── Main launch ────────────────────────────────────────────────────────
     def launch(self):
-        # Clear old ready flag
         if os.path.exists(READY_FLAG):
-            try:
-                os.remove(READY_FLAG)
-            except Exception:
-                pass
+            try: os.remove(READY_FLAG)
+            except Exception: pass
 
-        # Resolve working directory from command
         target_dir = os.getcwd()
         try:
+            # Robust target_dir detection for paths with spaces
             parts = shlex.split(self.command)
             for p in parts:
-                if os.path.exists(p):
-                    target_dir = os.path.dirname(os.path.abspath(p))
+                abs_p = os.path.abspath(p)
+                if os.path.isfile(abs_p):
+                    target_dir = os.path.dirname(abs_p)
                     break
-        except Exception:
-            pass
+            else:
+                matches = re.findall(r'"([^"]+)"|\'([^\']+)\'|(\S+)', self.command)
+                for groups in matches:
+                    for token in groups:
+                        if token and os.path.isfile(os.path.abspath(token)):
+                            target_dir = os.path.dirname(os.path.abspath(token))
+                            break
+        except Exception: pass
         
         self.log(f"Working dir: {target_dir}")
         os.chdir(target_dir)
 
-        # Launch the game process
         try:
             if os.name != 'nt':
-                self.process = subprocess.Popen(
-                    self.command, shell=True, preexec_fn=os.setsid
-                )
+                self.process = subprocess.Popen(self.command, shell=True, preexec_fn=os.setsid)
             else:
-                self.process = subprocess.Popen(
-                    self.command, shell=True,
-                    creationflags=subprocess.CREATE_NEW_PROCESS_GROUP
-                )
+                self.process = subprocess.Popen(self.command, shell=True, creationflags=subprocess.CREATE_NEW_PROCESS_GROUP)
         except Exception as e:
             self.log(f"FATAL: Could not launch process: {e}")
             return
 
         self.log(f"Launched PID {self.process.pid}: {self.command}")
-
-        # Start threads
         threading.Thread(target=self._signal_ready, daemon=True).start()
         self._start_input_monitor()
-
-        # Wait for game to exit
         self.process.wait()
         self.running = False
         self.log("Game process exited")
         
-        # Cleanup
         if os.path.exists(READY_FLAG):
-            try:
-                os.remove(READY_FLAG)
-            except Exception:
-                pass
+            try: os.remove(READY_FLAG)
+            except Exception: pass
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: wrapper.py <command>")
-        sys.exit(1)
+    if len(sys.argv) < 2: sys.exit(1)
     cmd = " ".join(sys.argv[1:])
     ArcadeWrapper(cmd).launch()
