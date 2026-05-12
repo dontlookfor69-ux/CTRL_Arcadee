@@ -13,7 +13,7 @@ echo "Installing system dependencies..."
 # Core Python dependencies & system libraries
 apt-get install -y python3-pip python3-pygame python3-evdev python3-opencv python3-numpy \
                    box64 chocolate-doom plymouth plymouth-themes libsdl2-2.0-0 libsdl2-dev \
-                   godot3 wget tar mpv
+                   godot3 wget tar mpv xdotool
 
 # Install rembg, tinytag, pynput, and yt-dlp (requires PEP 668 override on newer Pi OS, so we use break-system-packages if needed)
 echo "Installing pip dependencies..."
