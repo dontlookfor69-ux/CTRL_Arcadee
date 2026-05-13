@@ -27,10 +27,9 @@ func _ready():
 func _process(_delta):
 	if _is_searching:
 		var t = OS.get_ticks_msec()
-		status_label.text = ">>> SEARCHING_NETWORK_[" + str(t % 999) + "] <<<"
+		status_label.text = ">>> SEARCHING_STREAMS_[" + str(t % 999) + "] <<<"
 		if randf() > 0.95:
-			now_playing.text = "SCANNING_RECORDS..."
-		# UI Jitter
+			now_playing.text = "SCANNING_YOUTUBE_DB..."
 		if randf() > 0.97:
 			rect_position = Vector2(rand_range(-3,3), rand_range(-3,3))
 		else:
@@ -55,23 +54,52 @@ func _on_SearchBtn_pressed():
 	_kill_mpv()
 	_is_searching = true
 	now_playing.text = "QUERY: " + query.to_upper()
-	status_label.text = "INITIALIZING_SEARCH..."
+	status_label.text = "CONNECTING_TO_API..."
 	
 	_search_thread = Thread.new()
 	_search_thread.start(self, "_do_stream_search", query)
 
 func _do_stream_search(query):
-	# Improved yt-dlp arguments for robust YouTube searching
-	var args = [
+	# [FINAL_FIX] Extremely robust search parameters
+	var base_args = [
 		"--get-url",
-		"--format", "best[ext=mp4]/best",
+		"--format", "best",
 		"--no-playlist",
 		"--default-search", "ytsearch",
-		"ytsearch1:" + query
+		"--socket-timeout", "20",
+		"--no-check-certificate",
+		"--no-warnings"
 	]
+	
+	# Strategy 1: Targeted search
+	var args1 = base_args.duplicate()
+	args1.append("ytsearch1:" + query)
 	var out = []
-	var exit_code = OS.execute("yt-dlp", args, true, out)
+	var exit_code = OS.execute("yt-dlp", args1, true, out)
+	
+	# Strategy 2: Permissive search with 'video'
+	if exit_code != 0 or out.size() == 0 or not _has_url(out):
+		status_label.text = "RETRYING_STRATEGY_B..."
+		var args2 = base_args.duplicate()
+		args2.append("ytsearch1:" + query + " video")
+		out = []
+		exit_code = OS.execute("yt-dlp", args2, true, out)
+	
+	# Strategy 3: Multi-result search (take first)
+	if exit_code != 0 or out.size() == 0 or not _has_url(out):
+		status_label.text = "RETRYING_STRATEGY_C..."
+		var args3 = base_args.duplicate()
+		args3.append("ytsearch5:" + query)
+		out = []
+		exit_code = OS.execute("yt-dlp", args3, true, out)
+		
 	call_deferred("_finalize_search", exit_code, out)
+
+func _has_url(out):
+	for line in out:
+		if line.strip_edges().begins_with("http"):
+			return true
+	return false
 
 func _finalize_search(exit_code, out):
 	if _search_thread:
@@ -79,27 +107,26 @@ func _finalize_search(exit_code, out):
 		_search_thread = null
 	_is_searching = false
 	
-	if exit_code != 0 or out.size() == 0 or out[0].strip_edges() == "":
-		status_label.text = "SEARCH_FAILED"
-		now_playing.text = "ERROR: NO_RESULTS_FOUND"
-		return
+	var url = ""
+	for line in out:
+		var s = line.strip_edges()
+		if s.begins_with("http"):
+			url = s
+			break
 	
-	var url = out[0].strip_edges()
-	if not url.begins_with("http"):
-		status_label.text = "LINK_BROKEN"
-		now_playing.text = "ERROR: INVALID_URL_RETURNED"
+	if url == "":
+		status_label.text = "SEARCH_FAILED"
+		now_playing.text = "ERROR: NO_STREAMS_FOUND"
 		return
 		
 	_launch_mpv(url)
 
 func _launch_mpv(url):
 	var gr = video_panel.get_global_rect()
-	# Position mpv to cover the search box area as requested
 	var x = int(gr.position.x + 5)
 	var y = int(gr.position.y + 55)
 	var w = int(gr.size.x - 10)
 	var h = int(gr.size.y - 110)
-	
 	var geom = str(w) + "x" + str(h) + "+" + str(x) + "+" + str(y)
 	
 	var args = [
@@ -108,13 +135,13 @@ func _launch_mpv(url):
 		"--no-border",
 		"--no-osc",
 		"--no-input-default-bindings",
-		"--vo=xv", # Best for Pi 4
+		"--vo=xv",
 		url
 	]
 	
 	_mpv_pid = OS.execute("mpv", args, false)
-	status_label.text = "STREAM_CONNECTED"
-	now_playing.text = "PLAYING_LIVE_DATA"
+	status_label.text = "STREAM_READY"
+	now_playing.text = "DATA_FLOWING_OK"
 
 func _kill_mpv():
 	OS.execute("pkill", ["-f", "mpv"], true)

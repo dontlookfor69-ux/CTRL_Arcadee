@@ -205,134 +205,302 @@ func _connect_input_debug_button():
 
 func play_boot_sequence():
 	if Global.has_booted:
-		boot_screen.hide(); main_ui.show(); _build_game_buttons(); _build_controls_bar()
+		boot_screen.hide()
+		main_ui.show()
+		_build_game_buttons()
+		_build_controls_bar()
 		if games_grid.get_child_count() > 0:
 			games_grid.get_child(Global.last_focused_game_index).grab_focus()
 		return
-	var bios = $BootScreen/BiosText; var tween = $BootScreen/BootTween
-	bios.bbcode_text = ""; bios.show(); bios.modulate.a = 1.0; bios.add_color_override("default_color", C_NEON_GREEN)
-	bios.anchor_right = 1.0; bios.anchor_bottom = 1.0; bios.margin_left = 20; bios.margin_right = -20
-	boot_screen.color = Color(1, 1, 1, 1); yield(get_tree().create_timer(0.08), "timeout"); boot_screen.color = Color(0,0,0,1)
 	
-	var log_pool = ["INIT_KERNEL", "RAM_CHECK", "IO_PROTOCOL", "VIBE_ANALYSIS", "GLES2_STABILIZED", "MAPPING_VECTORS", "INTERRUPT_HANDLER"]
+	var cl = CanvasLayer.new()
+	cl.layer = 120
+	add_child(cl)
+	var bg = ColorRect.new()
+	bg.color = Color(0,0,0,1)
+	bg.anchor_right = 1.0
+	bg.anchor_bottom = 1.0
+	cl.add_child(bg)
+	
+	var bios = RichTextLabel.new()
+	bios.bbcode_enabled = true
+	bios.anchor_right = 1.0
+	bios.anchor_bottom = 1.0
+	bios.margin_left = 20
+	bios.margin_top = 20
+	bios.add_color_override("default_color", C_NEON_GREEN)
+	bg.add_child(bios)
+	
+	bg.color = Color(1, 1, 1, 1)
+	yield(get_tree().create_timer(0.08), "timeout")
+	bg.color = Color(0,0,0,1)
+	
+	var log_pool = ["BOOT_OS_V8", "DISK_MOUNT_OK", "VIDEO_DRIVER_V3D", "INPUT_MAPPING", "NEURAL_LINK_ESTABLISHED"]
 	for i in range(250):
-		var line = log_pool[randi() % log_pool.size()]
-		bios.bbcode_text += ">>> " + line + " 0x" + str(randi()).left(8) + " [OK]\n"
+		bios.bbcode_text += ">>> " + log_pool[randi() % log_pool.size()] + " 0x" + str(randi()).left(8) + " [READY]\n"
 		var vs = bios.get_v_scroll()
-		if vs: vs.value = vs.max_value
-		if i % 10 == 0: yield(get_tree(), "idle_frame")
+		if vs:
+			vs.value = vs.max_value
+		if i % 10 == 0:
+			yield(get_tree(), "idle_frame")
 	
 	yield(get_tree().create_timer(0.2), "timeout")
 	bios.hide()
 	
-	var frame = ColorRect.new(); frame.color = Color(0,1,0,0.2); frame.rect_min_size = Vector2(900, 50)
-	frame.anchor_left = 0.5; frame.anchor_top = 0.5; frame.margin_left = -450; frame.margin_top = -25
-	boot_screen.add_child(frame)
-	var pb = ProgressBar.new(); pb.anchor_right = 1.0; pb.anchor_bottom = 1.0
-	var bsb = StyleBoxFlat.new(); bsb.bg_color = C_NEON_GREEN; pb.add_stylebox_override("fg", bsb); pb.percent_visible = false; frame.add_child(pb)
+	var pb_frame = ColorRect.new()
+	pb_frame.color = Color(0,1,0,0.2)
+	pb_frame.rect_min_size = Vector2(900, 50)
+	pb_frame.anchor_left = 0.5
+	pb_frame.anchor_top = 0.5
+	pb_frame.margin_left = -450
+	pb_frame.margin_top = -25
+	bg.add_child(pb_frame)
+	var pb = ProgressBar.new()
+	pb.anchor_right = 1.0
+	pb.anchor_bottom = 1.0
+	var bsb = StyleBoxFlat.new()
+	bsb.bg_color = C_NEON_GREEN
+	pb.add_stylebox_override("fg", bsb)
+	pb.percent_visible = false
+	pb_frame.add_child(pb)
 	for i in range(101):
 		pb.value = i
-		if i % 5 == 0: yield(get_tree(), "idle_frame")
+		if i % 5 == 0:
+			yield(get_tree(), "idle_frame")
 	yield(get_tree().create_timer(0.2), "timeout")
-	frame.queue_free()
+	pb_frame.queue_free()
 	
-	var logo_lbl = Label.new(); logo_lbl.name = "BootLogoLabel"; logo_lbl.text = "CTRL ARCADE"
-	logo_lbl.align = Label.ALIGN_CENTER; logo_lbl.valign = Label.VALIGN_CENTER
-	logo_lbl.anchor_right = 1.0; logo_lbl.anchor_bottom = 1.0
-	var f = DynamicFont.new(); f.size = 220; logo_lbl.add_font_override("font", f)
-	boot_screen.add_child(logo_lbl); logo_lbl.raise()
+	# [FIX] HIGH QUALITY RETRO LOGO (Stacked CTRL and ARCADE)
+	var font = DynamicFont.new()
+	# Try to load a system font or common retro-style font on Raspberry Pi
+	var font_data = DynamicFontData.new()
+	var font_paths = [
+		"/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf",
+		"/usr/share/fonts/truetype/freefont/FreeMonoBold.ttf",
+		"res://assets/fonts/retro.ttf" # Fallback if exists
+	]
+	for p in font_paths:
+		if File.new().file_exists(p):
+			font_data.font_path = p
+			break
+	font.font_data = font_data
+	font.size = 180
+	
+	var logo_container = VBoxContainer.new()
+	logo_container.anchor_left = 0.0
+	logo_container.anchor_right = 1.0
+	logo_container.anchor_top = 0.0
+	logo_container.anchor_bottom = 1.0
+	logo_container.alignment = BoxContainer.ALIGN_CENTER
+	logo_container.add_constant_override("separation", -20)
+	bg.add_child(logo_container)
+	
+	var lbl_ctrl = Label.new()
+	lbl_ctrl.text = "CTRL"
+	lbl_ctrl.align = Label.ALIGN_CENTER
+	lbl_ctrl.add_font_override("font", font)
+	lbl_ctrl.add_color_override("font_color", C_NEON_GREEN)
+	logo_container.add_child(lbl_ctrl)
+	
+	var lbl_arcade = Label.new()
+	lbl_arcade.text = "ARCADE"
+	lbl_arcade.align = Label.ALIGN_CENTER
+	lbl_arcade.add_font_override("font", font)
+	lbl_arcade.add_color_override("font_color", C_NEON_GREEN)
+	logo_container.add_child(lbl_arcade)
 	
 	var start_ms = OS.get_ticks_msec()
 	while OS.get_ticks_msec() - start_ms < 2000:
-		logo_lbl.rect_position = Vector2(rand_range(-40, 40), rand_range(-20, 20))
-		logo_lbl.visible = (randf() > 0.08)
-		logo_lbl.modulate = Color(3, 3, 3) if randf() > 0.9 else Color(1,1,1)
-		yield(get_tree().create_timer(0.03), "timeout")
+		# Glitch logic: Stay clean mostly, but occasionally jump partially out of screen
+		if randf() > 0.95:
+			logo_container.rect_position = Vector2(rand_range(-500, 500), rand_range(-100, 100))
+			logo_container.modulate = Color(1, 0, 1) # Magenta glitch
+		elif randf() > 0.90:
+			logo_container.rect_position = Vector2(rand_range(-50, 50), 0)
+			logo_container.modulate = Color(1, 1, 1) # White glitch
+		else:
+			logo_container.rect_position = Vector2(0, 0)
+			logo_container.modulate = C_NEON_GREEN
+		
+		# Flicker logic
+		logo_container.visible = (randf() > 0.05)
+		yield(get_tree().create_timer(0.04), "timeout")
 	
-	logo_lbl.queue_free()
-	tween.interpolate_property(boot_screen, "modulate:a", 1.0, 0.0, 0.3); tween.start(); yield(tween, "tween_all_completed")
-	Global.has_booted = true; _build_game_buttons(); _build_controls_bar(); boot_screen.hide(); main_ui.show()
+	# Fade out fast
+	var tw = Tween.new()
+	add_child(tw)
+	tw.interpolate_property(cl.get_child(0), "modulate:a", 1.0, 0.0, 0.2)
+	tw.start()
+	yield(tw, "tween_all_completed")
+	cl.queue_free()
+	tw.queue_free()
+	
+	Global.has_booted = true
+	_build_game_buttons()
+	_build_controls_bar()
+	boot_screen.hide()
+	main_ui.show()
 	if games_grid.get_child_count() > 0:
 		games_grid.get_child(0).grab_focus()
 
 func launch_game(game_name, index):
-	if is_launching: return
-	is_launching = true; Global.last_focused_game_index = index; var info = game_paths[game_name]
+	if is_launching:
+		return
+	is_launching = true
+	Global.last_focused_game_index = index
+	var info = game_paths[game_name]
 	if info.has("scene"):
-		get_tree().change_scene(info["scene"]); is_launching = false; return
+		get_tree().change_scene(info["scene"])
+		is_launching = false
+		return
 	var abs_path = root_path.plus_file(info["path"])
 	if not File.new().file_exists(abs_path):
-		_show_game_not_available(); return
-	$MainUI/Header.visible = false; $MainUI/GamesCenter.visible = false; _set_shaders_visible(false)
-	var dir = Directory.new(); for flag in [FLAG_READY, FLAG_DONE]:
-		if File.new().file_exists(flag): dir.remove(flag)
-	var lo = $MainUI/LoadingOverlay; lo.show(); var pb = lo.get_node("Frame/FakeLoadingBar"); var lbl = lo.get_node("LoadingLabel"); var flbl = lo.get_node("FlashLabel")
-	pb.value = 0; lbl.text = "LAUNCHING..."; _perform_actual_launch(game_name)
-	var start_ms = OS.get_ticks_msec(); var got_ready = false
+		_show_game_not_available()
+		return
+	$MainUI/Header.visible = false
+	$MainUI/GamesCenter.visible = false
+	_set_shaders_visible(false)
+	var dir = Directory.new()
+	for flag in [FLAG_READY, FLAG_DONE]:
+		if File.new().file_exists(flag):
+			dir.remove(flag)
+	var lo = $MainUI/LoadingOverlay
+	lo.show()
+	var pb = lo.get_node("Frame/FakeLoadingBar")
+	var lbl = lo.get_node("LoadingLabel")
+	var flbl = lo.get_node("FlashLabel")
+	pb.value = 0
+	lbl.text = "LAUNCHING..."
+	_perform_actual_launch(game_name)
+	var start_ms = OS.get_ticks_msec()
+	var got_ready = false
 	while true:
 		var elapsed = OS.get_ticks_msec() - start_ms
 		pb.value = min(98.0, float(elapsed) / 15000.0 * 100.0)
 		flbl.visible = (int(elapsed / 200) % 2 == 0)
 		if File.new().file_exists(FLAG_READY):
-			got_ready = true; dir.remove(FLAG_READY); break
-		if elapsed >= 15000: break
+			got_ready = true
+			dir.remove(FLAG_READY)
+			break
+		if elapsed >= 15000:
+			break
 		yield(get_tree().create_timer(0.05), "timeout")
 	if not got_ready:
-		lo.hide(); _show_game_not_available(); return
+		lo.hide()
+		_show_game_not_available()
+		return
 	yield(get_tree().create_timer(0.5), "timeout")
 	if File.new().file_exists(FLAG_DONE):
-		lo.hide(); dir.remove(FLAG_DONE); _show_game_not_available(); return
-	pb.value = 100.0; lbl.text = "READY"; yield(get_tree().create_timer(0.4), "timeout"); lo.hide()
+		lo.hide()
+		dir.remove(FLAG_DONE)
+		_show_game_not_available()
+		return
+	pb.value = 100.0
+	lbl.text = "READY"
+	yield(get_tree().create_timer(0.4), "timeout")
+	lo.hide()
 	OS.execute("bash", ["-c", "xdotool search --pid $(pgrep -f 'python3.*wrapper') windowfocus 2>/dev/null || true"], false)
 	while true:
 		if File.new().file_exists(FLAG_DONE):
-			dir.remove(FLAG_DONE); break
+			dir.remove(FLAG_DONE)
+			break
 		yield(get_tree().create_timer(0.5), "timeout")
 	
-	$ReturnOverlay.show(); var console = $ReturnOverlay/Console; console.bbcode_text = ""
+	$ReturnOverlay.show()
+	var console = $ReturnOverlay/Console
+	console.bbcode_text = ""
 	for i in range(120):
-		console.bbcode_text += ">>> RESTORE_BLOCK_" + str(randi()).left(6) + "\n"
+		console.bbcode_text += ">>> RESTORE_NODE_" + str(randi()).left(6) + "\n"
 		var vs = console.get_v_scroll()
-		if vs: vs.value = vs.max_value
-		if i % 15 == 0: yield(get_tree(), "idle_frame")
-	yield(get_tree().create_timer(0.2), "timeout"); $ReturnOverlay.hide()
-	$MainUI/Header.visible = true; $MainUI/GamesCenter.visible = true; _set_shaders_visible(true); is_launching = false
-	if games_grid.get_child_count() > index: games_grid.get_child(index).grab_focus()
+		if vs:
+			vs.value = vs.max_value
+		if i % 15 == 0:
+			$ReturnOverlay.rect_position = Vector2(rand_range(-30, 30), rand_range(-30, 30))
+			if randf() > 0.9:
+				$ReturnOverlay.color = Color(1, 1, 1, 1)
+			else:
+				$ReturnOverlay.color = Color(0,0,0,1)
+			yield(get_tree(), "idle_frame")
+	
+	$ReturnOverlay.rect_position = Vector2(0,0)
+	$ReturnOverlay.color = Color(0,0,0,1)
+	yield(get_tree().create_timer(0.2), "timeout")
+	$ReturnOverlay.hide()
+	$MainUI/Header.visible = true
+	$MainUI/GamesCenter.visible = true
+	_set_shaders_visible(true)
+	is_launching = false
+	if games_grid.get_child_count() > index:
+		games_grid.get_child(index).grab_focus()
 
 func _show_game_not_available():
-	var lo = $MainUI/LoadingOverlay; lo.show()
-	var bg = ColorRect.new(); bg.color = Color(0,0,0,1); bg.anchor_right = 1.0; bg.anchor_bottom = 1.0
-	lo.add_child(bg); lo.move_child(bg, 0)
+	var lo = $MainUI/LoadingOverlay
+	lo.show()
+	var bg = ColorRect.new()
+	bg.color = Color(0,0,0,1)
+	bg.anchor_right = 1.0
+	bg.anchor_bottom = 1.0
+	lo.add_child(bg)
+	lo.move_child(bg, 0)
 	for c in lo.get_children():
-		if c != bg: c.hide()
-	var err = Label.new(); err.text = "THIS GAME IS NOT AVAILABLE"; err.anchor_right = 1.0; err.anchor_bottom = 1.0; err.align = Label.ALIGN_CENTER; err.valign = Label.VALIGN_CENTER
-	var df = DynamicFont.new(); df.size = 100; err.add_font_override("font", df); err.add_color_override("font_color", Color(1,0,0)); lo.add_child(err)
-	var t = 0.0; while t < 2.5:
+		if c != bg:
+			c.hide()
+	var err = Label.new()
+	err.text = "THIS GAME IS NOT AVAILABLE"
+	err.anchor_right = 1.0
+	err.anchor_bottom = 1.0
+	err.align = Label.ALIGN_CENTER
+	err.valign = Label.VALIGN_CENTER
+	var df = DynamicFont.new()
+	df.size = 100
+	err.add_font_override("font", df)
+	err.add_color_override("font_color", Color(1,0,0))
+	lo.add_child(err)
+	var t = 0.0
+	while t < 2.5:
 		err.visible = (int(t * 8) % 2 == 0)
-		t += 0.1; yield(get_tree().create_timer(0.1), "timeout")
-	err.queue_free(); bg.queue_free(); lo.hide()
-	$MainUI/Header.visible = true; $MainUI/GamesCenter.visible = true; _set_shaders_visible(true); is_launching = false
+		t += 0.1
+		yield(get_tree().create_timer(0.1), "timeout")
+	err.queue_free()
+	bg.queue_free()
+	lo.hide()
+	$MainUI/Header.visible = true
+	$MainUI/GamesCenter.visible = true
+	_set_shaders_visible(true)
+	is_launching = false
 
 func _perform_actual_launch(game_name):
-	var info = game_paths[game_name]; var abs_p = root_path.plus_file(info["path"]); var wrap = root_path.plus_file("utilities/pause_wrapper/wrapper.py")
+	var info = game_paths[game_name]
+	var abs_p = root_path.plus_file(info["path"])
+	var wrap = root_path.plus_file("utilities/pause_wrapper/wrapper.py")
 	var cmd = ""
-	if abs_p.ends_with(".py"): cmd = "python3 \"" + abs_p + "\""
-	elif abs_p.ends_with(".sh"): cmd = "bash \"" + abs_p + "\""
-	else: cmd = "\"" + abs_p + "\""
+	if abs_p.ends_with(".py"):
+		cmd = "python3 \"" + abs_p + "\""
+	elif abs_p.ends_with(".sh"):
+		cmd = "bash \"" + abs_p + "\""
+	else:
+		cmd = "\"" + abs_p + "\""
 	OS.execute("python3", [wrap, cmd], false)
 
 func _process(delta):
 	if clock_label:
-		var t = OS.get_time(); clock_label.text = "%02d:%02d:%02d" % [t.hour, t.minute, t.second]
-	var joy_x = Input.get_joy_axis(0, JOY_AXIS_0); var joy_y = Input.get_joy_axis(0, JOY_AXIS_1)
+		var t = OS.get_time()
+		clock_label.text = "%02d:%02d:%02d" % [t.hour, t.minute, t.second]
+	var joy_x = Input.get_joy_axis(0, JOY_AXIS_0)
+	var joy_y = Input.get_joy_axis(0, JOY_AXIS_1)
 	if abs(joy_x) > 0.4 or abs(joy_y) > 0.4:
 		if not _joystick_held:
 			_joystick_held = true
-			if joy_x > 0.4: _move_focus(1, 0)
-			elif joy_x < -0.4: _move_focus(-1, 0)
-			elif joy_y > 0.4: _move_focus(0, 1)
-			elif joy_y < -0.4: _move_focus(0,-1)
-	else: _joystick_held = false
+			if joy_x > 0.4:
+				_move_focus(1, 0)
+			elif joy_x < -0.4:
+				_move_focus(-1, 0)
+			elif joy_y > 0.4:
+				_move_focus(0, 1)
+			elif joy_y < -0.4:
+				_move_focus(0,-1)
+	else:
+		_joystick_held = false
 	for btn in games_grid.get_children():
 		var style = btn.get_stylebox("focus")
 		if btn.has_focus():
@@ -342,12 +510,18 @@ func _process(delta):
 			style.border_color = C_ACCENT
 
 func _move_focus(dx, dy):
-	var f = get_focus_owner(); if not f: return
-	var idx = f.get_index(); var total = games_grid.get_child_count(); var cols = games_grid.columns
-	var nr = (idx / cols) + dy; var nc = (idx % cols) + dx
+	var f = get_focus_owner()
+	if not f:
+		return
+	var idx = f.get_index()
+	var total = games_grid.get_child_count()
+	var cols = games_grid.columns
+	var nr = (idx / cols) + dy
+	var nc = (idx % cols) + dx
 	if nr >= 0 and nr < (total + cols - 1) / cols and nc >= 0 and nc < cols:
 		var next = nr * cols + nc
-		if next < total: games_grid.get_child(next).grab_focus()
+		if next < total:
+			games_grid.get_child(next).grab_focus()
 
 func _on_btn_focus_entered(btn, game_name):
 	_set_shaders_visible(true)
@@ -363,9 +537,12 @@ func _on_btn_focus_exited(btn):
 		tw.start()
 
 func _set_shaders_visible(visible):
-	var b = get_node_or_null("CRT_Barrel"); var s = get_node_or_null("CRT_Scanlines")
-	if b: b.visible = visible
-	if s: s.visible = visible
+	var b = get_node_or_null("CRT_Barrel")
+	var s = get_node_or_null("CRT_Scanlines")
+	if b:
+		b.visible = visible
+	if s:
+		s.visible = visible
 
 func _on_AboutButton_pressed():
 	OS.alert("CTRL ARCADE V8.0", "About")
