@@ -22,7 +22,7 @@ CANVAS_WIDTH  = 1200
 CANVAS_HEIGHT = 700
 BG_COLOR      = (5, 5, 15)
 FRAME_COLOR   = (255, 30, 60) # [BRIGHTER] Retro Red
-CANVAS_BG     = (215, 220, 205)
+CANVAS_BG     = (245, 248, 245)
 LINE_COLOR    = (35, 35, 40)
 TEXT_COLOR    = (0, 255, 200)
 DRAW_SPEED    = 250
@@ -190,6 +190,12 @@ class MagicEtch:
                 pygame.draw.circle(self.screen, (100, 100, 100), (dx, dy), 6)
             self._draw_controls_bar()
             if crt_overlay: crt_overlay.apply_crt(self.screen, current_time)
+            
+            # Reduce CRT washout on the canvas area
+            canvas_brighten = pygame.Surface((CANVAS_WIDTH, CANVAS_HEIGHT), pygame.SRCALPHA)
+            canvas_brighten.fill((255, 255, 255, 35))  # Very subtle white overlay to counteract darkening
+            self.screen.blit(canvas_brighten, self.canvas_rect.topleft)
+
             if self.is_processing:
                 overlay = pygame.Surface((self.w, self.h), pygame.SRCALPHA); overlay.fill((0, 0, 0, 180))
                 self.screen.blit(overlay, (0,0))

@@ -204,6 +204,7 @@ func _connect_input_debug_button():
 			idb.connect("pressed", self, "_on_InputDebugButton_pressed")
 
 func play_boot_sequence():
+	_set_shaders_visible(true)
 	if Global.has_booted:
 		boot_screen.hide()
 		main_ui.show()
@@ -214,7 +215,7 @@ func play_boot_sequence():
 		return
 	
 	var cl = CanvasLayer.new()
-	cl.layer = 120
+	cl.layer = 5
 	add_child(cl)
 	var bg = ColorRect.new()
 	bg.color = Color(0,0,0,1)

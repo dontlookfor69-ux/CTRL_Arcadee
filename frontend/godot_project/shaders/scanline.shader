@@ -23,5 +23,14 @@ void fragment() {
     float vig = pow(uv2.x * uv2.y * 15.0, 0.35);
     col.rgb *= vig;
     
+    // Analog TV noise
+    float noise = fract(sin(dot(SCREEN_UV + vec2(float(int(TIME * 30.0)) * 0.01, 0.0), vec2(12.9898, 78.233))) * 43758.5453);
+    col.rgb += noise * 0.04;
+
+    // Horizontal sync jitter (subtle)
+    float jitter = sin(TIME * 47.0 + SCREEN_UV.y * 300.0) * 0.001;
+    vec4 jitter_col = texture(SCREEN_TEXTURE, SCREEN_UV + vec2(jitter, 0.0));
+    col.rgb = mix(col.rgb, jitter_col.rgb, 0.3);
+    
     COLOR = col;
 }
