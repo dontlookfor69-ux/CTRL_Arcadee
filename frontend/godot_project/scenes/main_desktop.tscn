@@ -11,7 +11,7 @@ shader_param/curvature = 0.08
 [sub_resource type="ShaderMaterial" id=5]
 shader = ExtResource( 3 )
 shader_param/scanline_count = 540.0
-shader_param/scanline_opacity = 0.18
+shader_param/scanline_opacity = 0.12
 shader_param/flicker_speed = 8.0
 
 [node name="Desktop" type="Control"]

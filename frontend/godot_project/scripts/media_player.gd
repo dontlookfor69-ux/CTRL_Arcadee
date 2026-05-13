@@ -11,10 +11,18 @@ var _search_thread: Thread
 var _mpv_pid = -1
 var _is_searching = false
 
-func _ready():
-	_detect_dependencies()
-	status_label.text = "SYSTEM_READY"
-	search_input.placeholder_text = "ENTER_SEARCH_QUERY..."
+	_add_crt_shaders()
+	status_label.text = "Ready"
+	status_label.add_color_override("font_color", Color(0, 0, 0, 1))
+	search_input.placeholder_text = ""
+	now_playing.text = "(No media selected)"
+	now_playing.add_color_override("font_color", Color(0, 0, 0, 1))
+	
+	var title_lbl = get_node_or_null("WindowFrame/Header/Title")
+	if title_lbl:
+		title_lbl.text = "▐ Media Player"
+		title_lbl.add_color_override("font_color", Color(1, 1, 1, 1))
+	
 	if search_btn:
 		if not search_btn.is_connected("pressed", self, "_on_SearchBtn_pressed"):
 			search_btn.connect("pressed", self, "_on_SearchBtn_pressed")
@@ -60,39 +68,17 @@ func _on_SearchBtn_pressed():
 	_search_thread.start(self, "_do_stream_search", query)
 
 func _do_stream_search(query):
-	# [FINAL_FIX] Extremely robust search parameters
-	var base_args = [
+	var args = [
 		"--get-url",
-		"--format", "best",
 		"--no-playlist",
+		"--format", "bestaudio/best",
 		"--default-search", "ytsearch",
-		"--socket-timeout", "20",
+		"--no-warnings",
 		"--no-check-certificate",
-		"--no-warnings"
+		"ytsearch1:" + query
 	]
-	
-	# Strategy 1: Targeted search
-	var args1 = base_args.duplicate()
-	args1.append("ytsearch1:" + query)
 	var out = []
-	var exit_code = OS.execute("yt-dlp", args1, true, out)
-	
-	# Strategy 2: Permissive search with 'video'
-	if exit_code != 0 or out.size() == 0 or not _has_url(out):
-		status_label.text = "RETRYING_STRATEGY_B..."
-		var args2 = base_args.duplicate()
-		args2.append("ytsearch1:" + query + " video")
-		out = []
-		exit_code = OS.execute("yt-dlp", args2, true, out)
-	
-	# Strategy 3: Multi-result search (take first)
-	if exit_code != 0 or out.size() == 0 or not _has_url(out):
-		status_label.text = "RETRYING_STRATEGY_C..."
-		var args3 = base_args.duplicate()
-		args3.append("ytsearch5:" + query)
-		out = []
-		exit_code = OS.execute("yt-dlp", args3, true, out)
-		
+	var exit_code = OS.execute("yt-dlp", args, true, out)
 	call_deferred("_finalize_search", exit_code, out)
 
 func _has_url(out):
@@ -140,8 +126,8 @@ func _launch_mpv(url):
 	]
 	
 	_mpv_pid = OS.execute("mpv", args, false)
-	status_label.text = "STREAM_READY"
-	now_playing.text = "DATA_FLOWING_OK"
+	status_label.text = "Streaming"
+	now_playing.text = "Now Playing: " + url.split("/")[-1].left(40)
 
 func _kill_mpv():
 	OS.execute("pkill", ["-f", "mpv"], true)
@@ -150,6 +136,40 @@ func _kill_mpv():
 func _on_BackBtn_pressed():
 	_kill_mpv()
 	get_tree().change_scene("res://scenes/main_desktop.tscn")
+
+func _add_crt_shaders():
+	var barrel_shader = load("res://shaders/barrel.shader")
+	var scanline_shader = load("res://shaders/scanline.shader")
+	
+	if barrel_shader:
+		var barrel_layer = CanvasLayer.new()
+		barrel_layer.layer = 10
+		var barrel_rect = ColorRect.new()
+		var barrel_mat = ShaderMaterial.new()
+		barrel_mat.shader = barrel_shader
+		barrel_mat.set_shader_param("curvature", 0.08)
+		barrel_rect.material = barrel_mat
+		barrel_rect.anchor_right = 1.0
+		barrel_rect.anchor_bottom = 1.0
+		barrel_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		barrel_layer.add_child(barrel_rect)
+		add_child(barrel_layer)
+	
+	if scanline_shader:
+		var scanline_layer = CanvasLayer.new()
+		scanline_layer.layer = 11
+		var scanline_rect = ColorRect.new()
+		var scanline_mat = ShaderMaterial.new()
+		scanline_mat.shader = scanline_shader
+		scanline_mat.set_shader_param("scanline_count", 540.0)
+		scanline_mat.set_shader_param("scanline_opacity", 0.12)
+		scanline_mat.set_shader_param("flicker_speed", 8.0)
+		scanline_rect.material = scanline_mat
+		scanline_rect.anchor_right = 1.0
+		scanline_rect.anchor_bottom = 1.0
+		scanline_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		scanline_layer.add_child(scanline_rect)
+		add_child(scanline_layer)
 
 func _exit_tree():
 	_kill_mpv()

@@ -63,8 +63,16 @@ class MagicEtch:
     def _edges_to_path(self, edges: np.ndarray, scale_x: float, scale_y: float):
         contours, _ = cv2.findContours(edges, cv2.RETR_LIST, cv2.CHAIN_APPROX_TC89_KCOS)
         if not contours: return deque(), 0
-        contours = [c for c in contours if cv2.arcLength(c, True) > 20]
+        # Filter out tiny noisy contours
+        contours = [c for c in contours if cv2.contourArea(c) > 50 or cv2.arcLength(c, True) > 40]
         if not contours: return deque(), 0
+        
+        # Sort by contour length descending and keep max 40
+        contours = sorted(contours, key=lambda c: cv2.arcLength(c, True), reverse=True)
+        contours = contours[:40]
+        
+        # Simplify contours
+        contours = [cv2.approxPolyDP(c, epsilon=2.0, closed=True) for c in contours]
 
         path: deque = deque()
         total = 0
@@ -109,14 +117,14 @@ class MagicEtch:
                 frame = cv2.imread(img_p)
                 if frame is None: self.is_processing = False; return
 
-            frame = cv2.resize(frame, (800, 600))
+            frame = cv2.resize(frame, (400, 300))
             h, w = frame.shape[:2]
             scale_x, scale_y = CANVAS_WIDTH / w, CANVAS_HEIGHT / h
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
             gray = clahe.apply(gray)
             filtered = cv2.bilateralFilter(gray, 9, 75, 75)
-            edges = cv2.Canny(filtered, 50, 150)
+            edges = cv2.Canny(filtered, 80, 200)
             kernel = np.ones((2,2), np.uint8)
             edges = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
             path, total = self._edges_to_path(edges, scale_x, scale_y)
@@ -129,8 +137,8 @@ class MagicEtch:
     def _draw_controls_bar(self):
         bar_y = self.h - 80
         bar_rect = pygame.Rect(0, bar_y, self.w, 80)
-        pygame.draw.rect(self.screen, (10, 10, 25), bar_rect)
-        pygame.draw.line(self.screen, (0, 180, 140), (0, bar_y), (self.w, bar_y), 2)
+        pygame.draw.rect(self.screen, (5, 5, 15), bar_rect)
+        pygame.draw.line(self.screen, (0, 255, 200), (0, bar_y), (self.w, bar_y), 3)
         controls = [("SPACE", "Snap"), ("M", "Load"), ("C", "Clear"), ("↑↓←→", "Manual Draw"), ("ESC", "Exit")]
         col_width = self.w // len(controls)
         for i, (key, desc) in enumerate(controls):
@@ -162,7 +170,7 @@ class MagicEtch:
             # [NEW] Manual drawing whenever AI is not active
             if not self.is_processing and not self.points_to_draw:
                 keys = pygame.key.get_pressed()
-                moved = False; spd = 4
+                moved = False; spd = 10
                 if keys[pygame.K_LEFT]:  self.cursor_x = max(0, self.cursor_x - spd); moved = True
                 if keys[pygame.K_RIGHT]: self.cursor_x = min(CANVAS_WIDTH-1, self.cursor_x + spd); moved = True
                 if keys[pygame.K_UP]:    self.cursor_y = max(0, self.cursor_y - spd); moved = True
@@ -188,9 +196,10 @@ class MagicEtch:
             for dx in (self.canvas_rect.left - 38, self.canvas_rect.right + 38):
                 pygame.draw.circle(self.screen, (240, 240, 240), (dx, dy), 32)
                 pygame.draw.circle(self.screen, (100, 100, 100), (dx, dy), 6)
-            self._draw_controls_bar()
             if crt_overlay: crt_overlay.apply_crt(self.screen, current_time)
             
+            self._draw_controls_bar()
+
             # Reduce CRT washout on the canvas area
             canvas_brighten = pygame.Surface((CANVAS_WIDTH, CANVAS_HEIGHT), pygame.SRCALPHA)
             canvas_brighten.fill((255, 255, 255, 35))  # Very subtle white overlay to counteract darkening

@@ -20,6 +20,12 @@ var C_BG = Color(0.05, 0, 0, 1)
 var C_ACCENT = Color(0.0, 1.0, 1.0, 1)
 var C_LIME = Color(0.2, 1.0, 0.2, 1)
 var C_NEON_GREEN = Color("#39FF14")
+var GLITCH_COLORS = [
+    Color("#FF0000"), Color("#00FF00"), Color("#0000FF"),
+    Color("#FF00FF"), Color("#00FFFF"), Color("#FFFF00"),
+    Color("#FF6600"), Color("#FF0066"), Color("#00FF66"),
+    Color("#6600FF"), Color("#FFFFFF"), Color("#39FF14")
+]
 
 var game_paths = {
 	"Pacman": {"path": "games/pacman/launch_pacman.sh", "icon": "res://assets/icons/pacman.png"},
@@ -166,16 +172,12 @@ func _build_loading_bar():
 	var lo = $MainUI/LoadingOverlay; if not lo: return
 	for child in lo.get_children():
 		child.queue_free()
-	var flbl = Label.new(); flbl.name = "FlashLabel"; flbl.text = "LOADING..."
-	flbl.anchor_left = 0.5; flbl.anchor_top = 0.45; flbl.anchor_right = 0.5; flbl.anchor_bottom = 0.45
-	flbl.margin_left = -200; flbl.margin_right = 200; flbl.align = Label.ALIGN_CENTER
-	var df = DynamicFont.new(); df.size = 32; flbl.add_font_override("font", df); lo.add_child(flbl)
-	var frame = ColorRect.new(); frame.name = "Frame"; frame.color = Color(0, 1, 1, 0.2)
+	var frame = ColorRect.new(); frame.name = "Frame"; frame.color = Color(0.224, 1.0, 0.078, 0.15)
 	frame.anchor_left = 0.5; frame.anchor_top = 0.6; frame.anchor_right = 0.5; frame.anchor_bottom = 0.6
-	frame.margin_left = -300; frame.margin_right = 300; frame.margin_top = -15; frame.margin_bottom = 15
+	frame.margin_left = -400; frame.margin_right = 400; frame.margin_top = -15; frame.margin_bottom = 15
 	lo.add_child(frame)
 	var pb = ProgressBar.new(); pb.name = "FakeLoadingBar"; pb.anchor_right = 1.0; pb.anchor_bottom = 1.0
-	var sb = StyleBoxFlat.new(); sb.bg_color = C_ACCENT; pb.add_stylebox_override("fg", sb)
+	var sb = StyleBoxFlat.new(); sb.bg_color = C_NEON_GREEN; pb.add_stylebox_override("fg", sb)
 	var bgs = StyleBoxFlat.new(); bgs.bg_color = Color(0,0,0,1); pb.add_stylebox_override("bg", bgs)
 	pb.percent_visible = false; frame.add_child(pb)
 	var lbl = Label.new(); lbl.name = "LoadingLabel"; lbl.anchor_left = 0.0; lbl.anchor_right = 1.0; lbl.anchor_top = 0.6
@@ -311,21 +313,32 @@ func play_boot_sequence():
 	logo_container.add_child(lbl_arcade)
 	
 	var start_ms = OS.get_ticks_msec()
-	while OS.get_ticks_msec() - start_ms < 2000:
-		# Glitch logic: Stay clean mostly, but occasionally jump partially out of screen
-		if randf() > 0.95:
-			logo_container.rect_position = Vector2(rand_range(-500, 500), rand_range(-100, 100))
-			logo_container.modulate = Color(1, 0, 1) # Magenta glitch
-		elif randf() > 0.90:
-			logo_container.rect_position = Vector2(rand_range(-50, 50), 0)
-			logo_container.modulate = Color(1, 1, 1) # White glitch
+	var glitch_intensity = 0.0
+	while OS.get_ticks_msec() - start_ms < 2500:
+		var elapsed = OS.get_ticks_msec() - start_ms
+		glitch_intensity = float(elapsed) / 2500.0
+		var r = randf()
+		var max_offset_x = lerp(50.0, 800.0, glitch_intensity)
+		var max_offset_y = lerp(10.0, 200.0, glitch_intensity)
+		if r < 0.3:
+			logo_container.rect_position = Vector2(rand_range(-max_offset_x, max_offset_x), rand_range(-max_offset_y, max_offset_y))
+		elif r < 0.6:
+			logo_container.rect_position = Vector2(rand_range(-30, 30), 0)
 		else:
 			logo_container.rect_position = Vector2(0, 0)
-			logo_container.modulate = C_NEON_GREEN
-		
-		# Flicker logic
-		logo_container.visible = (randf() > 0.05)
-		yield(get_tree().create_timer(0.04), "timeout")
+		if randf() < lerp(0.3, 0.95, glitch_intensity):
+			logo_container.modulate = GLITCH_COLORS[randi() % GLITCH_COLORS.size()]
+		else:
+			logo_container.modulate = Color("#39FF14")
+		logo_container.visible = randf() > lerp(0.02, 0.4, glitch_intensity)
+		if randf() < 0.15:
+			logo_container.rect_scale = Vector2(rand_range(0.8, 1.3), rand_range(0.8, 1.3))
+		else:
+			logo_container.rect_scale = Vector2(1.0, 1.0)
+		yield(get_tree().create_timer(0.033), "timeout")
+	logo_container.rect_position = Vector2(0, 0); logo_container.rect_scale = Vector2(1.0, 1.0)
+	logo_container.modulate = Color("#39FF14"); logo_container.visible = true
+	yield(get_tree().create_timer(0.3), "timeout")
 	
 	# Fade out fast
 	var tw = Tween.new()
@@ -337,6 +350,14 @@ func play_boot_sequence():
 	tw.queue_free()
 	
 	Global.has_booted = true
+	
+	# Lightbulb intro integration
+	var lightbulb_scene = load("res://scenes/lightbulb_intro.tscn")
+	if lightbulb_scene:
+		var lightbulb = lightbulb_scene.instance()
+		add_child(lightbulb)
+		yield(lightbulb, "lightbulb_lit")
+	
 	_build_game_buttons()
 	_build_controls_bar()
 	boot_screen.hide()
@@ -367,9 +388,10 @@ func launch_game(game_name, index):
 			dir.remove(flag)
 	var lo = $MainUI/LoadingOverlay
 	lo.show()
+	yield(get_tree(), "idle_frame")
+	yield(get_tree(), "idle_frame")
 	var pb = lo.get_node("Frame/FakeLoadingBar")
 	var lbl = lo.get_node("LoadingLabel")
-	var flbl = lo.get_node("FlashLabel")
 	pb.value = 0
 	lbl.text = "LAUNCHING..."
 	_perform_actual_launch(game_name)
@@ -378,7 +400,6 @@ func launch_game(game_name, index):
 	while true:
 		var elapsed = OS.get_ticks_msec() - start_ms
 		pb.value = min(98.0, float(elapsed) / 15000.0 * 100.0)
-		flbl.visible = (int(elapsed / 200) % 2 == 0)
 		if File.new().file_exists(FLAG_READY):
 			got_ready = true
 			dir.remove(FLAG_READY)

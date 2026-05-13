@@ -16,6 +16,16 @@ from weapon import *
 from sound import *
 from pathfinding import *
 
+# --- Fix path for shared utilities ---
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+# DOOM is nested: games/doom/DOOM-style-Game-main/DOOM-style-Game-main/main.py
+UTILS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(SCRIPT_DIR)))), "utilities")
+sys.path.insert(0, UTILS_DIR)
+try:
+    import crt_overlay
+except ImportError:
+    crt_overlay = None
+
 
 class Game:
     def __init__(self):
@@ -46,7 +56,6 @@ class Game:
         self.raycasting.update()
         self.object_handler.update()
         self.weapon.update()
-        pg.display.flip()
         self.delta_time = self.clock.tick(60)
         pg.display.set_caption(f'{self.clock.get_fps() :.1f}')
 
@@ -54,6 +63,9 @@ class Game:
         # self.screen.fill('black')
         self.object_renderer.draw()
         self.weapon.draw()
+        if crt_overlay:
+            crt_overlay.apply_crt(self.screen, pg.time.get_ticks())
+        pg.display.flip()
         # self.map.draw()
         # self.player.draw()
 
