@@ -1,51 +1,64 @@
 import pygame
-import random
+import numpy as np
 
-_scanline_surface = None
+_scanline_surf = None
+_vignette_surf = None
+_last_size = (0, 0)
 
-def apply_crt(surface, time_ms):
+def apply_crt(surface: pygame.Surface, time_ms: int):
     """
-    Applies authentic arcade CRT effects to a pygame surface:
-    - Persistent scanlines
-    - Vignette (dark corners)
-    - Subtle static/noise flicker
-    """
-    global _scanline_surface
-    width, height = surface.get_size()
-
-    # 1. SCANLINES (Pre-generated for performance)
-    if _scanline_surface is None or _scanline_surface.get_size() != (width, height):
-        _scanline_surface = pygame.Surface((width, height), pygame.SRCALPHA)
-        for y in range(0, height, 3):
-            pygame.draw.line(_scanline_surface, (0, 0, 0, 60), (0, y), (width, y))
+    Applies a high-quality software CRT effect:
+    1. Dense scanlines (every 2px, semi-transparent dark lines)
+    2. Vignette (dark corners fading to black)
+    3. Subtle green phosphor tint
+    4. Very subtle full-screen flicker (brightness only, no pixels)
     
-    surface.blit(_scanline_surface, (0, 0))
-
-    # 2. VIGNETTE
-    vignette = pygame.Surface((width, height), pygame.SRCALPHA)
-    # Simple radial gradient approximation using circles
-    for i in range(10):
-        alpha = int(40 * (i / 10.0))
-        size = int(width * (1.0 + i * 0.1))
-        # Draw a large circle with alpha that fades out
-        # Actually a simpler vignette is to draw onto a surface and blur, 
-        # but for performance we just draw a few thick borders
-        rect = pygame.Rect(0, 0, width, height)
-        inset = i * 20
-        pygame.draw.rect(vignette, (0, 0, 0, alpha), rect.inflate(-inset, -inset), 30, border_radius=100)
-    surface.blit(vignette, (0, 0))
-
-    # 3. SUBTLE STATIC NOISE (0.5% of pixels)
-    # We draw random tiny white/gray dots that flicker based on time
-    if (time_ms // 100) % 2 == 0:
-        for _ in range(int(width * height * 0.0005)):
-            rx = random.randint(0, width - 1)
-            ry = random.randint(0, height - 1)
-            c = random.randint(150, 255)
-            surface.set_at((rx, ry), (c, c, c, 30))
-
-    # 4. SUBTLE SCREEN FLICKER
-    if random.random() < 0.02:
-        flicker = pygame.Surface((width, height), pygame.SRCALPHA)
-        flicker.fill((255, 255, 255, 5))
-        surface.blit(flicker, (0, 0))
+    This implementation uses blit() with SRCALPHA surfaces to avoid the 
+    alpha-discard bug in set_at() on regular surfaces.
+    """
+    global _scanline_surf, _vignette_surf, _last_size
+    
+    w, h = surface.get_size()
+    
+    # Rebuild cached surfaces if size changed
+    if (w, h) != _last_size:
+        _last_size = (w, h)
+        
+        # --- SCANLINES ---
+        # Every 2 pixels — dense like the reference images
+        _scanline_surf = pygame.Surface((w, h), pygame.SRCALPHA)
+        _scanline_surf.fill((0, 0, 0, 0))
+        for y in range(0, h, 2):
+            pygame.draw.line(_scanline_surf, (0, 0, 0, 110), (0, y), (w, y))
+        
+        # --- VIGNETTE ---
+        # Draw concentric border rectangles getting darker toward the corners
+        _vignette_surf = pygame.Surface((w, h), pygame.SRCALPHA)
+        _vignette_surf.fill((0, 0, 0, 0))
+        steps = 30
+        for i in range(steps):
+            alpha = int(180 * (i / steps) ** 2.5)  # Quadratic falloff for realistic vignette
+            inset = int((steps - i) * (min(w, h) / (steps * 2.2)))
+            rect = pygame.Rect(inset, inset, w - inset * 2, h - inset * 2)
+            if rect.width > 0 and rect.height > 0:
+                pygame.draw.rect(_vignette_surf, (0, 0, 0, alpha), rect, max(1, inset // 2), border_radius=inset)
+    
+    # --- APPLY PHOSPHOR TINT ---
+    # Very subtle green cast like old monitors
+    tint = pygame.Surface((w, h), pygame.SRCALPHA)
+    tint.fill((0, 255, 0, 8))
+    surface.blit(tint, (0, 0))
+    
+    # --- APPLY SCANLINES ---
+    surface.blit(_scanline_surf, (0, 0))
+    
+    # --- APPLY VIGNETTE ---
+    surface.blit(_vignette_surf, (0, 0))
+    
+    # --- SUBTLE BRIGHTNESS FLICKER ---
+    # Dims the whole screen slightly every ~3 seconds
+    flicker_cycle = (time_ms // 3000) % 7
+    if flicker_cycle == 0 and (time_ms % 3000) < 50:
+        dim = pygame.Surface((w, h), pygame.SRCALPHA)
+        dim.fill((0, 0, 0, 18))
+        surface.blit(dim, (0, 0))

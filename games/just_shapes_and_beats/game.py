@@ -1,10 +1,12 @@
 import pygame
 import random
-import os
+import math
 import sys
+import os
 
-# --- Fix path for shared utilities ---
+# --- [MODIFIED] Fix path for shared utilities ---
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+# Note: In the production layout, utilities is 2 levels up from the game script
 UTILS_DIR = os.path.join(os.path.dirname(os.path.dirname(SCRIPT_DIR)), "utilities")
 sys.path.insert(0, UTILS_DIR)
 
@@ -13,224 +15,393 @@ try:
 except ImportError:
     crt_overlay = None
 
-# --- Configuration ---
-SCREEN_WIDTH = 1920
-SCREEN_HEIGHT = 1080
-FPS = 60
+# Initialize Pygame
+# [MODIFIED] Low-latency audio buffer for Raspberry Pi
+pygame.mixer.pre_init(44100, -16, 2, 4096)
+pygame.init()
+pygame.mixer.init()
 
-# Palette
-COLOR_BG = (10, 10, 25)
-COLOR_PLAYER = (0, 255, 255)
-COLOR_OBSTACLE = (255, 0, 100)
-COLOR_TEXT = (255, 255, 255)
-COLOR_HINT = (255, 0, 100, 100)
+# Game Constants
+BPM = 128
+BEAT_INTERVAL = (60 / BPM) * 1000
+DASH_COOLDOWN = 600
+DASH_DURATION = 150
+DASH_DISTANCE = 120
+INVULNERABILITY_TIME = 200
+MAX_HEALTH = 100
 
-HIGHSCORE_FILE = os.path.join(os.path.dirname(__file__), "highscore.txt")
+# Screen Setup
+info = pygame.display.Info()
+SCREEN_WIDTH = info.current_w
+SCREEN_HEIGHT = info.current_h
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.FULLSCREEN | pygame.DOUBLEBUF | pygame.HWSURFACE)
+pygame.display.set_caption("Just Shapes & Beats Arcade")
+clock = pygame.time.Clock()
+
+# Colors
+BG_COLOR = (5, 5, 5)
+PLAYER1_COLOR = (0, 255, 255)
+PLAYER2_COLOR = (255, 255, 0)
+ENEMY_COLOR = (255, 0, 102)
+UI_TEXT_COLOR = (255, 255, 255)
+
+# Fonts
+try:
+    font_large = pygame.font.SysFont('Arial', 80, bold=True)
+    font_medium = pygame.font.SysFont('Arial', 40, bold=True)
+    font_small = pygame.font.SysFont('Arial', 24)
+except:
+    font_large = pygame.font.Font(None, 120)
+    font_medium = pygame.font.Font(None, 60)
+    font_small = pygame.font.Font(None, 30)
+
+# Audio Setup
+bgm_path = os.path.join(SCRIPT_DIR, 'Audio', 'CLOSE TO ME.mp3')
+if os.path.exists(bgm_path):
+    pygame.mixer.music.load(bgm_path)
+else:
+    print(f"Warning: Audio file not found at {bgm_path}")
+
+# Game State
+class GameState:
+    START = 0
+    PLAYING = 1
+    GAMEOVER = 2
+
+state = GameState.START
+is_two_player = False
+score = 0
+health = MAX_HEALTH
+last_beat_time = 0
+shake_amount = 0
+obstacles = []
+particles = []
 
 class Player:
-    def __init__(self):
-        self.size = 30
-        self.x = SCREEN_WIDTH // 2
-        self.y = SCREEN_HEIGHT // 2
+    def __init__(self, id, color, shape):
+        self.id = id
+        self.color = color
+        self.shape = shape
+        self.size = 25
+        self.reset()
+
+    def reset(self):
+        if self.id == 1:
+            self.x = SCREEN_WIDTH / 2 - (50 if is_two_player else 0)
+        else:
+            self.x = SCREEN_WIDTH / 2 + 50
+        self.y = SCREEN_HEIGHT / 2
         self.speed = 8
-        self.invulnerable = False
+        self.is_dashing = False
         self.dash_timer = 0
         self.dash_cooldown = 0
+        self.invulnerable = False
+        self.invuln_timer = 0
+        self.trail = [] # List of (x, y, opacity)
 
-    def move(self, keys):
-        """Original Keyboard Handling"""
-        if self.dash_cooldown > 0: self.dash_cooldown -= 1
-        
-        move_x = keys[pygame.K_RIGHT] - keys[pygame.K_LEFT]
-        move_y = keys[pygame.K_DOWN] - keys[pygame.K_UP]
-        
-        speed = self.speed
-        if keys[pygame.K_LSHIFT] and self.dash_cooldown == 0:
-            self.dash_timer = 10
-            self.dash_cooldown = 40
-            self.invulnerable = True
-            speed *= 4
-            
-        if self.dash_timer > 0:
-            self.dash_timer -= 1
-            if self.dash_timer == 0: self.invulnerable = False
-            
-        self.x += move_x * speed
-        self.y += move_y * speed
-        
-        # Clamp
+    def update(self, dt):
+        if self.dash_cooldown > 0: self.dash_cooldown -= dt
+        if self.invuln_timer > 0:
+            self.invuln_timer -= dt
+            if self.invuln_timer <= 0: self.invulnerable = False
+
+        if self.is_dashing:
+            self.dash_timer -= dt
+            if self.dash_timer <= 0:
+                self.is_dashing = False
+            self.trail.append({'x': self.x, 'y': self.y, 'opacity': 1.0})
+        else:
+            dx, dy = 0, 0
+            keys = pygame.key.get_pressed()
+            dash_key = False
+
+            if self.id == 1:
+                if keys[pygame.K_w] or keys[pygame.K_UP]: dy -= 1
+                if keys[pygame.K_s] or keys[pygame.K_DOWN]: dy += 1
+                if keys[pygame.K_a] or keys[pygame.K_LEFT]: dx -= 1
+                if keys[pygame.K_d] or keys[pygame.K_RIGHT]: dx += 1
+                dash_key = keys[pygame.K_SPACE] or keys[pygame.K_LSHIFT]
+            else:
+                # Player 2 on Arrows (or joystick 2 mapped)
+                if keys[pygame.K_UP]: dy -= 1
+                if keys[pygame.K_DOWN]: dy += 1
+                if keys[pygame.K_LEFT]: dx -= 1
+                if keys[pygame.K_RIGHT]: dx += 1
+                dash_key = keys[pygame.K_RETURN] or keys[pygame.K_RSHIFT]
+
+            if dx != 0 or dy != 0:
+                mag = math.sqrt(dx*dx + dy*dy)
+                self.x += (dx / mag) * self.speed
+                self.y += (dy / mag) * self.speed
+
+            if dash_key and self.dash_cooldown <= 0:
+                self.dash(dx, dy)
+
+        # Bounds
         self.x = max(self.size, min(SCREEN_WIDTH - self.size, self.x))
         self.y = max(self.size, min(SCREEN_HEIGHT - self.size, self.y))
 
-    def move_joystick(self, move_x, move_y, dash_pressed):
-        """Additive Joystick Support"""
-        if self.dash_cooldown > 0: self.dash_cooldown -= 1
-        
-        speed = self.speed
-        if dash_pressed and self.dash_cooldown == 0:
-            self.dash_timer = 10
-            self.dash_cooldown = 40
-            self.invulnerable = True
-            speed *= 4
-            
-        if self.dash_timer > 0:
-            self.dash_timer -= 1
-            if self.dash_timer == 0: self.invulnerable = False
-            
-        self.x += move_x * speed
-        self.y += move_y * speed
-        
-        # Clamp
-        self.x = max(self.size, min(SCREEN_WIDTH - self.size, self.x))
-        self.y = max(self.size, min(SCREEN_HEIGHT - self.size, self.y))
+        # Update trail
+        for t in self.trail:
+            t['opacity'] -= 0.05
+        self.trail = [t for t in self.trail if t['opacity'] > 0]
 
-    def draw(self, screen):
-        color = COLOR_PLAYER if not self.invulnerable else (255, 255, 255)
-        pygame.draw.rect(screen, color, (self.x - self.size//2, self.y - self.size//2, self.size, self.size))
+    def dash(self, dx, dy):
+        global shake_amount
+        if dx == 0 and dy == 0:
+            dx = -1 if self.id == 1 else 1
+        
+        mag = math.sqrt(dx*dx + dy*dy)
+        self.x += (dx / mag) * DASH_DISTANCE
+        self.y += (dy / mag) * DASH_DISTANCE
+
+        self.is_dashing = True
+        self.invulnerable = True
+        self.dash_timer = DASH_DURATION
+        self.dash_cooldown = DASH_COOLDOWN
+        self.invuln_timer = INVULNERABILITY_TIME
+        shake_amount = 10
+
+    def draw(self, surface):
+        # Draw Trail
+        for t in self.trail:
+            alpha = int(t['opacity'] * 128)
+            trail_surface = pygame.Surface((self.size, self.size), pygame.SRCALPHA)
+            color_with_alpha = (*self.color, alpha)
+            if self.shape == 'square':
+                pygame.draw.rect(trail_surface, color_with_alpha, (0, 0, self.size, self.size))
+            else:
+                pygame.draw.polygon(trail_surface, color_with_alpha, [(self.size/2, 0), (self.size, self.size), (0, self.size)])
+            surface.blit(trail_surface, (t['x'] - self.size/2, t['y'] - self.size/2))
+
+        # Draw Player
+        if self.invulnerable and (pygame.time.get_ticks() // 50) % 2 == 0:
+            return
+
+        if self.shape == 'square':
+            pygame.draw.rect(surface, self.color, (self.x - self.size/2, self.y - self.size/2, self.size, self.size))
+        else:
+            pygame.draw.polygon(surface, self.color, [(self.x, self.y - self.size/2), (self.x + self.size/2, self.y + self.size/2), (self.x - self.size/2, self.y + self.size/2)])
 
 class Obstacle:
-    def __init__(self, score):
-        self.reset(score)
+    def __init__(self):
+        self.reset()
 
-    def reset(self, score):
-        self.size = random.randint(40, 120)
+    def reset(self):
         side = random.randint(0, 3)
         if side == 0: # Left
-            self.x, self.y = -self.size, random.randint(0, SCREEN_HEIGHT)
-            self.vx, self.vy = random.randint(3, 7), random.randint(-2, 2)
+            self.x, self.y = -100, random.randint(0, SCREEN_HEIGHT)
+            self.vx, self.vy = random.uniform(3, 6), 0
         elif side == 1: # Right
-            self.x, self.y = SCREEN_WIDTH + self.size, random.randint(0, SCREEN_HEIGHT)
-            self.vx, self.vy = random.randint(-7, -3), random.randint(-2, 2)
+            self.x, self.y = SCREEN_WIDTH + 100, random.randint(0, SCREEN_HEIGHT)
+            self.vx, self.vy = -random.uniform(3, 6), 0
         elif side == 2: # Top
-            self.x, self.y = random.randint(0, SCREEN_WIDTH), -self.size
-            self.vx, self.vy = random.randint(-2, 2), random.randint(3, 7)
+            self.x, self.y = random.randint(0, SCREEN_WIDTH), -100
+            self.vx, self.vy = 0, random.uniform(3, 6)
         else: # Bottom
-            self.x, self.y = random.randint(0, SCREEN_WIDTH), SCREEN_HEIGHT + self.size
-            self.vx, self.vy = random.randint(-2, 2), random.randint(-7, -3)
-        
-        speed_scale = 1.0 + min(score / 100.0, 2.0)
-        self.vx *= speed_scale
-        self.vy *= speed_scale
-        self.warning = 60
+            self.x, self.y = random.randint(0, SCREEN_WIDTH), SCREEN_HEIGHT + 100
+            self.vx, self.vy = 0, -random.uniform(3, 6)
 
-    def update(self):
-        if self.warning > 0:
-            self.warning -= 1
-            return True
+        self.size = random.uniform(40, 80)
+        self.angle = random.uniform(0, math.pi * 2)
+        self.rotation_speed = random.uniform(-0.05, 0.05)
+        self.warning = 1000 # ms
+
+    def update(self, dt):
         self.x += self.vx
         self.y += self.vy
-        return -200 < self.x < SCREEN_WIDTH+200 and -200 < self.y < SCREEN_HEIGHT+200
-
-    def draw(self, screen):
+        self.angle += self.rotation_speed
         if self.warning > 0:
-            if (self.warning // 10) % 2 == 0:
-                end_x = self.x + self.vx * 100
-                end_y = self.y + self.vy * 100
-                pygame.draw.line(screen, (50, 0, 20), (self.x, self.y), (end_x, end_y), 2)
-            return
-        pygame.draw.rect(screen, COLOR_OBSTACLE, (self.x - self.size//2, self.y - self.size//2, self.size, self.size))
+            self.warning -= dt
+
+    def draw(self, surface, current_time, last_beat):
+        is_dangerous = self.warning <= 0
+        color = ENEMY_COLOR if is_dangerous else (*ENEMY_COLOR, 50)
+        
+        # Pulsing effect
+        pulse = math.sin((current_time - last_beat) / 100.0) * 8
+        draw_size = self.size + (pulse if is_dangerous else 0)
+
+        # Create a surface for rotation and alpha
+        obs_surf = pygame.Surface((draw_size * 2, draw_size * 2), pygame.SRCALPHA)
+        pygame.draw.rect(obs_surf, color, (draw_size/2, draw_size/2, draw_size, draw_size))
+        
+        if is_dangerous:
+            pygame.draw.rect(obs_surf, (255, 255, 255), (draw_size/2, draw_size/2, draw_size, draw_size), 2)
+
+        rotated_surf = pygame.transform.rotate(obs_surf, math.degrees(self.angle))
+        rect = rotated_surf.get_rect(center=(self.x, self.y))
+        surface.blit(rotated_surf, rect.topleft)
 
     def check_collision(self, player):
-        if self.warning > 0 or player.invulnerable: return False
-        dx = player.x - self.x
-        dy = player.y - self.y
-        dist_sq = dx*dx + dy*dy
-        combined_radius = (self.size * 0.7 + player.size * 0.7)
-        return dist_sq < combined_radius * combined_radius
+        if self.warning > 0 or player.invulnerable:
+            return False
+        
+        dx = abs(player.x - self.x)
+        dy = abs(player.y - self.y)
+        combined_size = (self.size + player.size) / 2
+        
+        return dx < combined_size and dy < combined_size
 
-def load_highscore():
-    if os.path.exists(HIGHSCORE_FILE):
-        try:
-            with open(HIGHSCORE_FILE, "r") as f: return int(f.read().strip())
-        except: return 0
-    return 0
+player1 = Player(1, PLAYER1_COLOR, 'square')
+player2 = Player(2, PLAYER2_COLOR, 'triangle')
+active_players = [player1]
 
-def save_highscore(score):
-    if score > load_highscore():
-        with open(HIGHSCORE_FILE, "w") as f: f.write(str(score))
-
-def main():
-    pygame.init()
-    
-    # Joystick setup
-    pygame.joystick.init()
-    joysticks = [pygame.joystick.Joystick(i) for i in range(pygame.joystick.get_count())]
-    for j in joysticks: j.init()
-    
-    screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
-    clock = pygame.time.Clock()
-    font_large = pygame.font.SysFont("monospace", 72, bold=True)
-    font_small = pygame.font.SysFont("monospace", 36)
-    
-    player = Player()
-    obstacles = []
+def start_game():
+    global state, health, score, obstacles, active_players, last_beat_time
+    state = GameState.PLAYING
+    health = MAX_HEALTH
     score = 0
-    highscore = load_highscore()
-    game_over = False
+    obstacles = []
+    player1.reset()
+    active_players = [player1]
+    if is_two_player:
+        player2.reset()
+        active_players.append(player2)
     
-    running = True
-    while running:
-        screen.fill(COLOR_BG)
-        keys = pygame.key.get_pressed()
-        
-        # 1. Original Movement
-        player.move(keys)
-        
-        # 2. Additive Joystick Movement
-        for j in joysticks:
-            if j.get_numaxes() >= 2:
-                jx = j.get_axis(0)
-                jy = j.get_axis(1)
-                if abs(jx) > 0.2 or abs(jy) > 0.2:
-                    # Map buttons for dash
-                    dash = any(j.get_button(b) for b in range(min(j.get_numbuttons(), 4)))
-                    player.move_joystick(jx if abs(jx) > 0.2 else 0, jy if abs(jy) > 0.2 else 0, dash)
+    if pygame.mixer.music.get_busy():
+        pygame.mixer.music.stop()
+    pygame.mixer.music.play(-1)
+    last_beat_time = pygame.time.get_ticks()
 
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT: running = False
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE: running = False
-                if game_over and event.key == pygame.K_r:
-                    player = Player(); obstacles = []; score = 0; game_over = False; highscore = load_highscore()
-            if event.type == pygame.JOYBUTTONDOWN and game_over:
-                player = Player(); obstacles = []; score = 0; game_over = False; highscore = load_highscore()
+def game_over():
+    global state
+    state = GameState.GAMEOVER
+    pygame.mixer.music.stop()
 
-        if not game_over:
-            obstacles = [o for o in obstacles if -300 < o.x < SCREEN_WIDTH+300 and -300 < o.y < SCREEN_HEIGHT+300]
-            if len(obstacles) < 25 and random.random() < 0.05:
-                obstacles.append(Obstacle(score))
-            for o in obstacles:
-                o.update()
-                if o.check_collision(player):
-                    game_over = True
-                    save_highscore(int(score))
-            score += 1/60.0
+def draw_ui(surface):
+    # Health Bar
+    bar_width = 400
+    bar_height = 20
+    pygame.draw.rect(surface, (50, 50, 50), (40, 40, bar_width, bar_height))
+    current_bar_width = (health / MAX_HEALTH) * bar_width
+    if health > 0:
+        pygame.draw.rect(surface, PLAYER1_COLOR, (40, 40, current_bar_width, bar_height))
+    pygame.draw.rect(surface, (255, 255, 255), (40, 40, bar_width, bar_height), 2)
+
+    # Score
+    score_text = font_medium.render(f"SCORE: {int(score)}", True, UI_TEXT_COLOR)
+    surface.blit(score_text, (40, 80))
+
+    if state == GameState.START:
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 180))
+        surface.blit(overlay, (0, 0))
+        
+        title1 = font_large.render("JUST SHAPES", True, PLAYER1_COLOR)
+        title2 = font_large.render("& BEATS", True, PLAYER1_COLOR)
+        surface.blit(title1, (SCREEN_WIDTH//2 - title1.get_width()//2, SCREEN_HEIGHT//2 - 200))
+        surface.blit(title2, (SCREEN_WIDTH//2 - title2.get_width()//2, SCREEN_HEIGHT//2 - 100))
+        
+        sub_msg = "PRESS ANY KEY TO PLAY (1: 1P, 2: 2P)"
+        sub_text = font_small.render(sub_msg, True, UI_TEXT_COLOR)
+        surface.blit(sub_text, (SCREEN_WIDTH//2 - sub_text.get_width()//2, SCREEN_HEIGHT//2 + 120))
+
+    elif state == GameState.GAMEOVER:
+        overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 200))
+        surface.blit(overlay, (0, 0))
+        
+        go_text = font_large.render("GAME OVER", True, ENEMY_COLOR)
+        surface.blit(go_text, (SCREEN_WIDTH//2 - go_text.get_width()//2, SCREEN_HEIGHT//2 - 50))
+        
+        score_msg = f"FINAL SCORE: {int(score)}"
+        score_text = font_medium.render(score_msg, True, UI_TEXT_COLOR)
+        surface.blit(score_text, (SCREEN_WIDTH//2 - score_text.get_width()//2, SCREEN_HEIGHT//2 + 50))
+        
+        restart_text = font_small.render("PRESS ANY KEY TO RESTART", True, UI_TEXT_COLOR)
+        surface.blit(restart_text, (SCREEN_WIDTH//2 - restart_text.get_width()//2, SCREEN_HEIGHT//2 + 150))
+
+# Main Loop
+running = True
+while running:
+    current_time = pygame.time.get_ticks()
+    dt = clock.tick(60) # Lock to 60 FPS
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                running = False
             
-        for o in obstacles: o.draw(screen)
-        player.draw(screen)
+            if state == GameState.START or state == GameState.GAMEOVER:
+                if event.key == pygame.K_1:
+                    is_two_player = False
+                    start_game()
+                elif event.key == pygame.K_2:
+                    is_two_player = True
+                    start_game()
+                else:
+                    start_game()
+
+    if state == GameState.PLAYING:
+        # Beat management
+        if current_time - last_beat_time > BEAT_INTERVAL:
+            last_beat_time = current_time
+            if len(obstacles) < 20:
+                obstacles.append(Obstacle())
+            shake_amount = 5
         
-        # CRT Overlay
-        if crt_overlay:
-            crt_overlay.apply_crt(screen, pygame.time.get_ticks())
+        # Update Players
+        for p in active_players:
+            p.update(dt)
         
-        score_text = font_small.render(f"SCORE: {int(score)}", True, COLOR_TEXT)
-        screen.blit(score_text, (20, 20))
-        hs_text = font_small.render(f"BEST: {highscore}", True, (100, 100, 100))
-        screen.blit(hs_text, (20, 60))
+        score += dt / 1000.0
         
-        if game_over:
-            overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
-            overlay.fill((0, 0, 0, 180))
-            screen.blit(overlay, (0,0))
-            msg = font_large.render("GAME OVER", True, COLOR_OBSTACLE)
-            screen.blit(msg, (SCREEN_WIDTH//2 - msg.get_width()//2, SCREEN_HEIGHT//2 - 100))
-            retry = font_small.render("PRESS 'R' TO RESTART", True, COLOR_PLAYER)
-            screen.blit(retry, (SCREEN_WIDTH//2 - retry.get_width()//2, SCREEN_HEIGHT//2 + 60))
+        # Update Obstacles
+        for obs in obstacles[:]:
+            obs.update(dt)
             
-        pygame.display.flip()
-        clock.tick(FPS)
+            for p in active_players:
+                if obs.check_collision(p):
+                    health -= 10
+                    shake_amount = 20
+                    p.invulnerable = True
+                    p.invuln_timer = 1000
+                    if obs in obstacles: obstacles.remove(obs)
+                    if health <= 0:
+                        game_over()
+            
+            if obs.x < -300 or obs.x > SCREEN_WIDTH + 300 or obs.y < -300 or obs.y > SCREEN_HEIGHT + 300:
+                if obs in obstacles: obstacles.remove(obs)
 
-    pygame.quit()
+    # Rendering
+    # Background pulse
+    bg_pulse = max(0, 1 - (current_time - last_beat_time) / (BEAT_INTERVAL / 2))
+    bg_val = int(bg_pulse * 20)
+    screen.fill((bg_val, bg_val//2, bg_val))
 
-if __name__ == "__main__":
-    main()
+    # Screen Shake
+    render_offset = [0, 0]
+    if shake_amount > 0:
+        render_offset[0] = random.uniform(-shake_amount, shake_amount)
+        render_offset[1] = random.uniform(-shake_amount, shake_amount)
+        shake_amount *= 0.9
+        if shake_amount < 0.5: shake_amount = 0
+
+    # Grid
+    grid_size = 60
+    for x in range(0, SCREEN_WIDTH, grid_size):
+        pygame.draw.line(screen, (30, 30, 30), (x + render_offset[0], 0), (x + render_offset[0], SCREEN_HEIGHT))
+    for y in range(0, SCREEN_HEIGHT, grid_size):
+        pygame.draw.line(screen, (30, 30, 30), (0, y + render_offset[1]), (SCREEN_WIDTH, y + render_offset[1]))
+
+    # Entities
+    for obs in obstacles:
+        obs.draw(screen, current_time, last_beat_time)
+    
+    for p in active_players:
+        p.draw(screen)
+
+    # UI
+    draw_ui(screen)
+
+    # --- [MODIFIED] Shared CRT Overlay ---
+    if crt_overlay:
+        crt_overlay.apply_crt(screen, current_time)
+    
+    pygame.display.flip()
+
+pygame.quit()
+sys.exit()
