@@ -38,5 +38,10 @@
         "description": "High-fidelity retro media management.",
         "controls": "MOUSE: Interface",
         "year": "2025"
+    },
+    "Tennis for 2": {
+        "description": "A classic paddle game for two players.",
+        "controls": "P1 HAT / P2 W/S: Move  START: Play",
+        "year": "2026"
     }
 }

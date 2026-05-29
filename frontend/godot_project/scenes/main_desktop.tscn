@@ -10,155 +10,160 @@ shader_param/curvature = 0.08
 
 [sub_resource type="ShaderMaterial" id=5]
 shader = ExtResource( 3 )
-shader_param/scanline_count = 540.0
-shader_param/scanline_opacity = 0.12
-shader_param/flicker_speed = 8.0
+shader_param/scanline_count   = 540.0
+shader_param/scanline_opacity = 0.18
+shader_param/flicker_speed    = 8.0
 
 [node name="Desktop" type="Control"]
-anchor_right = 1.0
+anchor_right  = 1.0
 anchor_bottom = 1.0
 script = ExtResource( 1 )
 
 [node name="MainUI" type="Control" parent="."]
-anchor_right = 1.0
+anchor_right  = 1.0
 anchor_bottom = 1.0
 
 [node name="Background" type="ColorRect" parent="MainUI"]
-anchor_right = 1.0
+anchor_right  = 1.0
 anchor_bottom = 1.0
-color = Color( 0.05, 0, 0, 1 )
-
-[node name="Glow" type="ColorRect" parent="MainUI/Background"]
-anchor_right = 1.0
-anchor_bottom = 1.0
-color = Color( 0, 0.2, 0, 0.1 )
+color = Color( 0.04, 0.0, 0.08, 1 )
 
 [node name="Header" type="ColorRect" parent="MainUI"]
-anchor_right = 1.0
-margin_bottom = 80.0
-color = Color( 0, 0, 0, 1 )
+anchor_right  = 1.0
+margin_bottom = 72.0
+color = Color( 0, 0, 0, 0.85 )
 
 [node name="HBox" type="HBoxContainer" parent="MainUI/Header"]
-anchor_right = 1.0
+anchor_right  = 1.0
 anchor_bottom = 1.0
-margin_left = 30.0
-margin_right = -30.0
+margin_left   = 30.0
+margin_right  = -30.0
 
 [node name="Logo" type="TextureRect" parent="MainUI/Header/HBox"]
-margin_right = 80.0
-margin_bottom = 80.0
-rect_min_size = Vector2( 80, 80 )
-expand = true
+margin_right  = 72.0
+margin_bottom = 72.0
+rect_min_size = Vector2( 72, 72 )
+expand       = true
 stretch_mode = 6
 
 [node name="Title" type="Label" parent="MainUI/Header/HBox"]
-margin_left = 84.0
-margin_top = 33.0
-margin_right = 186.0
-margin_bottom = 47.0
-text = "CTRL ARCADE"
+margin_left   = 76.0
+margin_top    = 26.0
+margin_right  = 280.0
+margin_bottom = 46.0
+text   = "CTRL ARCADE"
 valign = 1
 
 [node name="Spacer" type="Control" parent="MainUI/Header/HBox"]
-margin_left = 190.0
+margin_left  = 284.0
 margin_right = 1860.0
-margin_bottom = 80.0
 size_flags_horizontal = 3
 
 [node name="ClockLabel" type="Label" parent="MainUI/Header/HBox"]
-margin_left = 1864.0
-margin_top = 33.0
-margin_right = 1864.0
-margin_bottom = 47.0
+margin_left   = 1864.0
+margin_top    = 26.0
+margin_right  = 1920.0
+margin_bottom = 46.0
 valign = 1
 
-[node name="AboutButton" type="Button" parent="MainUI/Header/HBox"]
-margin_left = 1868.0
-margin_right = 1920.0
-margin_bottom = 80.0
-rect_min_size = Vector2( 60, 0 )
-text = "?"
-flat = true
+; ── Carousel container — fills between header and controls bar ────────────────
+[node name="Carousel" type="Control" parent="MainUI"]
+anchor_right  = 1.0
+anchor_bottom = 1.0
+margin_top    = 72.0
+margin_bottom = -80.0
 
-[node name="GamesCenter" type="CenterContainer" parent="MainUI"]
-anchor_top = 0.5
-anchor_right = 1.0
-anchor_bottom = 0.5
-margin_top = -300.0
-margin_bottom = 400.0
+; ── Game-name label shown below center card ────────────────────────────────
+[node name="GameNameLabel" type="Label" parent="MainUI"]
+anchor_left   = 0.0
+anchor_top    = 1.0
+anchor_right  = 1.0
+anchor_bottom = 1.0
+margin_top    = -160.0
+margin_bottom = -100.0
+custom_colors/font_color = Color( 0, 1, 1, 1 )
+align  = 1
+valign = 1
+text   = ""
 
-[node name="GamesGrid" type="GridContainer" parent="MainUI/GamesCenter"]
-margin_left = 960.0
-margin_top = 350.0
-margin_right = 960.0
-margin_bottom = 350.0
-columns = 4
-custom_constants/vseparation = 60
-custom_constants/hseparation = 60
+; ── "Press X to launch" hint ──────────────────────────────────────────────
+[node name="LaunchHint" type="Label" parent="MainUI"]
+anchor_left   = 0.0
+anchor_top    = 1.0
+anchor_right  = 1.0
+anchor_bottom = 1.0
+margin_top    = -80.0
+margin_bottom = -40.0
+custom_colors/font_color = Color( 0.5, 0.5, 0.6, 1 )
+align  = 1
+valign = 1
+text   = "[ X / ENTER ] to launch"
 
+; ── Debug menu ───────────────────────────────────────────────────────────
 [node name="DebugMenu" type="Panel" parent="MainUI"]
 visible = false
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
+anchor_left   = 0.5
+anchor_top    = 0.5
+anchor_right  = 0.5
 anchor_bottom = 0.5
-margin_left = -150.0
-margin_top = -100.0
-margin_right = 150.0
+margin_left   = -150.0
+margin_top    = -100.0
+margin_right  = 150.0
 margin_bottom = 100.0
 
 [node name="VBoxContainer" type="VBoxContainer" parent="MainUI/DebugMenu"]
-anchor_right = 1.0
+anchor_right  = 1.0
 anchor_bottom = 1.0
-margin_left = 10.0
-margin_top = 10.0
-margin_right = -10.0
+margin_left   = 10.0
+margin_top    = 10.0
+margin_right  = -10.0
 margin_bottom = -10.0
 custom_constants/separation = 10
 
 [node name="Label" type="Label" parent="MainUI/DebugMenu/VBoxContainer"]
-margin_right = 280.0
+margin_right  = 280.0
 margin_bottom = 14.0
-text = "SECRET DEBUG MENU"
+text  = "SECRET DEBUG MENU"
 align = 1
 
 [node name="SystemInfoButton" type="Button" parent="MainUI/DebugMenu/VBoxContainer"]
-margin_top = 24.0
-margin_right = 280.0
+margin_top    = 24.0
+margin_right  = 280.0
 margin_bottom = 44.0
 text = "System Info"
 
 [node name="CloseButton" type="Button" parent="MainUI/DebugMenu/VBoxContainer"]
-margin_top = 54.0
-margin_right = 280.0
+margin_top    = 54.0
+margin_right  = 280.0
 margin_bottom = 74.0
 text = "Close"
 
 [node name="InputDebugButton" type="Button" parent="MainUI/DebugMenu/VBoxContainer"]
-margin_top = 84.0
-margin_right = 280.0
+margin_top    = 84.0
+margin_right  = 280.0
 margin_bottom = 104.0
 text = "Input Debugger"
 
+; ── Input debug overlay ──────────────────────────────────────────────────
 [node name="InputDebugOverlay" type="ColorRect" parent="MainUI"]
 visible = false
-anchor_right = 1.0
+anchor_right  = 1.0
 anchor_bottom = 1.0
 color = Color( 0, 0, 0, 0.8 )
 
 [node name="Scroll" type="ScrollContainer" parent="MainUI/InputDebugOverlay"]
-anchor_right = 1.0
+anchor_right  = 1.0
 anchor_bottom = 1.0
-margin_left = 50.0
-margin_top = 50.0
-margin_right = -50.0
+margin_left   = 50.0
+margin_top    = 50.0
+margin_right  = -50.0
 margin_bottom = -50.0
 
 [node name="LogLabel" type="Label" parent="MainUI/InputDebugOverlay/Scroll"]
-margin_right = 1820.0
+margin_right  = 1820.0
 margin_bottom = 980.0
 size_flags_horizontal = 3
-size_flags_vertical = 3
+size_flags_vertical   = 3
 custom_colors/font_color = Color( 0, 1, 0, 1 )
 text = "--- HARDWARE INPUT DEBUGGER ---
 Press any button, move any joystick, or trigger any switch to see its raw hardware ID.
@@ -166,109 +171,83 @@ Press 'ESC' or Arcade Button 1 to exit.
 "
 autowrap = true
 
+; ── Loading overlay ──────────────────────────────────────────────────────
 [node name="LoadingOverlay" type="ColorRect" parent="MainUI"]
 visible = false
-anchor_right = 1.0
+anchor_right  = 1.0
 anchor_bottom = 1.0
 color = Color( 0, 0, 0, 0.9 )
 
+; ── Attract mode ────────────────────────────────────────────────────────
 [node name="AttractMode" type="ColorRect" parent="MainUI"]
 visible = false
-anchor_right = 1.0
+anchor_right  = 1.0
 anchor_bottom = 1.0
 color = Color( 0, 0, 0, 0.85 )
 
-[node name="VBox" type="VBoxContainer" parent="MainUI/AttractMode"]
-anchor_right = 1.0
-anchor_bottom = 1.0
-margin_left = 100.0
-margin_top = 100.0
-margin_right = -100.0
-margin_bottom = -100.0
-alignment = 1
-
-[node name="GameTitle" type="Label" parent="MainUI/AttractMode/VBox"]
-margin_top = 373.0
-margin_right = 1720.0
-margin_bottom = 387.0
-text = "GAME TITLE"
-align = 1
-
-[node name="Desc" type="Label" parent="MainUI/AttractMode/VBox"]
-margin_top = 407.0
-margin_right = 1720.0
-margin_bottom = 421.0
-text = "Description"
-align = 1
-
-[node name="Controls" type="Label" parent="MainUI/AttractMode/VBox"]
-margin_top = 441.0
-margin_right = 1720.0
-margin_bottom = 455.0
-text = "Controls"
-align = 1
-
 [node name="InsertCoin" type="Label" parent="MainUI/AttractMode"]
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
+anchor_left   = 0.5
+anchor_top    = 1.0
+anchor_right  = 0.5
 anchor_bottom = 1.0
-margin_left = -100.0
-margin_top = -100.0
-margin_right = 100.0
-text = "PRESS ANY BUTTON TO PLAY"
+margin_left   = -160.0
+margin_top    = -100.0
+margin_right  = 160.0
+text  = "PRESS ANY BUTTON TO PLAY"
 align = 1
 
+; ── Boot screen ──────────────────────────────────────────────────────────
 [node name="BootScreen" type="ColorRect" parent="."]
-anchor_right = 1.0
+anchor_right  = 1.0
 anchor_bottom = 1.0
 color = Color( 0, 0, 0, 1 )
 
 [node name="CRTScreen" type="ColorRect" parent="BootScreen"]
-anchor_top = 0.5
-anchor_right = 1.0
+anchor_top    = 0.5
+anchor_right  = 1.0
 anchor_bottom = 0.5
-margin_top = -540.0
-margin_bottom = 540.0
+margin_top    = -540.0
+margin_bottom =  540.0
 color = Color( 0, 0, 0, 1 )
 
 [node name="BiosText" type="RichTextLabel" parent="BootScreen"]
-anchor_right = 1.0
+anchor_right  = 1.0
 anchor_bottom = 1.0
 custom_colors/default_color = Color( 0.2, 1, 0.2, 1 )
 bbcode_enabled = true
 
 [node name="BootLogo" type="TextureRect" parent="BootScreen"]
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
+anchor_left   = 0.5
+anchor_top    = 0.5
+anchor_right  = 0.5
 anchor_bottom = 0.5
-margin_left = -200.0
-margin_top = -200.0
-margin_right = 200.0
-margin_bottom = 200.0
+margin_left   = -200.0
+margin_top    = -200.0
+margin_right  =  200.0
+margin_bottom =  200.0
 rect_pivot_offset = Vector2( 200, 200 )
-expand = true
+expand       = true
 stretch_mode = 6
 
 [node name="BootTween" type="Tween" parent="BootScreen"]
 
+; ── CRT shaders ──────────────────────────────────────────────────────────
 [node name="CRT_Barrel" type="CanvasLayer" parent="."]
 layer = 10
 
 [node name="ShaderRect" type="ColorRect" parent="CRT_Barrel"]
-material = SubResource( 4 )
-anchor_right = 1.0
+material     = SubResource( 4 )
+anchor_right  = 1.0
 anchor_bottom = 1.0
-mouse_filter = 2
+mouse_filter  = 2
 
 [node name="CRT_Scanlines" type="CanvasLayer" parent="."]
 layer = 11
 
 [node name="ShaderRect" type="ColorRect" parent="CRT_Scanlines"]
-material = SubResource( 5 )
-anchor_right = 1.0
+material     = SubResource( 5 )
+anchor_right  = 1.0
 anchor_bottom = 1.0
-mouse_filter = 2
+mouse_filter  = 2
 
 [connection signal="pressed" from="MainUI/DebugMenu/VBoxContainer/CloseButton" to="." method="_on_CloseDebugButton_pressed"]

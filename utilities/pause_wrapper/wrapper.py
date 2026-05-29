@@ -8,6 +8,9 @@ to show a pause menu.  Writes two flag files that the Godot frontend watches:
 
 Without arcade_done, Godot never knows the game has closed and stays minimised
 forever — which was the "game running in background, menu never comes back" bug.
+
+ARCADE BUTTON MAPPING (relevant to wrapper):
+  BACK = Joystick 0 Button 6  →  acts as ESC (double-tap opens pause menu)
 """
 import subprocess
 import sys
@@ -21,6 +24,9 @@ import re
 READY_FLAG      = "/tmp/arcade_ready"
 DONE_FLAG       = "/tmp/arcade_done"
 PAUSE_MENU_SCRIPT = os.path.join(os.path.dirname(__file__), "pause_menu.py")
+
+# Joystick button that acts as ESC
+_BTN_BACK = 6
 
 
 class ArcadeWrapper:
@@ -57,17 +63,26 @@ class ArcadeWrapper:
             try:
                 import evdev
                 from evdev import ecodes
-                threading.Thread(target=self._evdev_monitor, args=(ecodes,), daemon=True).start()
-                self.log("Input monitor: evdev")
-                return
+                if hasattr(evdev, "list_devices"):
+                    threading.Thread(target=self._evdev_monitor, args=(ecodes,), daemon=True).start()
+                    self.log("Input monitor: evdev")
+                else:
+                    self.log("evdev module is corrupt (missing list_devices) — falling back")
             except ImportError:
                 self.log("evdev not available, trying keyboard library")
-        try:
-            import keyboard
-            keyboard.add_hotkey("esc", self._on_esc_pressed)
-            self.log("Input monitor: keyboard library")
-        except Exception as e:
-            self.log(f"keyboard library failed ({e}) — ESC interception disabled")
+                try:
+                    import keyboard
+                    keyboard.add_hotkey("esc", self._on_esc_pressed)
+                    self.log("Input monitor: keyboard library")
+                except Exception as e:
+                    self.log(f"keyboard library failed ({e}) — ESC interception disabled")
+
+        # Always start the joystick BACK-button monitor
+        if sys.platform.startswith("linux"):
+            threading.Thread(target=self._joystick_back_monitor, daemon=True).start()
+            self.log("Input monitor: joystick back-button (evdev)")
+        else:
+            self.log("Joystick BACK monitor: Linux only, skipped on this OS")
 
     def _evdev_monitor(self, ecodes):
         import evdev
@@ -89,6 +104,8 @@ class ArcadeWrapper:
 
         while self.running:
             try:
+                if not devices:
+                    break
                 r, _, _ = select.select(devices, [], [], 0.1)
                 for dev in r:
                     for event in dev.read():
@@ -96,8 +113,72 @@ class ArcadeWrapper:
                                 event.code == ecodes.KEY_ESC and
                                 event.value == 1):
                             self._on_esc_pressed()
-            except Exception:
-                pass
+            except Exception as e:
+                self.log(f"evdev monitor loop error: {e}")
+                break
+
+    def _joystick_back_monitor(self):
+        """Read raw joystick EV_KEY events from /dev/input and treat
+        button-6 (BACK) the same as a keyboard ESC press.
+
+        Gamepad buttons are exposed as EV_KEY codes starting at BTN_TRIGGER_HAPPY
+        (0x2c0 = 704) for some drivers, or as BTN_SOUTH/BTN_A etc. for others.
+        We look at ALL EV_KEY events from joystick-like devices and check whether
+        the nth button pressed (counting from 0) equals _BTN_BACK (6).
+
+        A simpler approach: enumerate the EV_KEY capabilities of each device,
+        sort them, and treat the 7th entry (index 6) as our BACK button.
+        """
+        try:
+            import evdev
+            from evdev import ecodes
+            import select
+
+            # Find all joystick-like devices (have EV_ABS or BTN_GAMEPAD etc.)
+            joy_devices = []
+            for path in evdev.list_devices():
+                try:
+                    dev = evdev.InputDevice(path)
+                    caps = dev.capabilities()
+                    # A gamepad has EV_ABS or BTN_SOUTH in its capabilities
+                    has_abs = ecodes.EV_ABS in caps
+                    has_btn = ecodes.EV_KEY in caps and any(
+                        c >= ecodes.BTN_JOYSTICK for c in caps.get(ecodes.EV_KEY, [])
+                    )
+                    if has_abs or has_btn:
+                        # Build sorted list of button codes to map index -> code
+                        btn_codes = sorted(caps.get(ecodes.EV_KEY, []))
+                        if len(btn_codes) > _BTN_BACK:
+                            back_code = btn_codes[_BTN_BACK]
+                            joy_devices.append((dev, back_code))
+                            self.log(f"Joy BACK monitor: {dev.name!r}  "
+                                     f"btn[{_BTN_BACK}] = code {back_code} "
+                                     f"({ecodes.KEY.get(back_code, '?')})")
+                except Exception:
+                    pass
+
+            if not joy_devices:
+                self.log("Joy BACK monitor: no suitable devices found")
+                return
+
+            devs = [d for d, _ in joy_devices]
+            code_map = {d.fd: code for d, code in joy_devices}
+
+            while self.running:
+                try:
+                    r, _, _ = select.select(devs, [], [], 0.1)
+                    for dev in r:
+                        for event in dev.read():
+                            if (event.type == ecodes.EV_KEY and
+                                    event.value == 1 and        # key-down
+                                    event.code == code_map.get(dev.fd)):
+                                self.log("BACK button pressed — treating as ESC")
+                                self._on_esc_pressed()
+                except Exception as e:
+                    self.log(f"Joy BACK monitor loop error: {e}")
+                    break
+        except Exception as e:
+            self.log(f"Joy BACK monitor startup error: {e}")
 
     def _on_esc_pressed(self):
         now = time.time()

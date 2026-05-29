@@ -1,290 +1,511 @@
-[gd_scene load_steps=5 format=2]
+[gd_scene load_steps=14 format=2]
 
 [ext_resource path="res://scripts/media_player.gd" type="Script" id=1]
 
-[sub_resource type="StyleBoxFlat" id=1]
+; ── Win95 colour palette ─────────────────────────────────────────────────────
+; Classic grey face
+[sub_resource type="StyleBoxFlat" id=10]
 bg_color = Color( 0.753, 0.753, 0.753, 1 )
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color( 1, 1, 1, 1 )
-border_blend = false
-shadow_size = 0
-anti_aliasing = false
-expand_margin_left = 1.0
-expand_margin_right = 1.0
-expand_margin_top = 1.0
-expand_margin_bottom = 1.0
+border_width_left   = 0
+border_width_top    = 0
+border_width_right  = 0
+border_width_bottom = 0
 
-[sub_resource type="StyleBoxFlat" id=2]
-bg_color = Color( 1, 1, 1, 1 )
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color( 0.502, 0.502, 0.502, 1 )
-shadow_size = 0
-anti_aliasing = false
+; Raised button (light top-left, dark bottom-right)
+[sub_resource type="StyleBoxFlat" id=11]
+bg_color             = Color( 0.753, 0.753, 0.753, 1 )
+border_width_left    = 2
+border_width_top     = 2
+border_width_right   = 2
+border_width_bottom  = 2
+border_color         = Color( 1, 1, 1, 1 )
+border_blend         = false
+; We fake the shadow side via corner colours trick — actual shadow drawn in GDScript
 
-[sub_resource type="StyleBoxFlat" id=4]
-bg_color = Color( 0, 0, 0.502, 1 )
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color( 0.753, 0.753, 0.753, 1 )
+; Pressed button (sunken)
+[sub_resource type="StyleBoxFlat" id=12]
+bg_color             = Color( 0.69, 0.69, 0.69, 1 )
+border_width_left    = 2
+border_width_top     = 2
+border_width_right   = 2
+border_width_bottom  = 2
+border_color         = Color( 0.376, 0.376, 0.376, 1 )
+border_blend         = false
 
-[sub_resource type="StyleBoxFlat" id=5]
-bg_color = Color( 0.753, 0.753, 0.753, 1 )
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color( 1, 1, 1, 1 )
-corner_radius_top_left = 0
-corner_radius_top_right = 0
-corner_radius_bottom_right = 0
-corner_radius_bottom_left = 0
+; Sunken input field
+[sub_resource type="StyleBoxFlat" id=13]
+bg_color             = Color( 1, 1, 1, 1 )
+border_width_left    = 2
+border_width_top     = 2
+border_width_right   = 2
+border_width_bottom  = 2
+border_color         = Color( 0.376, 0.376, 0.376, 1 )
+border_blend         = false
 
+; Sunken panel (for status bar / video area)
+[sub_resource type="StyleBoxFlat" id=14]
+bg_color             = Color( 0.69, 0.69, 0.69, 1 )
+border_width_left    = 2
+border_width_top     = 2
+border_width_right   = 2
+border_width_bottom  = 2
+border_color         = Color( 0.376, 0.376, 0.376, 1 )
+border_blend         = false
+
+; Title bar blue gradient approximation (flat)
+[sub_resource type="StyleBoxFlat" id=15]
+bg_color             = Color( 0.0, 0.0, 0.502, 1 )
+border_width_left    = 0
+border_width_top     = 0
+border_width_right   = 0
+border_width_bottom  = 0
+
+; Toolbar background
+[sub_resource type="StyleBoxFlat" id=16]
+bg_color             = Color( 0.753, 0.753, 0.753, 1 )
+border_width_bottom  = 1
+border_color         = Color( 0.5, 0.5, 0.5, 1 )
+
+; Close button red hover style
+[sub_resource type="StyleBoxFlat" id=17]
+bg_color             = Color( 0.9, 0.1, 0.1, 1 )
+border_width_left    = 2
+border_width_top     = 2
+border_width_right   = 2
+border_width_bottom  = 2
+border_color         = Color( 1, 1, 1, 1 )
+
+; Theme
 [sub_resource type="Theme" id=3]
-Button/colors/font_color = Color( 0, 0, 0, 1 )
-Button/colors/font_color_disabled = Color( 0.4, 0.4, 0.4, 1 )
-Button/colors/font_color_focus = Color( 0, 0, 0, 1 )
-Button/colors/font_color_hover = Color( 0, 0, 0, 1 )
+Button/styles/normal   = SubResource( 11 )
+Button/styles/pressed  = SubResource( 12 )
+Button/styles/focus    = SubResource( 11 )
+Button/styles/hover    = SubResource( 11 )
+Button/styles/disabled = SubResource( 10 )
+Button/colors/font_color         = Color( 0, 0, 0, 1 )
 Button/colors/font_color_pressed = Color( 0, 0, 0, 1 )
-Button/styles/normal = SubResource( 1 )
-Button/styles/pressed = SubResource( 1 )
-Button/styles/focus = SubResource( 1 )
-Button/styles/hover = SubResource( 1 )
-Button/styles/disabled = SubResource( 1 )
-Panel/styles/panel = SubResource( 1 )
-Label/colors/font_color = Color( 0, 0, 0, 1 )
-LineEdit/styles/normal = SubResource( 2 )
-LineEdit/colors/font_color = Color( 0, 0, 0, 1 )
-LineEdit/colors/cursor_color = Color( 0, 0, 0, 1 )
-ItemList/styles/bg = SubResource( 2 )
-ItemList/colors/font_color = Color( 0, 0, 0, 1 )
-ItemList/colors/font_color_selected = Color( 1, 1, 1, 1 )
-ItemList/styles/selected = SubResource( 4 )
-ProgressBar/styles/bg = SubResource( 2 )
-ProgressBar/styles/fg = SubResource( 4 )
+Button/colors/font_color_hover   = Color( 0, 0, 0, 1 )
+Panel/styles/panel               = SubResource( 10 )
+Label/colors/font_color          = Color( 0, 0, 0, 1 )
+LineEdit/styles/normal           = SubResource( 13 )
+LineEdit/colors/font_color       = Color( 0, 0, 0, 1 )
+ItemList/styles/bg               = SubResource( 13 )
+ItemList/colors/font_color       = Color( 0, 0, 0, 1 )
+ProgressBar/styles/bg            = SubResource( 14 )
+ProgressBar/styles/fg            = SubResource( 11 )
+
+; ── Scene tree ───────────────────────────────────────────────────────────────
 
 [node name="MediaPlayer" type="Control"]
-anchor_right = 1.0
+anchor_right  = 1.0
 anchor_bottom = 1.0
 theme = SubResource( 3 )
 script = ExtResource( 1 )
 
+; Desktop background — classic Win95 teal
 [node name="DesktopBg" type="ColorRect" parent="."]
-anchor_right = 1.0
+anchor_right  = 1.0
 anchor_bottom = 1.0
-color = Color( 0.05, 0.05, 0.05, 1 )
+color = Color( 0.0, 0.502, 0.502, 1 )
 
+; Main window panel
 [node name="WindowFrame" type="Panel" parent="."]
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
+anchor_left   = 0.5
+anchor_top    = 0.5
+anchor_right  = 0.5
 anchor_bottom = 0.5
-margin_left = -620.0
-margin_top = -450.0
-margin_right = 620.0
-margin_bottom = 450.0
+margin_left   = -560.0
+margin_top    = -400.0
+margin_right  =  560.0
+margin_bottom =  400.0
+custom_styles/panel = SubResource( 10 )
 
+; ── Title bar ────────────────────────────────────────────────────────────────
 [node name="TitleBar" type="Panel" parent="WindowFrame"]
 anchor_right = 1.0
-margin_left = 2.0
-margin_top = 2.0
-margin_right = -2.0
-margin_bottom = 32.0
-custom_styles/panel = SubResource( 4 )
+margin_left   = 3.0
+margin_top    = 3.0
+margin_right  = -3.0
+margin_bottom = 25.0
+custom_styles/panel = SubResource( 15 )
 
 [node name="TitleText" type="Label" parent="WindowFrame/TitleBar"]
-margin_left = 12.0
-margin_right = 200.0
-margin_bottom = 30.0
+margin_left   = 6.0
+margin_right  = 700.0
+margin_bottom = 22.0
 custom_colors/font_color = Color( 1, 1, 1, 1 )
-text = "◈ MEDIA PLAYER"
-valign = 1
+text    = "📼  Media Player"
+valign  = 1
 
-[node name="WindowButtons" type="HBoxContainer" parent="WindowFrame/TitleBar"]
-anchor_left = 1.0
-anchor_right = 1.0
-margin_left = -40.0
-margin_bottom = 30.0
-alignment = 2
+[node name="WinButtons" type="HBoxContainer" parent="WindowFrame/TitleBar"]
+anchor_left   = 1.0
+anchor_right  = 1.0
+margin_left   = -66.0
+margin_top    = 2.0
+margin_bottom = 20.0
+custom_constants/separation = 2
 
-[node name="CloseBtn" type="Button" parent="WindowFrame/TitleBar/WindowButtons"]
-margin_left = 10.0
-margin_top = 3.0
-margin_right = 34.0
-margin_bottom = 27.0
-rect_min_size = Vector2( 24, 24 )
-size_flags_vertical = 4
-custom_styles/normal = SubResource( 5 )
-custom_styles/hover = SubResource( 5 )
-custom_styles/pressed = SubResource( 5 )
+[node name="MinBtn" type="Button" parent="WindowFrame/TitleBar/WinButtons"]
+margin_right  = 20.0
+margin_bottom = 18.0
+rect_min_size = Vector2( 20, 18 )
+custom_styles/normal   = SubResource( 11 )
+custom_styles/pressed  = SubResource( 12 )
+custom_styles/hover    = SubResource( 11 )
+custom_colors/font_color = Color( 0, 0, 0, 1 )
+text = "_"
+
+[node name="MaxBtn" type="Button" parent="WindowFrame/TitleBar/WinButtons"]
+margin_left   = 22.0
+margin_right  = 42.0
+margin_bottom = 18.0
+rect_min_size = Vector2( 20, 18 )
+custom_styles/normal   = SubResource( 11 )
+custom_styles/pressed  = SubResource( 12 )
+custom_styles/hover    = SubResource( 11 )
+custom_colors/font_color = Color( 0, 0, 0, 1 )
+text = "□"
+
+[node name="CloseBtn" type="Button" parent="WindowFrame/TitleBar/WinButtons"]
+margin_left   = 44.0
+margin_right  = 64.0
+margin_bottom = 18.0
+rect_min_size = Vector2( 20, 18 )
+custom_styles/normal   = SubResource( 11 )
+custom_styles/pressed  = SubResource( 12 )
+custom_styles/hover    = SubResource( 17 )
+custom_colors/font_color         = Color( 0, 0, 0, 1 )
+custom_colors/font_color_hover   = Color( 1, 1, 1, 1 )
 text = "✕"
 
+; ── Menu bar ─────────────────────────────────────────────────────────────────
+[node name="MenuBar" type="Panel" parent="WindowFrame"]
+anchor_right  = 1.0
+margin_left   = 3.0
+margin_top    = 28.0
+margin_right  = -3.0
+margin_bottom = 48.0
+custom_styles/panel = SubResource( 16 )
 
-[node name="MainContent" type="HBoxContainer" parent="WindowFrame"]
-anchor_right = 1.0
+[node name="MenuHBox" type="HBoxContainer" parent="WindowFrame/MenuBar"]
+anchor_right  = 1.0
 anchor_bottom = 1.0
-margin_left = 10.0
-margin_top = 40.0
-margin_right = -10.0
-margin_bottom = -90.0
-custom_constants/separation = 10
+margin_left   = 4.0
+margin_top    = 2.0
+custom_constants/separation = 0
 
+[node name="FileMenu" type="Button" parent="WindowFrame/MenuBar/MenuHBox"]
+margin_right  = 40.0
+margin_bottom = 18.0
+flat = true
+custom_colors/font_color = Color( 0, 0, 0, 1 )
+text = "File"
+
+[node name="EditMenu" type="Button" parent="WindowFrame/MenuBar/MenuHBox"]
+margin_left   = 40.0
+margin_right  = 80.0
+margin_bottom = 18.0
+flat = true
+custom_colors/font_color = Color( 0, 0, 0, 1 )
+text = "View"
+
+[node name="HelpMenu" type="Button" parent="WindowFrame/MenuBar/MenuHBox"]
+margin_left   = 80.0
+margin_right  = 120.0
+margin_bottom = 18.0
+flat = true
+custom_colors/font_color = Color( 0, 0, 0, 1 )
+text = "Help"
+
+; ── Main content area ─────────────────────────────────────────────────────────
+[node name="MainContent" type="HBoxContainer" parent="WindowFrame"]
+anchor_right  = 1.0
+anchor_bottom = 1.0
+margin_left   = 6.0
+margin_top    = 52.0
+margin_right  = -6.0
+margin_bottom = -70.0
+custom_constants/separation = 6
+
+; Left: video / search panel
 [node name="VideoPanel" type="Panel" parent="WindowFrame/MainContent"]
-margin_right = 800.0
-margin_bottom = 750.0
+margin_right  = 700.0
+margin_bottom = 580.0
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.0
+custom_styles/panel = SubResource( 14 )
 
 [node name="AudioPlayer" type="AudioStreamPlayer" parent="WindowFrame/MainContent/VideoPanel"]
 
 [node name="SearchBox" type="VBoxContainer" parent="WindowFrame/MainContent/VideoPanel"]
-anchor_right = 1.0
+anchor_right  = 1.0
 anchor_bottom = 1.0
-margin_left = 20.0
-margin_top = 20.0
-margin_right = -20.0
-margin_bottom = -20.0
+margin_left   = 14.0
+margin_top    = 14.0
+margin_right  = -14.0
+margin_bottom = -14.0
 alignment = 1
-custom_constants/separation = 20
-
-[node name="NowPlayingLabel" type="Label" parent="WindowFrame/MainContent/VideoPanel/SearchBox"]
-margin_top = 310.0
-margin_right = 752.0
-margin_bottom = 324.0
-custom_colors/font_color = Color( 0, 1, 1, 1 )
-text = "NO TRACK SELECTED"
-align = 1
-
-[node name="HBox" type="HBoxContainer" parent="WindowFrame/MainContent/VideoPanel/SearchBox"]
-margin_top = 344.0
-margin_right = 752.0
-margin_bottom = 384.0
-alignment = 1
-
-[node name="SearchInput" type="LineEdit" parent="WindowFrame/MainContent/VideoPanel/SearchBox/HBox"]
-margin_left = 126.0
-margin_right = 526.0
-margin_bottom = 40.0
-rect_min_size = Vector2( 400, 40 )
-placeholder_text = "Search song..."
-
-[node name="SearchBtn" type="Button" parent="WindowFrame/MainContent/VideoPanel/SearchBox/HBox"]
-margin_left = 530.0
-margin_right = 630.0
-margin_bottom = 40.0
-rect_min_size = Vector2( 100, 40 )
-text = "⬇ SEARCH & PLAY"
-
-[node name="PlaylistPanel" type="Panel" parent="WindowFrame/MainContent"]
-margin_left = 810.0
-margin_right = 1220.0
-margin_bottom = 750.0
-size_flags_horizontal = 3
-
-[node name="ColorRect" type="ColorRect" parent="WindowFrame/MainContent/PlaylistPanel"]
-anchor_right = 1.0
-anchor_bottom = 1.0
-margin_left = 2.0
-margin_top = 2.0
-margin_right = -2.0
-margin_bottom = -2.0
-color = Color( 1, 1, 1, 1 )
-
-[node name="PlaylistTitle" type="Label" parent="WindowFrame/MainContent/PlaylistPanel/ColorRect"]
-anchor_right = 1.0
-margin_bottom = 30.0
-text = " ◈ QUEUE"
-valign = 1
-
-[node name="SongList" type="ItemList" parent="WindowFrame/MainContent/PlaylistPanel/ColorRect"]
-anchor_right = 1.0
-anchor_bottom = 1.0
-margin_top = 30.0
-
-[node name="ControlsBar" type="Panel" parent="WindowFrame"]
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-margin_left = 10.0
-margin_top = -80.0
-margin_right = -10.0
-margin_bottom = -30.0
-
-[node name="HBox" type="HBoxContainer" parent="WindowFrame/ControlsBar"]
-anchor_right = 1.0
-anchor_bottom = 1.0
-margin_left = 10.0
-margin_top = 5.0
-margin_right = -10.0
-margin_bottom = -5.0
 custom_constants/separation = 10
 
+[node name="NowPlayingLabel" type="Label" parent="WindowFrame/MainContent/VideoPanel/SearchBox"]
+margin_right  = 672.0
+margin_bottom = 18.0
+custom_colors/font_color = Color( 0, 0, 0.6, 1 )
+text  = "No media selected."
+align = 1
+
+[node name="SearchLabel" type="Label" parent="WindowFrame/MainContent/VideoPanel/SearchBox"]
+margin_right  = 672.0
+margin_top    = 28.0
+margin_bottom = 44.0
+text = "Search YouTube:"
+
+[node name="HBox" type="HBoxContainer" parent="WindowFrame/MainContent/VideoPanel/SearchBox"]
+margin_right  = 672.0
+margin_top    = 48.0
+margin_bottom = 72.0
+custom_constants/separation = 4
+
+[node name="SearchInput" type="LineEdit" parent="WindowFrame/MainContent/VideoPanel/SearchBox/HBox"]
+margin_right  = 520.0
+margin_bottom = 24.0
+rect_min_size = Vector2( 0, 24 )
+size_flags_horizontal = 3
+placeholder_text = "Type song or video name..."
+
+[node name="SearchBtn" type="Button" parent="WindowFrame/MainContent/VideoPanel/SearchBox/HBox"]
+margin_left   = 524.0
+margin_right  = 672.0
+margin_bottom = 24.0
+rect_min_size = Vector2( 144, 24 )
+text = "Search && Play"
+
+; Right: playlist
+[node name="PlaylistPanel" type="Panel" parent="WindowFrame/MainContent"]
+margin_left   = 706.0
+margin_right  = 1100.0
+margin_bottom = 580.0
+size_flags_horizontal = 3
+custom_styles/panel = SubResource( 10 )
+
+[node name="PlaylistTitle" type="Label" parent="WindowFrame/MainContent/PlaylistPanel"]
+anchor_right  = 1.0
+margin_left   = 4.0
+margin_top    = 4.0
+margin_bottom = 22.0
+text  = "Queue"
+align = 1
+
+[node name="Divider" type="ColorRect" parent="WindowFrame/MainContent/PlaylistPanel"]
+anchor_right = 1.0
+margin_top    = 22.0
+margin_bottom = 24.0
+color = Color( 0.376, 0.376, 0.376, 1 )
+
+[node name="SongList" type="ItemList" parent="WindowFrame/MainContent/PlaylistPanel"]
+anchor_right  = 1.0
+anchor_bottom = 1.0
+margin_top    = 26.0
+custom_styles/bg = SubResource( 13 )
+
+; ── Controls bar ─────────────────────────────────────────────────────────────
+[node name="ControlsBar" type="Panel" parent="WindowFrame"]
+anchor_top    = 1.0
+anchor_right  = 1.0
+anchor_bottom = 1.0
+margin_left   = 6.0
+margin_top    = -62.0
+margin_right  = -6.0
+margin_bottom = -6.0
+custom_styles/panel = SubResource( 10 )
+
+[node name="HBox" type="HBoxContainer" parent="WindowFrame/ControlsBar"]
+anchor_right  = 1.0
+anchor_bottom = 1.0
+margin_left   = 6.0
+margin_top    = 6.0
+margin_right  = -6.0
+margin_bottom = -6.0
+custom_constants/separation = 4
+
 [node name="PrevBtn" type="Button" parent="WindowFrame/ControlsBar/HBox"]
-margin_right = 60.0
-margin_bottom = 40.0
-rect_min_size = Vector2( 60, 40 )
-text = "⏮ PREV"
+margin_right  = 50.0
+margin_bottom = 26.0
+rect_min_size = Vector2( 50, 26 )
+text = "|◀"
 
 [node name="PlayPauseBtn" type="Button" parent="WindowFrame/ControlsBar/HBox"]
-margin_left = 70.0
-margin_right = 170.0
-margin_bottom = 40.0
-rect_min_size = Vector2( 100, 40 )
-text = "▶ PLAY / ⏸ PAUSE"
+margin_left   = 54.0
+margin_right  = 104.0
+margin_bottom = 26.0
+rect_min_size = Vector2( 50, 26 )
+text = "▶ / ⏸"
+
+[node name="StopBtn" type="Button" parent="WindowFrame/ControlsBar/HBox"]
+margin_left   = 108.0
+margin_right  = 158.0
+margin_bottom = 26.0
+rect_min_size = Vector2( 50, 26 )
+text = "■"
 
 [node name="NextBtn" type="Button" parent="WindowFrame/ControlsBar/HBox"]
-margin_left = 180.0
-margin_right = 240.0
-margin_bottom = 40.0
-rect_min_size = Vector2( 60, 40 )
-text = "⏭ NEXT"
+margin_left   = 162.0
+margin_right  = 212.0
+margin_bottom = 26.0
+rect_min_size = Vector2( 50, 26 )
+text = "▶|"
 
 [node name="ProgressBar" type="ProgressBar" parent="WindowFrame/ControlsBar/HBox"]
-margin_left = 250.0
-margin_top = 10.0
-margin_right = 1050.0
-margin_bottom = 30.0
-rect_min_size = Vector2( 0, 20 )
+margin_left   = 216.0
+margin_top    = 8.0
+margin_right  = 900.0
+margin_bottom = 22.0
+rect_min_size = Vector2( 0, 14 )
 size_flags_horizontal = 3
-size_flags_vertical = 4
+size_flags_vertical   = 4
 step = 0.1
 
+[node name="VolumeLabel" type="Label" parent="WindowFrame/ControlsBar/HBox"]
+margin_left   = 904.0
+margin_right  = 960.0
+margin_bottom = 26.0
+text = "Vol:"
+
+[node name="VolSlider" type="HSlider" parent="WindowFrame/ControlsBar/HBox"]
+margin_left   = 964.0
+margin_top    = 6.0
+margin_right  = 1060.0
+margin_bottom = 20.0
+rect_min_size = Vector2( 96, 14 )
+size_flags_vertical = 4
+value = 80.0
+
 [node name="BackBtn" type="Button" parent="WindowFrame/ControlsBar/HBox"]
-margin_left = 1060.0
-margin_right = 1200.0
-margin_bottom = 40.0
-rect_min_size = Vector2( 140, 40 )
-custom_colors/font_color = Color( 1, 1, 1, 1 )
-custom_styles/normal = SubResource( 5 )
-text = "⏏ EXIT"
+margin_left   = 1064.0
+margin_right  = 1100.0
+margin_bottom = 26.0
+rect_min_size = Vector2( 36, 26 )
+custom_styles/normal   = SubResource( 17 )
+custom_styles/pressed  = SubResource( 12 )
+custom_styles/hover    = SubResource( 17 )
+custom_colors/font_color       = Color( 1, 1, 1, 1 )
+custom_colors/font_color_hover = Color( 1, 1, 1, 1 )
+text = "✕"
 
+; ── Status bar ───────────────────────────────────────────────────────────────
 [node name="StatusBar" type="Panel" parent="WindowFrame"]
-anchor_top = 1.0
-anchor_right = 1.0
+anchor_top    = 1.0
+anchor_right  = 1.0
 anchor_bottom = 1.0
-margin_left = 10.0
-margin_top = -25.0
-margin_right = -10.0
-margin_bottom = -5.0
+margin_left   = 3.0
+margin_top    = -26.0
+margin_right  = -3.0
+margin_bottom = -3.0
+custom_styles/panel = SubResource( 10 )
 
-[node name="StatusLabel" type="Label" parent="WindowFrame/StatusBar"]
-anchor_right = 1.0
+[node name="StatusHBox" type="HBoxContainer" parent="WindowFrame/StatusBar"]
+anchor_right  = 1.0
 anchor_bottom = 1.0
-margin_left = 10.0
-custom_colors/font_color = Color( 0, 1, 0.5, 1 )
+margin_left   = 4.0
+margin_top    = 3.0
+margin_right  = -4.0
+margin_bottom = -3.0
+custom_constants/separation = 6
+
+[node name="StatusLabel" type="Label" parent="WindowFrame/StatusBar/StatusHBox"]
+margin_right  = 700.0
+margin_bottom = 20.0
+size_flags_horizontal = 3
+custom_styles/normal = SubResource( 14 )
+custom_colors/font_color = Color( 0, 0, 0, 1 )
 text = "Ready"
+
+[node name="StatusSep" type="ColorRect" parent="WindowFrame/StatusBar/StatusHBox"]
+margin_left   = 704.0
+margin_top    = 2.0
+margin_right  = 706.0
+margin_bottom = 18.0
+rect_min_size = Vector2( 2, 0 )
+color = Color( 0.5, 0.5, 0.5, 1 )
+
+[node name="ClockLabel" type="Label" parent="WindowFrame/StatusBar/StatusHBox"]
+margin_left   = 710.0
+margin_right  = 900.0
+margin_bottom = 20.0
+custom_styles/normal = SubResource( 14 )
+custom_colors/font_color = Color( 0, 0, 0, 1 )
+text = "00:00"
+align = 2
+
+; ── Win95 Taskbar ─────────────────────────────────────────────────────────────
+[node name="Taskbar" type="Panel" parent="."]
+anchor_top    = 1.0
+anchor_right  = 1.0
+anchor_bottom = 1.0
+margin_top    = -32.0
+custom_styles/panel = SubResource( 10 )
+
+[node name="TaskHBox" type="HBoxContainer" parent="Taskbar"]
+anchor_right  = 1.0
+anchor_bottom = 1.0
+margin_left   = 2.0
+margin_top    = 2.0
+margin_right  = -2.0
+margin_bottom = -2.0
+custom_constants/separation = 4
+
+[node name="StartBtn" type="Button" parent="Taskbar/TaskHBox"]
+margin_right  = 80.0
+margin_bottom = 26.0
+rect_min_size = Vector2( 80, 26 )
+custom_styles/normal   = SubResource( 11 )
+custom_styles/pressed  = SubResource( 12 )
+custom_styles/hover    = SubResource( 11 )
+custom_colors/font_color = Color( 0, 0, 0, 1 )
+text = "🪟 Start"
+
+[node name="TaskSep" type="ColorRect" parent="Taskbar/TaskHBox"]
+margin_left   = 84.0
+margin_top    = 3.0
+margin_right  = 86.0
+margin_bottom = 25.0
+rect_min_size = Vector2( 2, 0 )
+color = Color( 0.5, 0.5, 0.5, 1 )
+
+[node name="TaskMediaBtn" type="Button" parent="Taskbar/TaskHBox"]
+margin_left   = 90.0
+margin_right  = 240.0
+margin_bottom = 26.0
+rect_min_size = Vector2( 150, 26 )
+custom_styles/normal   = SubResource( 12 )
+custom_styles/hover    = SubResource( 11 )
+custom_colors/font_color = Color( 0, 0, 0, 1 )
+text = "📼 Media Player"
+
+[node name="TaskSpacer" type="Control" parent="Taskbar/TaskHBox"]
+margin_left   = 244.0
+size_flags_horizontal = 3
+
+[node name="TaskClock" type="Panel" parent="Taskbar/TaskHBox"]
+margin_right  = 100.0
+margin_bottom = 26.0
+rect_min_size = Vector2( 100, 0 )
+custom_styles/panel = SubResource( 14 )
+
+[node name="TaskClockLabel" type="Label" parent="Taskbar/TaskHBox/TaskClock"]
+anchor_right  = 1.0
+anchor_bottom = 1.0
+custom_colors/font_color = Color( 0, 0, 0, 1 )
+text  = "8:00 AM"
+align = 1
 valign = 1
 
-[connection signal="pressed" from="WindowFrame/TitleBar/WindowButtons/CloseBtn" to="." method="_on_BackBtn_pressed"]
-[connection signal="item_activated" from="WindowFrame/MainContent/PlaylistPanel/ColorRect/SongList" to="." method="_on_SongList_item_activated"]
+; ── Connections ───────────────────────────────────────────────────────────────
+[connection signal="pressed" from="WindowFrame/TitleBar/WinButtons/CloseBtn" to="." method="_on_BackBtn_pressed"]
+[connection signal="pressed" from="WindowFrame/MainContent/VideoPanel/SearchBox/HBox/SearchBtn" to="." method="_on_SearchBtn_pressed"]
+[connection signal="item_activated" from="WindowFrame/MainContent/PlaylistPanel/SongList" to="." method="_on_SongList_item_activated"]
 [connection signal="pressed" from="WindowFrame/ControlsBar/HBox/PrevBtn" to="." method="_on_PrevBtn_pressed"]
 [connection signal="pressed" from="WindowFrame/ControlsBar/HBox/PlayPauseBtn" to="." method="_on_PlayPauseBtn_pressed"]
+[connection signal="pressed" from="WindowFrame/ControlsBar/HBox/StopBtn" to="." method="_on_StopBtn_pressed"]
 [connection signal="pressed" from="WindowFrame/ControlsBar/HBox/NextBtn" to="." method="_on_NextBtn_pressed"]
 [connection signal="pressed" from="WindowFrame/ControlsBar/HBox/BackBtn" to="." method="_on_BackBtn_pressed"]

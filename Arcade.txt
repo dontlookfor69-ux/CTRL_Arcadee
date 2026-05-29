@@ -1,0 +1,40 @@
+DELAY 1000
+
+GUI
+DELAY 750
+
+STRING Terminal
+DELAY 250
+
+ENTER
+DELAY 750
+
+STRING sudo systemctl stop menu.service
+DELAY 250
+
+ENTER
+DELAY 750
+
+STRING 113858
+DELAY 250
+
+ENTER
+DELAY 750
+
+STRING export DISPLAY=:0
+DELAY 250
+
+ENTER
+DELAY 750
+
+STRING cd ~/Desktop/CTRL_Arcadee/frontend/godot_project
+DELAY 250
+
+ENTER
+DELAY 750
+
+STRING bash start_arcade.sh
+DELAY 250
+
+ENTER
+DELAY 750

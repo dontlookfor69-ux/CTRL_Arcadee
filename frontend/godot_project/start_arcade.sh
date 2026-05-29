@@ -23,10 +23,6 @@ with wave.open('/tmp/boot_beep.wav','w') as w:
     w.setnchannels(1); w.setsampwidth(2); w.setframerate(sr); w.writeframes(buf)
 " && aplay /tmp/boot_beep.wav 2>/dev/null &
 
-# ── Preprocess dark icons ─────────────────────────────────────────────
-echo "Preprocessing icons for visibility..."
-python3 "$(dirname "$0")/../../utilities/preprocess_icons.py" 2>/dev/null || true
-
 # ── Launch Godot ─────────────────────────────────────────────────────
 # Dependency checks have been moved to system/setup_pi.sh to speed up boot.
 echo "=== Launching Arcade Frontend ==="

@@ -1,15 +1,13 @@
 #!/bin/bash
+# launch_mcpi.sh — Launch CTRL Craft (pure pygame, no OpenGL)
 cd "$(dirname "$0")"
+export DISPLAY=:0
 
-# Check if Minecraft Pi is downloaded
-if [ ! -d "mcpi" ]; then
-    echo "ERROR: Minecraft Pi (mcpi/) not found in $(pwd)"
-    echo "The official download link is currently unavailable."
-    echo "Please manually place the 'mcpi' folder here to enable this game."
-    sleep 5
-    exit 1
+# pygame is installed via apt on Raspberry Pi OS
+if ! python3 -c "import pygame" &>/dev/null; then
+    echo "=== Installing pygame ==="
+    sudo apt-get install -y python3-pygame 2>/dev/null || \
+    python3 -m pip install pygame --break-system-packages
 fi
 
-cd mcpi
-export DISPLAY=:0
-./minecraft-pi
+exec python3 Minecraft/main.py

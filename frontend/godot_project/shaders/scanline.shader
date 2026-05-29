@@ -28,7 +28,7 @@ void fragment() {
     col.rgb += noise * 0.04;
 
     // Horizontal sync jitter (subtle)
-    float jitter = sin(TIME * 47.0 + SCREEN_UV.y * 300.0) * 0.0005;
+    float jitter = sin(TIME * 47.0 + SCREEN_UV.y * 300.0) * 0.001;
     vec4 jitter_col = texture(SCREEN_TEXTURE, SCREEN_UV + vec2(jitter, 0.0));
     col.rgb = mix(col.rgb, jitter_col.rgb, 0.3);
     

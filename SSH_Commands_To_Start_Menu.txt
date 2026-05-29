@@ -20,17 +20,11 @@ sudo systemctl enable menu.service
 sudo systemctl start menu.service
 ```
 
-# Stop the background service
 sudo systemctl stop menu.service
-
-# Tell the terminal to output to the TV/Monitor
 export DISPLAY=:0
-
-# Go to the project folder
 cd ~/Desktop/CTRL_Arcadee/frontend/godot_project
-
-# Run the Godot frontend script
 bash start_arcade.sh
+wsl -d kali-linux python3 -m pip install openai-whisper --break-system-packages
 
 
 ---
