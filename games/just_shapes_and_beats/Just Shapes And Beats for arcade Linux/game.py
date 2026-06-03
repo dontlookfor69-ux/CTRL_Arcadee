@@ -22,7 +22,9 @@ def save_lyric_offsets(offsets):
         json.dump(offsets, f)
 
 # Initialize Pygame
+# (Removed low-latency buffer constraint as it silently breaks WSL audio backends)
 pygame.init()
+pygame.mixer.pre_init(44100, -16, 2, 512)
 pygame.mixer.init()
 pygame.mouse.set_visible(False)
 
@@ -116,10 +118,8 @@ def parse_lrc(filepath):
     return lyrics
 
 SONGS = {
-    "Cool Friends": {"path": os.path.join(MEDIA_PATH, "Cool Friends.mp3"), "img": os.path.join(MEDIA_PATH, "Cool Friends.png"), "bpm": 128, "artist": "Silva Hound", "diff": 8},
-    "Annihilate": {"path": os.path.join(MEDIA_PATH, "Annihilate.mp3"), "img": os.path.join(MEDIA_PATH, "Annihilate.jpeg"), "bpm": 140, "artist": "Destroid", "diff": 14},
-    "CLOSE TO ME": {"path": os.path.join(MEDIA_PATH, "CLOSE TO ME.mp3"), "img": os.path.join(MEDIA_PATH, "Close To Me.jpg"), "bpm": 130, "artist": "Sabrepulse", "diff": 11},
-    "Final Boss": {"path": os.path.join(MEDIA_PATH, "Final Boss.mp3"), "img": os.path.join(MEDIA_PATH, "Final Boss.png"), "bpm": 150, "artist": "Nitro Fun", "diff": 15},
+    "Annihilate": {"path": os.path.join(MEDIA_PATH, "Annihilate.ogg"), "img": os.path.join(MEDIA_PATH, "Annihilate.jpeg"), "bpm": 140, "artist": "Destroid", "diff": 14},
+    "CLOSE TO ME": {"path": os.path.join(MEDIA_PATH, "CLOSE TO ME.ogg"), "img": os.path.join(MEDIA_PATH, "Close To Me.jpg"), "bpm": 130, "artist": "Sabrepulse", "diff": 11},
     "Never Gonna Give You Up": {"path": os.path.join(MEDIA_PATH, "Never Gonna Give You Up.ogg"), "img": os.path.join(MEDIA_PATH, "Never Gonna Give You Up.png"), "bpm": 113, "artist": "Rick Astley", "diff": 5}
 }
 
@@ -188,6 +188,7 @@ def get_obs_surf(type, size, color, alpha):
     return _obs_cache[key]
 # --- Global State ---
 class GameState:
+    SHATTER_DEATH = 9
     MENU = "menu"
     SKINS = "skins"
     LEVEL_SELECT = "level_select"
@@ -200,6 +201,7 @@ class GameState:
     WARNING = "warning"
     LEVEL_MAKER = "level_maker"
     LEVEL_CONFIG = "level_config"
+    DIFFICULTY_SELECT = "difficulty_select"
 
 class App:
     def __init__(self):
@@ -233,6 +235,15 @@ class App:
         self.level_maker_anim = 0.0
         self.delete_mode = False
         self.delete_confirm = None
+        self.custom_bpms = {}
+        
+        try:
+            avg_file = os.path.join(os.path.dirname(__file__), "CustomLevels", "average_gen_time.txt")
+            if os.path.exists(avg_file):
+                with open(avg_file, "r") as f:
+                    times = [float(x) for x in f.read().split() if x]
+                    if times: self.avg_gen_time = sum(times) / len(times)
+        except: pass
 
         # Animation state
         self.scroll_y = 0
@@ -270,9 +281,9 @@ class App:
         
         # Settings state variables
         self.text_glitches = True
-        self.hq_processing = False
+        self.hq_processing = True
         self.settings_idx = 0
-        self.settings_options = [f"Music Volume: {int(self.global_volume * 100)}%", f"Text Glitches: {'ON' if self.text_glitches else 'OFF'}", f"HQ Processing (Laptop): {'ON' if self.hq_processing else 'OFF'}", "Back"]
+        self.settings_options = [f"Music Volume: {int(self.global_volume * 100)}%", f"Text Glitches: {'ON' if self.text_glitches else 'OFF'}", "Back"]
 
         if not pygame.joystick.get_init():
             pygame.joystick.init()
@@ -320,14 +331,21 @@ class Player:
         self.shape = shape
         self.size = 25
         self.speed = 11
-        self.dash_dist = 140
+        self.dash_dist = 200
         self.dash_cooldown = 0
         self.dash_timer = 0
         self.dash_energy = 100
         self.max_dash_energy = 100
         self.invuln_timer = 0
         self.is_dashing = False
+        self.dash_target_x = 0
+        self.dash_target_y = 0
+        self.dash_start_x = 0
+        self.dash_start_y = 0
         self.trail = []
+        self.dash_particles = []
+        self.shield_active = False
+        self.shield_cooldown = 0
         self.reset()
 
     def reset(self):
@@ -339,9 +357,13 @@ class Player:
         self.invuln_timer = 0
         self.is_dashing = False
         self.trail = []
+        self.dash_particles = []
+        self.shield_active = False
+        self.shield_cooldown = 0
 
     def update(self, dt, app):
         if self.dash_cooldown > 0: self.dash_cooldown -= dt
+        if self.shield_cooldown > 0: self.shield_cooldown -= dt
         if self.invuln_timer > 0: self.invuln_timer -= dt
         if self.dash_energy < self.max_dash_energy:
             self.dash_energy = min(self.max_dash_energy, self.dash_energy + 0.05 * dt)
@@ -349,12 +371,14 @@ class Player:
         keys = pygame.key.get_pressed()
         dx, dy = 0, 0
         
+        shield_key = False
         if self.id == 1:
             if keys[pygame.K_w]: dy -= 1
             if keys[pygame.K_s]: dy += 1
             if keys[pygame.K_a]: dx -= 1
             if keys[pygame.K_d]: dx += 1
             dash_key = keys[pygame.K_SPACE] or keys[pygame.K_LSHIFT]
+            shield_key = keys[pygame.K_q] or keys[pygame.K_e]
             
             if hasattr(app, 'joysticks') and len(app.joysticks) > 0:
                 j = app.joysticks[0]
@@ -363,19 +387,15 @@ class Player:
                     elif j.get_axis(0) > 0.3: dx += 1
                     if j.get_axis(1) < -0.3: dy -= 1
                     elif j.get_axis(1) > 0.3: dy += 1
-                if j.get_numhats() > 0:
-                    hx, hy = j.get_hat(0)
-                    if hx < 0: dx -= 1
-                    elif hx > 0: dx += 1
-                    if hy > 0: dy -= 1
-                    elif hy < 0: dy += 1
                 if j.get_button(0) or j.get_button(1) or j.get_button(9): dash_key = True
+                if j.get_button(2) or j.get_button(3): shield_key = True
         else:
             if keys[pygame.K_UP]: dy -= 1
             if keys[pygame.K_DOWN]: dy += 1
             if keys[pygame.K_LEFT]: dx -= 1
             if keys[pygame.K_RIGHT]: dx += 1
             dash_key = keys[pygame.K_RETURN] or keys[pygame.K_RSHIFT]
+            shield_key = keys[pygame.K_RCTRL] or keys[pygame.K_RALT]
             
             if hasattr(app, 'joysticks') and len(app.joysticks) > 1:
                 j = app.joysticks[1]
@@ -384,18 +404,34 @@ class Player:
                     elif j.get_axis(0) > 0.3: dx += 1
                     if j.get_axis(1) < -0.3: dy -= 1
                     elif j.get_axis(1) > 0.3: dy += 1
-                if j.get_numhats() > 0:
-                    hx, hy = j.get_hat(0)
-                    if hx < 0: dx -= 1
-                    elif hx > 0: dx += 1
-                    if hy > 0: dy -= 1
-                    elif hy < 0: dy += 1
                 if j.get_button(0) or j.get_button(1) or j.get_button(9): dash_key = True
+                if j.get_button(2) or j.get_button(3): shield_key = True
+
+        if shield_key and self.shield_cooldown <= 0 and not self.shield_active and self.dash_energy >= 50:
+            self.shield_active = True
+            self.dash_energy -= 50
+            self.shield_cooldown = 5000 # 5 seconds cooldown before you can shield again
 
         if self.is_dashing:
             self.dash_timer -= dt
-            if self.dash_timer <= 0: self.is_dashing = False
-            self.trail.append({'x': self.x, 'y': self.y, 'alpha': 150})
+            
+            # Smooth cubic ease-out
+            t = max(0, min(1, 1.0 - (self.dash_timer / 200.0)))
+            ease = 1 - (1 - t) ** 3
+            
+            self.x = self.dash_start_x + (self.dash_target_x - self.dash_start_x) * ease
+            self.y = self.dash_start_y + (self.dash_target_y - self.dash_start_y) * ease
+            
+            dx = self.dash_target_x - self.dash_start_x
+            dy = self.dash_target_y - self.dash_start_y
+            angle = math.degrees(math.atan2(-dy, dx))
+            # Trail effect (shrinking comet tail instead of particles)
+            self.trail.append({'x': self.x, 'y': self.y, 'alpha': 200, 'angle': angle, 'size': self.size})
+            
+            if self.dash_timer <= 0: 
+                self.is_dashing = False
+                self.x = self.dash_target_x
+                self.y = self.dash_target_y
         else:
             if dx != 0 or dy != 0:
                 mag = math.sqrt(dx*dx + dy*dy)
@@ -408,30 +444,71 @@ class Player:
         self.x = max(self.size, min(SCREEN_WIDTH - self.size, self.x))
         self.y = max(self.size, min(SCREEN_HEIGHT - self.size, self.y))
 
-        for t in self.trail: t['alpha'] -= 10
+        for t in self.trail: t['alpha'] -= 15
         self.trail = [t for t in self.trail if t['alpha'] > 0]
+        
+        for p in self.dash_particles:
+            p['x'] += p['vx']
+            p['y'] += p['vy']
+            p['life'] -= 15
+        self.dash_particles = [p for p in self.dash_particles if p['life'] > 0]
 
     def start_dash(self, dx, dy, app):
         if dx == 0 and dy == 0:
             dx = -1 if self.id == 1 else 1
         mag = math.sqrt(dx*dx + dy*dy)
-        self.x += (dx/mag) * self.dash_dist
-        self.y += (dy/mag) * self.dash_dist
+        
+        self.dash_start_x = self.x
+        self.dash_start_y = self.y
+        self.dash_target_x = self.x + (dx/mag) * self.dash_dist
+        self.dash_target_y = self.y + (dy/mag) * self.dash_dist
+        
+        # Clamp target
+        self.dash_target_x = max(self.size, min(SCREEN_WIDTH - self.size, self.dash_target_x))
+        self.dash_target_y = max(self.size, min(SCREEN_HEIGHT - self.size, self.dash_target_y))
+        
         self.is_dashing = True
         self.dash_energy -= 35
-        self.dash_timer = 150
-        self.dash_cooldown = 100
-        self.invuln_timer = 250
-        app.shake_amount = 8
+        self.dash_timer = 200
+        self.dash_cooldown = 150
+        self.invuln_timer = 300
+        # Remove dash burst particles
+        app.shake_amount = 12
 
     def draw(self, surface):
         color = SHAPE_COLORS[self.shape]
+        
+        # Draw Dash Particles (Stretching Sparks)
+        for p in self.dash_particles:
+            alpha = max(0, min(255, int(p['life'])))
+            c = p.get('color', color)
         for t in self.trail:
-            draw_shape(surface, self.shape, color, (t['x'], t['y']), self.size, t['alpha'])
+            sz = max(1, int(t.get('size', self.size) * (t['alpha']/200.0)))
+            p_surf = get_shape_surf(self.shape, sz, SHAPE_COLORS[self.shape], int(t['alpha']))
+            if t['angle'] != 0:
+                p_surf = pygame.transform.rotate(p_surf, t['angle'])
+            r = p_surf.get_rect(center=(t['x'], t['y']))
+            surface.blit(p_surf, r.topleft)
+            
         if self.invuln_timer > 0 and (pygame.time.get_ticks() // 50) % 2 == 0:
-            return
-        draw_shape(surface, self.shape, color, (self.x, self.y), self.size)
-
+            pass
+        else:
+            if self.is_dashing:
+                dx = self.dash_target_x - self.dash_start_x
+                dy = self.dash_target_y - self.dash_start_y
+                angle = math.degrees(math.atan2(-dy, dx))
+                surf = get_shape_surf(self.shape, self.size, color, 255)
+                surf = pygame.transform.scale(surf, (int(self.size*2), int(self.size*0.3)))
+                surf = pygame.transform.rotate(surf, angle)
+                surface.blit(surf, (self.x - surf.get_width()//2, self.y - surf.get_height()//2))
+            else:
+                draw_shape(surface, self.shape, color, (self.x, self.y), self.size)
+            
+        if self.shield_active:
+            pulse = abs(math.sin(pygame.time.get_ticks() * 0.01)) * 5
+            shield_surf = pygame.Surface((self.size + 30 + pulse*2, self.size + 30 + pulse*2), pygame.SRCALPHA)
+            pygame.draw.circle(shield_surf, (0, 255, 255, 150), (shield_surf.get_width()//2, shield_surf.get_height()//2), self.size//2 + 10 + pulse, 3)
+            surface.blit(shield_surf, (self.x - shield_surf.get_width()//2, self.y - shield_surf.get_height()//2))
 class Obstacle:
     def __init__(self, x, y, size, vx, vy, type='rect', warning=1000, damage=10, alpha=255, rot_speed=None, lifespan=None):
         self.x = x
@@ -513,10 +590,22 @@ class Obstacle:
                 else:
                     surface.blit(obs_surf, (self.x - s/2, self.y - s/2))
 
-    def check_collision(self, player):
+    def check_collision(self, player, app):
         if not self.active or player.invuln_timer > 0 or self.damage == 0: return False
+        
+        s = int(self.size)
         dist = math.sqrt((self.x - player.x)**2 + (self.y - player.y)**2)
-        return dist < (self.size + player.size) / 2
+        hit_radius = player.size * 0.4
+        
+        if self.type == 'circle':
+            return dist < (s * 0.45) + hit_radius
+        elif self.type in ['rect', 'square', 'octagon'] and self.rotation % 360 == 0:
+            return (self.x - s/2 < player.x + hit_radius and 
+                    self.x + s/2 > player.x - hit_radius and 
+                    self.y - s/2 < player.y + hit_radius and 
+                    self.y + s/2 > player.y - hit_radius)
+        else:
+            return dist < (s * 0.40) + hit_radius
 
 # --- Levels ---
 class Level:
@@ -524,9 +613,19 @@ class Level:
         self.name = name
         self.app = app
         self.obstacles = []
+        self.parallax_stars = [{'x': random.randint(0, SCREEN_WIDTH), 'y': random.randint(0, SCREEN_HEIGHT), 'size': random.uniform(1, 4), 'speed': random.uniform(20, 80), 'color': (random.randint(150, 255), random.randint(150, 255), 255)} for _ in range(50)]
+        self.parallax_grids = [y for y in range(0, SCREEN_HEIGHT, 100)]
         self.elapsed_ms = 0
         self.last_beat_time = 0
-        self.config = SONGS[name]
+        if name in SONGS:
+            self.config = SONGS[name]
+        else:
+            import sys
+            main_mod = sys.modules.get('__main__')
+            if main_mod and hasattr(main_mod, 'SONGS') and name in main_mod.SONGS:
+                self.config = main_mod.SONGS[name]
+            else:
+                self.config = {}
         self.bpm = self.config.get('bpm', 120)
         self.app.beat_interval = (60 / self.bpm) * 1000
         self.finished = False
@@ -551,28 +650,92 @@ class Level:
 
     def update(self, dt):
         self.elapsed_ms += dt
+        
+        # Audio Sync Fix: Snap to actual music playback position to prevent drift
+        if pygame.mixer.music.get_busy():
+            pos = pygame.mixer.music.get_pos()
+            if not hasattr(self, 'last_mixer_pos'): self.last_mixer_pos = -1
+            if pos > 0 and pos != self.last_mixer_pos:
+                if abs(self.elapsed_ms - pos) > 100:
+                    self.elapsed_ms = pos
+                self.last_mixer_pos = pos
+                
         self.spawn_patterns(self.elapsed_ms)
-        for obs in self.obstacles[:]:
+        alive_obstacles = []
+        for obs in self.obstacles:
             obs.update(dt, self.app)
+            
             if obs.x < -1000 or obs.x > SCREEN_WIDTH + 1000 or obs.y < -1000 or obs.y > SCREEN_HEIGHT + 1000:
-                self.obstacles.remove(obs)
-            elif getattr(obs, 'lifespan', None) is not None and obs.lifespan <= 0:
-                if obs in self.obstacles: self.obstacles.remove(obs)
-            else:
+                continue
+                
+            if getattr(obs, 'lifespan', None) is not None and obs.lifespan <= 0:
+                continue
+                
+            collided = False
+            if self.app.players:
                 for p in self.app.players:
-                    if obs.check_collision(p):
-                        self.app.health -= obs.damage
-                        self.app.shake_amount = 15
-                        p.invuln_timer = 1000
-                        if obs in self.obstacles: self.obstacles.remove(obs)
+                    if obs.check_collision(p, self.app):
+                        if p.shield_active:
+                            p.shield_active = False
+                            p.invuln_timer = 1500
+                            self.app.shake_amount = 10
+                        else:
+                            self.app.health -= obs.damage
+                            self.app.shake_amount = 15
+                            p.invuln_timer = 1000
+                            if self.app.health <= 0:
+                                self.app.shatter_player = p
+                                self.app.shatter_timer = 0
+                                self.app.shatter_particles = []
+                                for i in range(150):
+                                    angle = random.uniform(0, math.pi*2)
+                                    speed = random.uniform(5, 35)
+                                    self.app.shatter_particles.append({
+                                        'x': p.x, 'y': p.y,
+                                        'vx': math.cos(angle)*speed,
+                                        'vy': math.sin(angle)*speed,
+                                        'size': random.uniform(5, 25),
+                                        'rot': random.uniform(0, 360),
+                                        'rot_speed': random.uniform(-30, 30),
+                                        'color': SHAPE_COLORS[p.shape],
+                                        'shape': p.shape
+                                    })
+                        collided = True
+                        break
+            
+            if not collided:
+                alive_obstacles.append(obs)
+                
+        self.obstacles = alive_obstacles
 
     def spawn_patterns(self, elapsed):
-        if self.elapsed_ms - self.last_beat_time > self.app.beat_interval:
-            self.last_beat_time = self.elapsed_ms
-            self.app.shake_amount = 4
-            self.on_beat(elapsed)
+        sync_offset = self.app.lyric_offsets.get(self.name, 0)
+        true_elapsed = self.elapsed_ms - sync_offset
+        
+        if hasattr(self, 'beat_times'):
+            if not hasattr(self, 'beat_idx'): self.beat_idx = 0
+            while self.beat_idx < len(self.beat_times) and true_elapsed >= self.beat_times[self.beat_idx]:
+                self.app.shake_amount = 4
+                self.beat_idx += 1
+                self.on_beat(elapsed)
+        else:
+            if self.elapsed_ms - self.last_beat_time > self.app.beat_interval:
+                self.last_beat_time = self.elapsed_ms
+                self.app.shake_amount = 4
+                self.on_beat(elapsed)
 
     def on_beat(self, elapsed): pass
+
+    def draw_background(self, surface):
+        # Draw Parallax Background
+        for star in self.parallax_stars:
+            pygame.draw.circle(surface, star['color'], (int(star['x']), int(star['y'])), int(star['size']))
+            
+        for y in self.parallax_grids:
+            pygame.draw.line(surface, (30, 10, 50), (0, int(y)), (SCREEN_WIDTH, int(y)), 2)
+            
+        for x in range(0, SCREEN_WIDTH, 100):
+            pygame.draw.line(surface, (30, 10, 50), (x, 0), (x, SCREEN_HEIGHT), 2)
 
     def draw_extra(self, surface): pass
 
@@ -604,6 +767,8 @@ class Level:
             pygame.draw.line(surface, grid_color, (0, y), (SCREEN_WIDTH, y))
 
     def draw_background_lyrics(self, surface):
+        if not self.app.lyric_offsets.get(f"{self.name}_lyrics", True):
+            return
         if not getattr(self, 'lyrics', None) or not self.lyrics:
             return
             
@@ -660,13 +825,13 @@ class Level:
                 if glitch_active:
                     beat_pulse += energy * 0.1
                     
-                font_size = int(70 * beat_pulse)
+                # Use cached text rendering to avoid TTF lag
+                font_size = 70
+                tmp_surf = get_rendered_text(lyric_text, font_size, (255, 255, 255), bold=True)
                 
-                # Check for overflow and scale font down
-                tmp_surf = get_font(font_size).render(lyric_text, True, (255, 255, 255))
-                while tmp_surf.get_width() > SCREEN_WIDTH - 100 and font_size > 20:
-                    font_size -= 4
-                    tmp_surf = get_font(font_size).render(lyric_text, True, (255, 255, 255))
+                base_scale = 1.0
+                if tmp_surf.get_width() > SCREEN_WIDTH - 100:
+                    base_scale = (SCREEN_WIDTH - 100) / tmp_surf.get_width()
                 
                 base_x = SCREEN_WIDTH // 2
                 base_y = SCREEN_HEIGHT // 2  # Moved to the middle of the screen
@@ -680,17 +845,18 @@ class Level:
                 
                 t = time_since_lyric / max(1, duration) # 0.0 to 1.0
                 
-                scale_x, scale_y = 1.0, 1.0
+                scale_x = base_scale * beat_pulse
+                scale_y = base_scale * beat_pulse
                 rot_angle = 0
                 
                 if anim_type == 0: # Calm Pulse
                     pulse_t = (time_since_lyric % 1000) / 1000.0
-                    scale_x = 1.0 + math.sin(pulse_t * math.pi) * 0.02
-                    scale_y = 1.0 + math.cos(pulse_t * math.pi) * 0.02
+                    scale_x *= 1.0 + math.sin(pulse_t * math.pi) * 0.02
+                    scale_y *= 1.0 + math.cos(pulse_t * math.pi) * 0.02
                 elif anim_type == 1: # Verse Stretch
                     pulse_t = (time_since_lyric % 500) / 500.0
-                    scale_x = 1.0 + math.sin(pulse_t * math.pi) * 0.05
-                    scale_y = 1.0 + math.cos(pulse_t * math.pi) * 0.05
+                    scale_x *= 1.0 + math.sin(pulse_t * math.pi) * 0.05
+                    scale_y *= 1.0 + math.cos(pulse_t * math.pi) * 0.05
                 elif anim_type == 2: # Pre-Chorus Tense (glitchy)
                     if time_since_lyric % 150 < 75:
                         glitch_active = True
@@ -698,12 +864,12 @@ class Level:
                         base_y += random.randint(-5, 5)
                 elif anim_type == 3: # Chorus Slam
                     if t < 0.05:
-                        scale_x = 1.5 - (t / 0.05) * 0.5
-                        scale_y = 1.5 - (t / 0.05) * 0.5
+                        scale_x *= 1.5 - (t / 0.05) * 0.5
+                        scale_y *= 1.5 - (t / 0.05) * 0.5
                     else:
                         pulse_t = (time_since_lyric % 250) / 250.0
-                        scale_x = 1.0 + math.sin(pulse_t * math.pi) * 0.1
-                        scale_y = 1.0 + math.cos(pulse_t * math.pi) * 0.1
+                        scale_x *= 1.0 + math.sin(pulse_t * math.pi) * 0.1
+                        scale_y *= 1.0 + math.cos(pulse_t * math.pi) * 0.1
                 
                 if glitch_active:
                     glitch_dist = int(5 * energy)
@@ -749,88 +915,6 @@ class Level:
                     
                     rect = txt_surf.get_rect(center=(base_x + ox, base_y + oy))
                     surface.blit(txt_surf, rect.topleft)
-
-class CoolFriendsLevel(Level):
-    def __init__(self, name, app):
-        super().__init__(name, app)
-        self.boss_img_path = SONGS[name]["img"]
-        if os.path.exists(self.boss_img_path):
-            self.boss_img = pygame.image.load(self.boss_img_path).convert_alpha()
-        else:
-            self.boss_img = pygame.Surface((200, 200), pygame.SRCALPHA)
-            pygame.draw.circle(self.boss_img, COLORS['pink'], (100, 100), 100) # pink circle boss fallback
-        self.boss_img = pygame.transform.smoothscale(self.boss_img, (200, 200))
-        self.boss_x = SCREEN_WIDTH // 2
-        self.boss_y = SCREEN_HEIGHT // 2
-        self.boss_target_x = self.boss_x
-        self.boss_target_y = self.boss_y
-        self.attack_mode = 0
-        self.last_attack_change = 0
-        
-        # Red smiley tint setup
-        self.tint = pygame.Surface(self.boss_img.get_size(), pygame.SRCALPHA)
-        self.tint.fill((255, 0, 0, 100)) # subtle red tint
-
-    def update(self, dt):
-        super().update(dt)
-        self.boss_x += (self.boss_target_x - self.boss_x) * 0.05
-        self.boss_y += (self.boss_target_y - self.boss_y) * 0.05
-
-    def on_beat(self, elapsed):
-        sec = elapsed / 1000.0
-        level_progress = min(1.0, elapsed / 180000.0)
-
-        if sec - self.last_attack_change > max(1.5, 4.0 - level_progress * 2.5):
-            self.attack_mode = (self.attack_mode + 1) % 4
-            self.last_attack_change = sec
-            self.boss_x = random.randint(200, SCREEN_WIDTH - 200) # Teleport instantly on beat!
-            self.boss_y = random.randint(200, SCREEN_HEIGHT - 200)
-            self.boss_target_x = self.boss_x
-            self.boss_target_y = self.boss_y
-            self.app.shake_amount = 15 + int(10 * level_progress)
-
-        intensity_mult = 1 + int(level_progress * 1.5)
-
-        if self.attack_mode == 0:
-            count = 8 * intensity_mult
-            for i in range(count):
-                angle = i * (math.pi / (count / 2.0)) + sec
-                speed = 5 + 3 * level_progress
-                self.obstacles.append(Obstacle(self.boss_x, self.boss_y, 40, math.cos(angle)*speed, math.sin(angle)*speed, 'circle', max(100, 500 - int(level_progress*300))))
-        elif self.attack_mode == 1:
-            for _ in range(intensity_mult):
-                angle = sec * 5 + random.uniform(0, math.pi*2)
-                speed = 8 + 4 * level_progress
-                self.obstacles.append(Obstacle(self.boss_x, self.boss_y, 30, math.cos(angle)*speed, math.sin(angle)*speed, 'circle', 0))
-                self.obstacles.append(Obstacle(self.boss_x, self.boss_y, 30, math.cos(angle + math.pi)*speed, math.sin(angle + math.pi)*speed, 'circle', 0))
-        elif self.attack_mode == 2:
-            for _ in range(intensity_mult):
-                self.obstacles.append(Obstacle(random.randint(0, SCREEN_WIDTH), -50, 60, 0, 10 + 5*level_progress, 'rect', 200))
-                self.obstacles.append(Obstacle(random.randint(0, SCREEN_WIDTH), SCREEN_HEIGHT + 50, 60, 0, -10 - 5*level_progress, 'rect', 200))
-        elif self.attack_mode == 3:
-            if self.app.players:
-                for _ in range(intensity_mult):
-                    p = random.choice(self.app.players)
-                    dx = p.x - self.boss_x
-                    dy = p.y - self.boss_y
-                    mag = math.sqrt(dx*dx + dy*dy)
-                    if mag > 0:
-                        speed = 12 + 6 * level_progress
-                        angle_offset = random.uniform(-0.3, 0.3) * level_progress
-                        base_angle = math.atan2(dy, dx) + angle_offset
-                        self.obstacles.append(Obstacle(self.boss_x, self.boss_y, 40, math.cos(base_angle)*speed, math.sin(base_angle)*speed, 'circle', max(50, 300 - int(level_progress*200))))
-
-    def draw_extra(self, surface):
-        pulse = 1.0 + math.sin(self.elapsed_ms * 0.01) * 0.05
-        w, h = int(200 * pulse), int(200 * pulse)
-        scaled_img = pygame.transform.smoothscale(self.boss_img, (w, h))
-        
-        # Apply red tint since user mentioned red smiley
-        tint_scaled = pygame.transform.scale(self.tint, (w, h))
-        scaled_img.blit(tint_scaled, (0, 0), special_flags=pygame.BLEND_RGBA_MULT)
-        
-        rect = scaled_img.get_rect(center=(int(self.boss_x), int(self.boss_y)))
-        surface.blit(scaled_img, rect.topleft)
 
 class AnnihilateLevel(Level):
     def __init__(self, name, app):
@@ -1055,6 +1139,17 @@ class AnnihilateLevel(Level):
         else:
             pass # No beat spawns in final explosion timeline
 
+    def draw_background(self, surface):
+        # Draw Parallax Background
+        for star in self.parallax_stars:
+            pygame.draw.circle(surface, star['color'], (int(star['x']), int(star['y'])), int(star['size']))
+            
+        for y in self.parallax_grids:
+            pygame.draw.line(surface, (30, 10, 50), (0, int(y)), (SCREEN_WIDTH, int(y)), 2)
+            
+        for x in range(0, SCREEN_WIDTH, 100):
+            pygame.draw.line(surface, (30, 10, 50), (x, 0), (x, SCREEN_HEIGHT), 2)
+
     def draw_extra(self, surface):
         elapsed = self.elapsed_ms
 
@@ -1159,6 +1254,17 @@ class CloseToMeLevel(Level):
             self.app.fade_alpha += 3
             if self.app.fade_alpha >= 255: self.app.state = GameState.COMPLETED
 
+    def draw_background(self, surface):
+        # Draw Parallax Background
+        for star in self.parallax_stars:
+            pygame.draw.circle(surface, star['color'], (int(star['x']), int(star['y'])), int(star['size']))
+            
+        for y in self.parallax_grids:
+            pygame.draw.line(surface, (30, 10, 50), (0, int(y)), (SCREEN_WIDTH, int(y)), 2)
+            
+        for x in range(0, SCREEN_WIDTH, 100):
+            pygame.draw.line(surface, (30, 10, 50), (x, 0), (x, SCREEN_HEIGHT), 2)
+
     def draw_extra(self, surface):
         # Draw the actual hands/arms
         for arm in self.arms:
@@ -1171,78 +1277,6 @@ class CloseToMeLevel(Level):
             # Draw "hand"
             hx = arm['side'] - (60 if arm['side'] > 0 else -w)
             pygame.draw.rect(surface, color, (hx - 30, y - 20, 60, 100))
-
-class FinalBossLevel(Level):
-    def __init__(self, name, app):
-        super().__init__(name, app)
-        self.boss_img_path = SONGS[name]["img"]
-        if os.path.exists(self.boss_img_path):
-            self.boss_img = pygame.image.load(self.boss_img_path).convert_alpha()
-        else:
-            self.boss_img = pygame.Surface((200, 200), pygame.SRCALPHA)
-            pygame.draw.polygon(self.boss_img, COLORS['enemy'], [(100, 0), (200, 200), (0, 200)])
-        self.boss_img = pygame.transform.smoothscale(self.boss_img, (300, 300))
-        self.boss_x = SCREEN_WIDTH // 2
-        self.boss_y = 200
-        self.boss_target_x = self.boss_x
-        self.boss_target_y = self.boss_y
-        self.attack_mode = 0
-        self.last_attack_change = 0
-
-    def update(self, dt):
-        super().update(dt)
-        self.boss_x += (self.boss_target_x - self.boss_x) * 0.08
-        self.boss_y += (self.boss_target_y - self.boss_y) * 0.08
-
-    def on_beat(self, elapsed):
-        sec = elapsed / 1000.0
-        level_progress = min(1.0, elapsed / 240000.0)
-
-        change_interval = max(1.0, 3.0 - level_progress * 2.0)
-        if sec - self.last_attack_change > change_interval:
-            self.attack_mode = random.randint(0, 3)
-            self.last_attack_change = sec
-            self.boss_target_x = random.randint(200, SCREEN_WIDTH - 200)
-            self.boss_target_y = random.randint(150, SCREEN_HEIGHT // 2)
-            self.app.shake_amount = 10 + int(20 * level_progress)
-
-        intensity = 1 + int(level_progress * 2)
-
-        if self.attack_mode == 0:
-            count = 12 + int(12 * level_progress)
-            for i in range(count):
-                angle = i * (math.pi / (count/2.0)) + sec
-                speed = 12 + 8 * level_progress
-                self.obstacles.append(Obstacle(self.boss_x, self.boss_y, 45, math.cos(angle)*speed, math.sin(angle)*speed, 'triangle', max(100, 400 - int(level_progress*200))))
-        elif self.attack_mode == 1:
-            for i in range(4 * intensity):
-                self.obstacles.append(Obstacle(random.randint(0, SCREEN_WIDTH), -50, 60, random.uniform(-4, 4), 15 + 10*level_progress, 'triangle', max(50, 200 - int(level_progress*100))))
-        elif self.attack_mode == 2:
-            for _ in range(intensity):
-                y = random.randint(100, SCREEN_HEIGHT - 100)
-                speed = 25 + 15 * level_progress
-                self.obstacles.append(Obstacle(-50, y, 70, speed, 0, 'triangle', max(50, 100 - int(level_progress*50)), rot_speed=15))
-                self.obstacles.append(Obstacle(SCREEN_WIDTH + 50, y + 100, 70, -speed, 0, 'triangle', max(50, 100 - int(level_progress*50)), rot_speed=-15))
-        elif self.attack_mode == 3:
-            if self.app.players:
-                p = random.choice(self.app.players)
-                dx = p.x - self.boss_x
-                dy = p.y - self.boss_y
-                mag = math.sqrt(dx*dx + dy*dy)
-                if mag > 0:
-                    for _ in range(intensity):
-                        for i in range(-2, 3):
-                            angle_offset = i * 0.2 + random.uniform(-0.1, 0.1)*level_progress
-                            base_angle = math.atan2(dy, dx) + angle_offset
-                            speed = 14 + 10 * level_progress
-                            self.obstacles.append(Obstacle(self.boss_x, self.boss_y, 40, math.cos(base_angle)*speed, math.sin(base_angle)*speed, 'triangle', max(50, 200 - int(level_progress*100))))
-
-    def draw_extra(self, surface):
-        pulse = 1.0 + math.sin(self.elapsed_ms * 0.02) * 0.08
-        w, h = int(300 * pulse), int(300 * pulse)
-        scaled_img = pygame.transform.smoothscale(self.boss_img, (w, h))
-        rect = scaled_img.get_rect(center=(int(self.boss_x), int(self.boss_y)))
-        surface.blit(scaled_img, rect.topleft)
 
 class NeverGonnaGiveYouUpLevel(Level):
     def __init__(self, name, app):
@@ -1416,35 +1450,19 @@ class CustomLevel(Level):
         super().draw_background(surface)
         COLORS['pink'] = orig_pink
 
+    def draw_background(self, surface):
+        # Draw Parallax Background
+        for star in self.parallax_stars:
+            pygame.draw.circle(surface, star['color'], (int(star['x']), int(star['y'])), int(star['size']))
+            
+        for y in self.parallax_grids:
+            pygame.draw.line(surface, (30, 10, 50), (0, int(y)), (SCREEN_WIDTH, int(y)), 2)
+            
+        for x in range(0, SCREEN_WIDTH, 100):
+            pygame.draw.line(surface, (30, 10, 50), (x, 0), (x, SCREEN_HEIGHT), 2)
+
     def draw_extra(self, surface):
-        # Boss Entity Logic
-        if getattr(self, 'boss_enabled', False) and hasattr(self, 'rms_curve') and self.rms_curve:
-            idx = int((self.elapsed_ms + self.app.lyric_offsets.get(self.name, 0)) / 100)
-            if idx >= 0 and idx < len(self.rms_curve):
-                energy = self.rms_curve[idx]["energy"]
-                if energy > 0.4:
-                    bx, by = SCREEN_WIDTH//2, SCREEN_HEIGHT//2 - 150
-                    pulse = math.sin(pygame.time.get_ticks() * 0.01) * 20 * energy
-                    b_size = 100 + pulse
-                    
-                    color = COLORS['enemy']
-                    if getattr(self, 'chroma_enabled', False) and hasattr(self, 'chroma_curve') and self.chroma_curve:
-                        c_idx = int((self.elapsed_ms + self.app.lyric_offsets.get(self.name, 0)) / 400)
-                        if c_idx >= 0 and c_idx < len(self.chroma_curve):
-                            pitch = self.chroma_curve[c_idx]["pitch"]
-                            import colorsys
-                            r, g, b = colorsys.hsv_to_rgb(pitch / 11.0, 0.8, 1.0)
-                            color = (int(r*255), int(g*255), int(b*255))
-                            
-                    pts = [(bx, by - b_size), (bx + b_size, by), (bx, by + b_size), (bx - b_size, by)]
-                    pygame.draw.polygon(surface, color, pts)
-                    pygame.draw.polygon(surface, COLORS['white'], pts, 3)
-                    
-                    pygame.draw.circle(surface, COLORS['white'], (int(bx - 20), int(by - 10)), 8)
-                    pygame.draw.circle(surface, COLORS['white'], (int(bx + 20), int(by - 10)), 8)
-                    if energy > 0.6:
-                        pygame.draw.line(surface, COLORS['white'], (bx - 30, by - 25), (bx - 10, by - 15), 3)
-                        pygame.draw.line(surface, COLORS['white'], (bx + 30, by - 25), (bx + 10, by - 15), 3)
+        pass
 
     def on_beat(self, elapsed):
         while self.spawn_idx < len(self.obs_data):
@@ -1458,10 +1476,15 @@ class CustomLevel(Level):
                 if ox == "PLAYER_X":
                     if self.app.players: ox = self.app.players[0].x
                     else: ox = SCREEN_WIDTH//2
+
+                oy = obs.get("y", -50)
+                if oy == "PLAYER_Y":
+                    if self.app.players: oy = self.app.players[0].y
+                    else: oy = SCREEN_HEIGHT//2
                 
                 self.obstacles.append(Obstacle(
                     ox,
-                    obs.get("y", -50),
+                    oy,
                     size,
                     vx,
                     speed,
@@ -1663,7 +1686,6 @@ class UI:
         selected_song = SONGS[selected_name]
         detail_x = SCREEN_WIDTH - 650
         
-        # Large Title and Artist
         font_sz = 80
         disp_name = selected_name.upper() if selected_name != "Secret" else "UNKNOWN"
         big_title = get_font(font_sz).render(disp_name, True, COLORS['white'])
@@ -1674,6 +1696,18 @@ class UI:
         
         big_artist = get_font(35, False).render(selected_song["artist"].upper(), True, (200, 200, 200))
         screen.blit(big_artist, (detail_x + 5, 190))
+        
+        if "duration" not in selected_song:
+            try:
+                selected_song["duration"] = pygame.mixer.Sound(selected_song["path"]).get_length()
+            except:
+                selected_song["duration"] = 0
+                
+        dur = selected_song["duration"]
+        if dur > 0:
+            m, s = int(dur // 60), int(dur % 60)
+            dur_txt = get_font(30, False).render(f"Duration: {m}:{s:02d}", True, COLORS['blue'])
+            screen.blit(dur_txt, (detail_x + 5, 240))
         
         # Frame and Album Art
         img_size = 500
@@ -1741,13 +1775,13 @@ class UI:
             if is_sel:
                 color = COLORS['blue'] if idx == 0 else COLORS['pink']
             opt_txt = font_medium.render(opt, True, color)
-            box_surf.blit(opt_txt, (box_w//2 - opt_txt.get_width()//2, 180 + idx * 100))
+            box_surf.blit(opt_txt, (box_w//2 - opt_txt.get_width()//2, 120 + idx * 80))
             
             if is_sel:
                 pygame.draw.polygon(box_surf, color, [
-                    (box_w//2 - opt_txt.get_width()//2 - 40, 180 + idx * 100 + 15),
-                    (box_w//2 - opt_txt.get_width()//2 - 20, 180 + idx * 100 + 25),
-                    (box_w//2 - opt_txt.get_width()//2 - 40, 180 + idx * 100 + 35)
+                    (box_w//2 - opt_txt.get_width()//2 - 40, 120 + idx * 80 + 15),
+                    (box_w//2 - opt_txt.get_width()//2 - 20, 120 + idx * 80 + 25),
+                    (box_w//2 - opt_txt.get_width()//2 - 40, 120 + idx * 80 + 35)
                 ])
                 
         rect = box_surf.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
@@ -1755,52 +1789,134 @@ class UI:
 
     @staticmethod
     def draw_level_maker(app):
-        screen.fill(COLORS['bg'])
-        if BG_IMG: screen.blit(BG_IMG, (0,0))
+        if BG_IMG: 
+            screen.blit(BG_IMG, (0,0))
+            overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+            overlay.fill((0, 0, 0))
+            overlay.set_alpha(150)
+            screen.blit(overlay, (0, 0))
+        else: 
+            screen.fill(COLORS['bg'])
+
+        for p in app.particles:
+            p['y'] -= p['speed']
+            if p['y'] < -20: p['y'] = SCREEN_HEIGHT + 20; p['x'] = random.randint(0, SCREEN_WIDTH)
+            alpha = max(0, min(255, 100 + math.sin(pygame.time.get_ticks() * 0.002 + p['x']) * 50))
+            p_surf = pygame.Surface((p['size'], p['size']), pygame.SRCALPHA)
+            pygame.draw.rect(p_surf, (*p['color'], int(alpha)), (0, 0, p['size'], p['size']))
+            screen.blit(p_surf, (p['x'], p['y']))
+
+        w = int(SCREEN_WIDTH * 0.8)
+        h = int(SCREEN_HEIGHT * 0.8)
+        box_surf = pygame.Surface((w, h), pygame.SRCALPHA)
+        time_ms = pygame.time.get_ticks()
         
-        box_w, box_h = 800, 600
-        box_surf = pygame.Surface((box_w, box_h), pygame.SRCALPHA)
-        pygame.draw.rect(box_surf, (20, 20, 35, 200), (0, 0, box_w, box_h), border_radius=25)
-        pygame.draw.rect(box_surf, COLORS['pink'], (0, 0, box_w, box_h), 5, border_radius=25)
+        pygame.draw.rect(box_surf, (20, 20, 25, 220), (0, 0, w, h), border_radius=15)
+        pygame.draw.rect(box_surf, COLORS['pink'], (0, 0, w, h), 3, border_radius=15)
         
-        title_txt = font_large.render("LEVEL MAKER", True, COLORS['pink'])
-        box_surf.blit(title_txt, (box_w//2 - title_txt.get_width()//2, 30))
+        f_title = get_font(50)
+        title = f_title.render("AUDIO ANALYZER", True, COLORS['pink'])
+        box_surf.blit(title, (w//2 - title.get_width()//2, 30))
         
-        status_raw = getattr(app, 'lm_status', "")
-        status_txt = font_medium.render(status_raw, True, COLORS['yellow'])
-        if status_txt.get_width() > box_w - 40:
-            sz = 40
-            while status_txt.get_width() > box_w - 40 and sz > 14:
-                sz -= 2
-                status_txt = get_font(sz).render(status_raw, True, COLORS['yellow'])
-        box_surf.blit(status_txt, (box_w//2 - status_txt.get_width()//2, 110))
-        
-        if getattr(app, 'lm_state', 0) == 0:
-            pygame.draw.rect(box_surf, (10, 10, 10), (100, 250, 600, 80), border_radius=10)
-            pygame.draw.rect(box_surf, COLORS['blue'], (100, 250, 600, 80), 3, border_radius=10)
+        if app.lm_state == 0:
+            f_label = get_font(30)
+            lbl = f_label.render("Enter Song Name / URL:", True, COLORS['white'])
+            box_surf.blit(lbl, (w//2 - lbl.get_width()//2, 120))
             
-            q = getattr(app, 'lm_query', "")
-            cursor = "|" if (pygame.time.get_ticks() // 500) % 2 == 0 else ""
-            q_txt = font_medium.render(q + cursor, True, COLORS['white'])
-            box_surf.blit(q_txt, (120, 290 - q_txt.get_height()//2))
+            # Text box
+            pygame.draw.rect(box_surf, (30, 30, 40), (w//2 - 300, 180, 600, 60), border_radius=10)
+            pygame.draw.rect(box_surf, COLORS['pink'], (w//2 - 300, 180, 600, 60), 2, border_radius=10)
             
-            hint_txt = get_font(24).render("Enter song name/URL & press ENTER", True, (150, 150, 150))
-            box_surf.blit(hint_txt, (box_w//2 - hint_txt.get_width()//2, 350))
-            
-        elif getattr(app, 'lm_state', 0) == 1:
-            p_w, p_h = 600, 20
-            pygame.draw.rect(box_surf, (50, 50, 50), (box_w//2 - p_w//2, 300, p_w, p_h), border_radius=10)
-            progress = getattr(app, 'lm_progress', 0.0)
-            if progress > 0:
-                fill_w = int(p_w * progress)
-                pygame.draw.rect(box_surf, COLORS['pink'], (box_w//2 - p_w//2, 300, fill_w, p_h), border_radius=10)
+            f_input = get_font(35)
+            # Text glitch effect occasionally
+            disp_query = app.lm_query
+            if getattr(app, 'text_glitches', True) and random.random() < 0.05 and len(disp_query) > 0:
+                glitch_idx = random.randint(0, len(disp_query)-1)
+                disp_query = disp_query[:glitch_idx] + chr(random.randint(33, 126)) + disp_query[glitch_idx+1:]
                 
-        elif getattr(app, 'lm_state', 0) >= 2:
-            hint_txt = get_font(30).render("Press ESC to return to Menu", True, (200, 200, 200))
-            box_surf.blit(hint_txt, (box_w//2 - hint_txt.get_width()//2, 400))
+            txt = f_input.render(disp_query + ("|" if time_ms % 1000 < 500 else ""), True, COLORS['pink'])
+            box_surf.blit(txt, (w//2 - 280, 190))
             
-        rect = box_surf.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//2))
-        screen.blit(box_surf, rect.topleft)
+            help_txt = get_font(20).render("Press ENTER to start analysis. ESC to cancel.", True, (150, 150, 150))
+            box_surf.blit(help_txt, (w//2 - help_txt.get_width()//2, 260))
+            
+        elif app.lm_state == 1:
+            # Analysis mode!
+            f_stat = get_font(28)
+            stat_txt = getattr(app, 'lm_status', 'Processing...')
+            # Glitch text for hacker aesthetic
+            if getattr(app, 'text_glitches', True) and random.random() < 0.1:
+                stat_txt = "".join([chr(random.randint(33, 126)) if random.random() < 0.05 else c for c in stat_txt])
+            stat_render = f_stat.render(stat_txt, True, (0, 255, 150))
+            box_surf.blit(stat_render, (w//2 - stat_render.get_width()//2, 120))
+            
+            # Advanced Multi-band Visualizer
+            waveforms = getattr(app, 'lm_waveforms', None)
+            if waveforms and len(waveforms) == 8:
+                vis_w = 600
+                vis_h = 150
+                vis_x = w//2 - vis_w//2
+                vis_y = 200
+                pygame.draw.rect(box_surf, (5, 5, 10, 200), (vis_x, vis_y, vis_w, vis_h))
+                pygame.draw.rect(box_surf, (0, 100, 255), (vis_x, vis_y, vis_w, vis_h), 1)
+                
+                band_colors = [
+                    (255, 0, 0), (255, 100, 0), (255, 255, 0), (0, 255, 0),
+                    (0, 255, 255), (0, 100, 255), (100, 0, 255), (255, 0, 255)
+                ]
+                
+                bar_w = vis_w // 8
+                for i in range(8):
+                    val = waveforms[i] * vis_h
+                    # Animated visualizer bars
+                    anim_val = val * (0.8 + 0.2 * math.sin(time_ms * 0.01 + i))
+                    pygame.draw.rect(box_surf, band_colors[i], (vis_x + i*bar_w + 5, vis_y + vis_h - anim_val, bar_w - 10, anim_val))
+            
+            # Glowing Progress bar
+            prog_y = 400
+            prog_w = 600
+            pygame.draw.rect(box_surf, (30, 30, 40), (w//2 - prog_w//2, prog_y, prog_w, 20), border_radius=10)
+            
+            # Smooth out progress variable if it exists
+            target_prog = getattr(app, 'lm_progress', 0.0)
+            if not hasattr(app, 'smooth_prog'): app.smooth_prog = target_prog
+            app.smooth_prog += (target_prog - app.smooth_prog) * 0.1
+            
+            fill_w = int(prog_w * app.smooth_prog)
+            if fill_w > 0:
+                # Dynamic gradient/color pulse
+                r = int(127 + 128 * math.sin(time_ms * 0.005))
+                b = int(127 + 128 * math.cos(time_ms * 0.005))
+                pygame.draw.rect(box_surf, (r, 100, b), (w//2 - prog_w//2, prog_y, fill_w, 20), border_radius=10)
+                # Glowing tip
+                pygame.draw.circle(box_surf, (255, 255, 255), (w//2 - prog_w//2 + fill_w, prog_y + 10), 12)
+                
+            # Rotating Loading Icon
+            rot_angle = -(time_ms % 3600) / 10.0
+            load_surf = pygame.Surface((40, 40), pygame.SRCALPHA)
+            pygame.draw.arc(load_surf, (0, 255, 200), (5, 5, 30, 30), 0, math.pi*1.5, 4)
+            rot_surf = pygame.transform.rotate(load_surf, rot_angle)
+            box_surf.blit(rot_surf, (w//2 - prog_w//2 - 50 - rot_surf.get_width()//2, prog_y - 10))
+                
+            pct_txt = get_font(20).render(f"{int(app.smooth_prog*100)}%", True, COLORS['white'])
+            box_surf.blit(pct_txt, (w//2 - pct_txt.get_width()//2, prog_y + 30))
+            
+            if hasattr(app, 'avg_gen_time') and hasattr(app, 'lm_start_time'):
+                import time
+                rem = max(0, int(app.avg_gen_time - (time.time() - app.lm_start_time)))
+                est_txt = get_font(20).render(f"Estimated Time Remaining: {rem}s", True, (150, 150, 150))
+                box_surf.blit(est_txt, (w//2 - est_txt.get_width()//2, prog_y + 70))
+            
+        elif app.lm_state == 2:
+            # Done / Error
+            f_stat = get_font(30)
+            stat_render = f_stat.render(getattr(app, 'lm_status', 'Done!'), True, COLORS['pink'])
+            box_surf.blit(stat_render, (w//2 - stat_render.get_width()//2, int(h*0.4)))
+            
+            help_txt = get_font(25).render("Press ENTER to configure level & sync lyrics, or ESC for Menu", True, (150, 150, 150))
+            box_surf.blit(help_txt, (w//2 - help_txt.get_width()//2, int(h*0.6)))
+            
+        screen.blit(box_surf, (SCREEN_WIDTH//2 - w//2, SCREEN_HEIGHT//2 - h//2))
 
     @staticmethod
     def draw_level_config(app):
@@ -1822,7 +1938,12 @@ class UI:
         song_name = getattr(app, 'config_level_name', "")
         if song_name in SONGS:
             song_data = SONGS[song_name]
-            lrc_path = song_data.get("json_path", "").replace(".json", ".lrc")
+            import re
+            lrc_path = re.sub(r' \[(Easy|Normal|Hard)\]\.json$', '.lrc', song_data.get("json_path", ""))
+            if song_data.get("class") == "DynamicLevel" and "py_path" in song_data:
+                lrc_path = song_data["py_path"].replace(".py", ".lrc")
+            elif "path" in song_data and song_data["path"]:
+                lrc_path = song_data["path"].replace(".mp3", ".lrc").replace(".wav", ".lrc").replace(".m4a", ".lrc")
             if os.path.exists(lrc_path):
                 if not hasattr(app, 'config_lyrics'):
                     app.config_lyrics = parse_lrc(lrc_path)
@@ -1850,11 +1971,17 @@ class UI:
         t1 = get_font(60).render("Configuration", True, COLORS['white'])
         screen.blit(t1, (opt_x, opt_y - 100))
         
+        t_help = get_font(20).render("Use [A]/[D] or [Left]/[Right] to adjust values", True, (150, 150, 150))
+        screen.blit(t_help, (opt_x, opt_y - 30))
+        
+        bpm_val = getattr(app, 'config_bpm', 120.0)
         opts = [
             f"Delay: {getattr(app, 'config_delay', 0)} ms",
+            f"Music Pos: {getattr(app, 'config_start_pos', 0) // 1000} s",
             f"Difficulty: {getattr(app, 'config_diff', 'Normal')}",
-            f"Boss Entity: {'ON' if getattr(app, 'config_boss', True) else 'OFF'}",
+            f"Custom BPM: {int(bpm_val)}",
             f"Chroma Colors: {'ON' if getattr(app, 'config_chroma', True) else 'OFF'}",
+            f"Lyrics: {'ON' if getattr(app, 'config_lyrics_enabled', True) else 'OFF'}",
             "Save & Continue"
         ]
         
@@ -1864,19 +1991,80 @@ class UI:
             
             t = get_font(40).render(text, True, color)
             screen.blit(t, (opt_x, opt_y + idx * 60))
-            if getattr(app, 'config_idx', 0) == idx and idx < 4:
+            if getattr(app, 'config_idx', 0) == idx and idx < 6:
                 screen.blit(get_font(30).render("<   >", True, COLORS['yellow']), (opt_x - 60, opt_y + idx * 60 + 5))
+
+    @staticmethod
+    def draw_difficulty_select(app):
+        UI.draw_level_select(app)
+        s = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        s.set_alpha(150)
+        s.fill((0, 0, 0))
+        screen.blit(s, (0, 0))
+        
+        box_w, box_h = 400, 300
+        box_x = (SCREEN_WIDTH - box_w) // 2
+        box_y = (SCREEN_HEIGHT - box_h) // 2
+        pygame.draw.rect(screen, (30, 30, 30), (box_x, box_y, box_w, box_h))
+        pygame.draw.rect(screen, COLORS['pink'], (box_x, box_y, box_w, box_h), 3)
+        
+        title = get_font(30).render("Select Difficulty", True, COLORS['white'])
+        screen.blit(title, (box_x + box_w//2 - title.get_width()//2, box_y + 20))
+        
+        diffs = ["Easy", "Normal", "Hard"]
+        colors = [COLORS['blue'], COLORS['yellow'], COLORS['pink']]
+        for i, diff in enumerate(diffs):
+            color = colors[i] if getattr(app, 'diff_sel_idx', 1) == i else (100, 100, 100)
+            text = get_font(40).render(diff, True, color)
+            tx = box_x + box_w//2 - text.get_width()//2
+            ty = box_y + 100 + i * 60
+            screen.blit(text, (tx, ty))
+            if getattr(app, 'diff_sel_idx', 1) == i:
+                screen.blit(get_font(40).render(">", True, color), (tx - 40, ty))
+                screen.blit(get_font(40).render("<", True, color), (tx + text.get_width() + 10, ty))
 
 # --- Main App Logic ---
 def main():
     import os, glob, json
     custom_dir = os.path.join(os.path.dirname(__file__), "CustomLevels")
     if os.path.exists(custom_dir):
-        for f in glob.glob(os.path.join(custom_dir, "*.json")):
+        for f in glob.glob(os.path.join(custom_dir, "**", "*.py"), recursive=True):
+            if "__init__" in f: continue
+            try:
+                name = os.path.basename(f).replace(".py", "")
+                audio_path = f.replace(".py", ".ogg")
+                if not os.path.exists(audio_path): audio_path = f.replace(".py", ".mp3")
+                if not os.path.exists(audio_path): audio_path = f.replace(".py", ".wav")
+                if not os.path.exists(audio_path): audio_path = f.replace(".py", ".m4a")
+                if not os.path.exists(audio_path): audio_path = f.replace(".py", ".webm")
+                SONGS[name] = {
+                    "path": audio_path,
+                    "artist": "Dynamic Python Generator",
+                    "surf": None,
+                    "class": "DynamicLevel",
+                    "py_path": f,
+                    "bpm": 120.0
+                }
+                try:
+                    with open(f, 'r', encoding='utf-8') as pf:
+                        for line in pf:
+                            if "self.bpm =" in line:
+                                SONGS[name]["bpm"] = float(line.split("=")[1].strip())
+                                break
+                except: pass
+                cover_path = f.replace(".py", ".jpg")
+                if os.path.exists(cover_path):
+                    try:
+                        SONGS[name]["surf"] = pygame.transform.scale(pygame.image.load(cover_path).convert(), (400, 400))
+                    except: pass
+            except: pass
+
+        for f in glob.glob(os.path.join(custom_dir, "**", "*.json"), recursive=True):
+            if " [Easy]" in f or " [Hard]" in f: continue
             try:
                 with open(f, 'r') as fp:
                     data = json.load(fp)
-                    name = data.get("name", os.path.basename(f))
+                    name = data.get("name", os.path.basename(f).replace(" [Normal].json", "").replace(".json", ""))
                     SONGS[name] = {
                         "path": data.get("path", ""),
                         "artist": data.get("artist", "Custom Level"),
@@ -1978,8 +2166,6 @@ def main():
                     if event.key in [pygame.K_s, pygame.K_DOWN]: app.menu_idx = (app.menu_idx + 1) % len(app.menu_options)
                     
                     if event.key == pygame.K_z:
-                        app.hq_processing = not getattr(app, 'hq_processing', False)
-                        app.settings_options[2] = f"HQ Processing (Laptop): {'ON' if app.hq_processing else 'OFF'}"
                         if "Level Maker" not in app.menu_options:
                             app.menu_options.insert(1, "Level Maker")
                             app.menu_sel_lerp.insert(1, 0.0)
@@ -2031,7 +2217,52 @@ def main():
                             if getattr(app, 'delete_mode', False) and SONGS[name].get("class") == CustomLevel:
                                 app.delete_confirm = name
                             else:
+                                if SONGS[name].get("class") in [CustomLevel, "DynamicLevel"]:
+                                    app.state = GameState.DIFFICULTY_SELECT
+                                    app.diff_sel_idx = 1
+                                else:
+                                    start_game(app)
+                                    
+                elif app.state == GameState.DIFFICULTY_SELECT:
+                    if event.key in [pygame.K_w, pygame.K_UP]:
+                        app.diff_sel_idx = max(0, getattr(app, 'diff_sel_idx', 1) - 1)
+                    if event.key in [pygame.K_s, pygame.K_DOWN]:
+                        app.diff_sel_idx = min(2, getattr(app, 'diff_sel_idx', 1) + 1)
+                    if event.key == pygame.K_ESCAPE:
+                        app.state = GameState.LEVEL_SELECT
+                    if event.key in [pygame.K_RETURN, pygame.K_SPACE]:
+                        name = app.levels[app.selected_level_idx]
+                        diffs = ["Easy", "Normal", "Hard"]
+                        chosen_diff = diffs[getattr(app, 'diff_sel_idx', 1)]
+                        
+                        if SONGS[name].get("class") == "DynamicLevel":
+                            app.config_level_name = name
+                            app.config_diff = chosen_diff
+                            app.config_delay = int(app.lyric_offsets.get(name, 0.0))
+                            app.config_start_pos = 0
+                            app.config_health = 100
+                            
+                            if event.key == pygame.K_SPACE:
+                                app.state = GameState.LEVEL_CONFIG
+                                if name in SONGS and "bpm" in SONGS[name]:
+                                    app.config_bpm = float(SONGS[name]["bpm"])
+                                elif hasattr(app, 'custom_bpms') and name in app.custom_bpms:
+                                    app.config_bpm = app.custom_bpms[name]
+                                else:
+                                    app.config_bpm = 120.0
+                                if "path" in SONGS[name] and os.path.exists(SONGS[name]["path"]):
+                                    pygame.mixer.music.load(SONGS[name]["path"])
+                                    pygame.mixer.music.play()
+                            else:
                                 start_game(app)
+                        else:
+                            base_json = SONGS[name]["json_path"].replace(" [Normal].json", "").replace(".json", "")
+                            diff_json = f"{base_json} [{chosen_diff}].json"
+                            if os.path.exists(diff_json):
+                                SONGS[name]["json_path_current"] = diff_json
+                            else:
+                                SONGS[name]["json_path_current"] = SONGS[name]["json_path"]
+                            start_game(app)
 
                 elif app.state == GameState.SKINS:
                     if event.key in [pygame.K_a, pygame.K_LEFT]: app.p1_shape = SHAPE_TYPES[(SHAPE_TYPES.index(app.p1_shape) - 1) % 4]
@@ -2065,11 +2296,6 @@ def main():
                             app.text_glitches = not getattr(app, 'text_glitches', True)
                             app.settings_options[app.settings_idx] = f"Text Glitches: {'ON' if app.text_glitches else 'OFF'}"
                             
-                    elif opt.startswith("HQ Processing"):
-                        if event.key in [pygame.K_RETURN, pygame.K_SPACE, pygame.K_a, pygame.K_LEFT, pygame.K_d, pygame.K_RIGHT]:
-                            app.hq_processing = not getattr(app, 'hq_processing', False)
-                            app.settings_options[app.settings_idx] = f"HQ Processing (Laptop): {'ON' if app.hq_processing else 'OFF'}"
-                            
                     if event.key in [pygame.K_RETURN, pygame.K_SPACE]:
                         if opt == "Back":
                             app.state = GameState.MENU
@@ -2087,42 +2313,63 @@ def main():
                             threading.Thread(target=run_level_maker, args=(app, app.lm_query), daemon=True).start()
                         elif event.unicode.isprintable():
                             app.lm_query += event.unicode
-
                 elif app.state == GameState.LEVEL_CONFIG:
                     if event.key in [pygame.K_w, pygame.K_UP]:
-                        app.config_idx = (getattr(app, 'config_idx', 0) - 1) % 5
+                        app.config_idx = (getattr(app, 'config_idx', 0) - 1) % 7
                     if event.key in [pygame.K_s, pygame.K_DOWN]:
-                        app.config_idx = (getattr(app, 'config_idx', 0) + 1) % 5
+                        app.config_idx = (getattr(app, 'config_idx', 0) + 1) % 7
                         
                     idx = getattr(app, 'config_idx', 0)
                     if event.key in [pygame.K_a, pygame.K_LEFT, pygame.K_d, pygame.K_RIGHT]:
                         direction = -1 if event.key in [pygame.K_a, pygame.K_LEFT] else 1
                         if idx == 0: app.config_delay += 100 * direction
                         elif idx == 1:
+                            app.config_start_pos = max(0, getattr(app, 'config_start_pos', 0) + 5000 * direction)
+                            try:
+                                pygame.mixer.music.play(start=app.config_start_pos / 1000.0)
+                            except: pass
+                            app.config_start_time = pygame.time.get_ticks()
+                        elif idx == 2:
                             diffs = ["Easy", "Normal", "Hard"]
                             app.config_diff = diffs[(diffs.index(getattr(app, 'config_diff', 'Normal')) + direction) % 3]
-                        elif idx == 2:
-                            app.config_boss = not getattr(app, 'config_boss', True)
                         elif idx == 3:
+                            shift = 10 if pygame.key.get_mods() & pygame.KMOD_SHIFT else 1
+                            app.config_bpm = max(1, getattr(app, 'config_bpm', 120.0) + shift * direction)
+                        elif idx == 4:
                             app.config_chroma = not getattr(app, 'config_chroma', True)
+                        elif idx == 5:
+                            app.config_lyrics_enabled = not getattr(app, 'config_lyrics_enabled', True)
                             
                     if event.key in [pygame.K_RETURN, pygame.K_SPACE]:
-                        if idx == 4:
-                            app.lyric_offsets[app.config_level_name] = getattr(app, 'config_delay', 0)
+                        if idx == 6:
+                            if not hasattr(app, 'custom_bpms'): app.custom_bpms = {}
+                            import re
+                            base_name = re.sub(r' \[(Easy|Normal|Hard)\]$', '', app.config_level_name)
+                            app.custom_bpms[base_name] = getattr(app, 'config_bpm', 120.0)
+                            
+                            for diff in ["Easy", "Normal", "Hard"]:
+                                lvl_name = f"{base_name} [{diff}]"
+                                app.lyric_offsets[lvl_name] = getattr(app, 'config_delay', 0)
+                                app.lyric_offsets[f"{lvl_name}_lyrics"] = getattr(app, 'config_lyrics_enabled', True)
                             save_lyric_offsets(app.lyric_offsets)
                             
                             song_data = SONGS.get(app.config_level_name, {})
                             if "json_path" in song_data and os.path.exists(song_data["json_path"]):
-                                with open(song_data["json_path"], 'r') as f:
-                                    data = json.load(f)
-                                data["difficulty"] = getattr(app, 'config_diff', 'Normal')
-                                data["boss_entity"] = getattr(app, 'config_boss', True)
-                                data["chroma_colors"] = getattr(app, 'config_chroma', True)
-                                with open(song_data["json_path"], 'w') as f:
-                                    json.dump(data, f, indent=4)
+                                base_json = re.sub(r' \[(Easy|Normal|Hard)\]\.json$', '', song_data["json_path"])
+                                for diff in ["Easy", "Normal", "Hard"]:
+                                    jp = f"{base_json} [{diff}].json"
+                                    if os.path.exists(jp):
+                                        with open(jp, 'r') as f:
+                                            data = json.load(f)
+                                        data["boss_entity"] = getattr(app, 'config_boss', True)
+                                        data["chroma_colors"] = getattr(app, 'config_chroma', True)
+                                        with open(jp, 'w') as f:
+                                            json.dump(data, f, indent=4)
                             
+                            if app.config_level_name in app.levels:
+                                app.selected_level_idx = app.levels.index(app.config_level_name)
                             pygame.mixer.music.stop()
-                            app.state = GameState.MENU
+                            start_game(app)
                             if hasattr(app, 'config_lyrics'): delattr(app, 'config_lyrics')
 
                 elif app.state == GameState.PAUSED:
@@ -2159,16 +2406,67 @@ def main():
                             app.state = GameState.MENU
 
         if app.state == GameState.PLAYING:
-            app.active_level.update(dt)
-            for p in app.players: p.update(dt, app)
+            if getattr(app, 'level_start_countdown_timer', 0) > 0:
+                app.level_start_countdown_timer -= dt
+                if app.level_start_countdown_timer <= 0:
+                    pygame.mixer.music.play()
+            else:
+                app.active_level.update(dt)
+                for p in app.players: p.update(dt, app)
             if app.health <= 0:
-                app.state = GameState.GAMEOVER
-                app.end_screen_timer = pygame.time.get_ticks()
-                pygame.mixer.music.stop()
-            elif not pygame.mixer.music.get_busy() and app.active_level.name != "CLOSE TO ME":
+                app.state = GameState.SHATTER_DEATH
+                app.shatter_timer = 0
+                app.shatter_duration = 3000
+                pygame.mixer.music.set_volume(0.15) # Slow down effect drop
+                
+                # Create massive particle explosion
+                app.shatter_particles = []
+                p_color = SHAPE_COLORS.get(app.players[0].shape, (0, 255, 255))
+                for _ in range(400):
+                    angle = random.uniform(0, math.pi * 2)
+                    speed = random.uniform(5, 35)
+                    app.shatter_particles.append({
+                        'x': app.players[0].x,
+                        'y': app.players[0].y,
+                        'vx': math.cos(angle) * speed,
+                        'vy': math.sin(angle) * speed,
+                        'life': random.uniform(1.0, 3.0),
+                        'color': p_color if random.random() > 0.3 else (255, 255, 255)
+                    })
+                app.shatter_player = app.players[0]
+            elif getattr(app, 'level_start_countdown_timer', 0) <= 0 and not pygame.mixer.music.get_busy() and app.active_level.name != "CLOSE TO ME":
                 app.state = GameState.COMPLETED
                 app.end_screen_timer = pygame.time.get_ticks()
 
+        elif app.state == GameState.SHATTER_DEATH:
+            # Slow motion explosion that speeds up!
+            app.shatter_timer += dt
+            t = min(1.0, app.shatter_timer / app.shatter_duration)
+            
+            # Start very slow, speed up dramatically (cubic ease-in)
+            speed_mult = 0.05 + (t ** 3) * 2.0
+            dt_slow = dt * speed_mult
+            
+            # Intense screen shake that decays
+            app.shake_amount = int(20 * (1.0 - t))
+            
+            app.active_level.update(dt_slow)
+            for p in app.players: 
+                if getattr(app, 'shatter_player', None) != p:
+                    p.update(dt_slow, app)
+            
+            if hasattr(app, 'shatter_particles'):
+                for p in app.shatter_particles:
+                    p['vy'] += 0.8 * (dt / 16.0) # Gravity
+                    p['x'] += p['vx'] * (dt / 16.0) * speed_mult
+                    p['y'] += p['vy'] * (dt / 16.0) * speed_mult
+                    p['life'] -= (dt / 1000.0)
+            
+            if app.shatter_timer > app.shatter_duration:
+                app.state = GameState.GAMEOVER
+                app.end_screen_timer = pygame.time.get_ticks()
+                pygame.mixer.music.stop()
+                
         elif app.state == GameState.VIDEO:
             if not app.video_fps:
                 app.video_fps = app.video_cap.get(cv2.CAP_PROP_FPS)
@@ -2208,6 +2506,28 @@ def main():
         render_surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
         render_surf.fill(COLORS['bg'])
 
+        if app.state == GameState.LEVEL_MAKER and getattr(app, 'lm_state', 0) == 2:
+            app.state = GameState.LEVEL_CONFIG
+            app.config_level_name = getattr(app, 'lm_last_generated_name', getattr(app, 'lm_query', ""))
+            if app.config_level_name in SONGS and "bpm" in SONGS[app.config_level_name]:
+                app.config_bpm = float(SONGS[app.config_level_name]["bpm"])
+            elif hasattr(app, 'custom_bpms') and app.config_level_name in app.custom_bpms:
+                app.config_bpm = app.custom_bpms[app.config_level_name]
+            else:
+                app.config_bpm = 120.0
+            if app.config_level_name in SONGS:
+                path = SONGS[app.config_level_name].get("path", "")
+                if path and os.path.exists(path):
+                    try:
+                        pygame.mixer.music.load(path)
+                        pygame.mixer.music.play()
+                    except: pass
+            app.config_delay = 0
+            app.config_start_pos = 0
+            app.config_start_time = pygame.time.get_ticks()
+            app.config_idx = 0
+            app.lm_state = 0
+            
         if app.state == GameState.WARNING: UI.draw_warning(app)
         elif app.state == GameState.MENU: UI.draw_menu(app)
         elif app.state == GameState.LEVEL_SELECT: UI.draw_level_select(app)
@@ -2215,6 +2535,7 @@ def main():
         elif app.state == GameState.SETTINGS: UI.draw_settings(app)
         elif app.state == GameState.LEVEL_MAKER: UI.draw_level_maker(app)
         elif app.state == GameState.LEVEL_CONFIG: UI.draw_level_config(app)
+        elif app.state == GameState.DIFFICULTY_SELECT: UI.draw_difficulty_select(app)
         elif app.state == GameState.PLAYING:
             if hasattr(app.active_level, 'draw_background'):
                 app.active_level.draw_background(render_surf)
@@ -2227,6 +2548,21 @@ def main():
             for obs in app.active_level.obstacles: obs.draw(render_surf, app)
             app.active_level.draw_extra(render_surf)
             for p in app.players: p.draw(render_surf)
+            
+            if hasattr(app.active_level, 'rms_curve') and app.active_level.rms_curve:
+                idx = int((app.active_level.elapsed_ms + app.lyric_offsets.get(app.active_level.name, 0)) / 100)
+                if idx >= 0 and idx < len(app.active_level.rms_curve):
+                    sb = app.active_level.rms_curve[idx].get("sub_bass", 0)
+                    b = app.active_level.rms_curve[idx].get("bass", 0)
+                    if sb + b > 1.3:
+                        flash_alpha = min(150, int((sb + b - 1.3) * 200))
+                        app.shake_amount = max(app.shake_amount, int((sb + b - 1.3) * 12))
+                        if flash_alpha > 0:
+                            flash = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+                            flash.fill(COLORS['white'])
+                            flash.set_alpha(flash_alpha)
+                            render_surf.blit(flash, (0, 0))
+            
             pygame.draw.rect(render_surf, (50, 50, 50), (50, 50, 300, 20))
             pygame.draw.rect(render_surf, COLORS['pink'], (50, 50, (app.health/app.max_health)*300, 20))
             if app.players:
@@ -2248,6 +2584,19 @@ def main():
                 dbg_surf.blit(f_sm.render("[ENTER] Save to Config", True, (200, 200, 200)), (15, 115))
                 render_surf.blit(dbg_surf, (20, 80))
                 
+            if getattr(app, 'level_start_countdown_timer', 0) > 0:
+                dim = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+                dim.fill((0, 0, 0))
+                dim.set_alpha(150)
+                render_surf.blit(dim, (0, 0))
+                cd_val = math.ceil(app.level_start_countdown_timer / 1000)
+                txt = get_font(250, bold=True).render(str(cd_val), True, COLORS['white'])
+                ms_rem = app.level_start_countdown_timer % 1000
+                if cd_val == 3 and ms_rem == 0: scale = 1.0
+                else: scale = 1.0 + (ms_rem / 1000.0) * 0.5
+                scaled_txt = pygame.transform.smoothscale(txt, (int(txt.get_width()*scale), int(txt.get_height()*scale)))
+                render_surf.blit(scaled_txt, (SCREEN_WIDTH//2 - scaled_txt.get_width()//2, SCREEN_HEIGHT//2 - scaled_txt.get_height()//2))
+                
             screen.blit(render_surf, (offset_x, offset_y))
             if app.fade_alpha > 0:
                 fade = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -2255,6 +2604,49 @@ def main():
                 fade.set_alpha(app.fade_alpha)
                 screen.blit(fade, (0,0))
         
+        elif app.state == GameState.SHATTER_DEATH:
+            # Draw everything same as playing, but with slow motion effect and particles
+            if hasattr(app.active_level, 'draw_background'):
+                app.active_level.draw_background(render_surf)
+            else:
+                for x in range(0, SCREEN_WIDTH, 60): pygame.draw.line(render_surf, (20, 20, 20), (x, 0), (x, SCREEN_HEIGHT))
+                for y in range(0, SCREEN_HEIGHT, 60): pygame.draw.line(render_surf, (20, 20, 20), (0, y), (SCREEN_WIDTH, y))
+            
+            if hasattr(app.active_level, 'draw_background_lyrics'):
+                app.active_level.draw_background_lyrics(render_surf)
+            for obs in app.active_level.obstacles: obs.draw(render_surf, app)
+            app.active_level.draw_extra(render_surf)
+            
+            for p in app.players: 
+                if getattr(app, 'shatter_player', None) != p:
+                    p.draw(render_surf)
+                    
+            if hasattr(app, 'shatter_particles'):
+                for p in app.shatter_particles:
+                    if p['life'] > 0:
+                        alpha = min(255, max(0, int(p['life'] * 255)))
+                        size = max(1, int(p['life'] * 3))
+                        pygame.draw.circle(render_surf, (*p['color'], alpha), (int(p['x']), int(p['y'])), size)
+                        
+            # Draw white flash over the screen
+            t = min(1.0, app.shatter_timer / app.shatter_duration)
+            flash_alpha = max(0, int(255 * (1.0 - t*3))) # quick bright flash
+            if flash_alpha > 0:
+                flash_surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+                flash_surf.fill((255, 255, 255))
+                flash_surf.set_alpha(flash_alpha)
+                render_surf.blit(flash_surf, (0, 0))
+
+            # Apply calculated shake amount
+            offset_x = random.uniform(-app.shake_amount, app.shake_amount) if hasattr(app, 'shake_amount') else 0
+            offset_y = random.uniform(-app.shake_amount, app.shake_amount) if hasattr(app, 'shake_amount') else 0
+            # Grayscale / Chromatic filter over everything to look dramatic
+            filter_surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+            filter_surf.fill((255, 0, 0))
+            filter_surf.set_alpha(int(100 * (1 - app.shatter_timer / app.shatter_duration)))
+            render_surf.blit(filter_surf, (0, 0))
+            
+            screen.blit(render_surf, (offset_x, offset_y))
         elif app.state == GameState.PAUSED:
             if app.active_level:
                 for x in range(0, SCREEN_WIDTH, 60): pygame.draw.line(render_surf, (20, 20, 20), (x, 0), (x, SCREEN_HEIGHT))
@@ -2396,12 +2788,36 @@ def main():
                 alpha = min(255, int((elapsed_end / 1000) * 255))
                 txt = font_xl.render("LEVEL COMPLETED", True, COLORS['blue'])
                 txt.set_alpha(alpha)
-                screen.blit(txt, (SCREEN_WIDTH//2 - txt.get_width()//2, SCREEN_HEIGHT//2 - 100 + float_y))
+                screen.blit(txt, (SCREEN_WIDTH//2 - txt.get_width()//2, SCREEN_HEIGHT//2 - 150 + float_y))
+                
+                # Rank System
+                if elapsed_end > 1000:
+                    rank_alpha = min(255, int(((elapsed_end-1000) / 1000) * 255))
+                    hp = app.health
+                    if hp >= 100: rank, r_col = "S", (255, 215, 0) # Gold
+                    elif hp >= 80: rank, r_col = "A", (0, 255, 0)
+                    elif hp >= 50: rank, r_col = "B", (0, 200, 255)
+                    elif hp >= 20: rank, r_col = "C", (255, 150, 0)
+                    else: rank, r_col = "D", (255, 0, 0)
+                    
+                    r_txt = get_font(150, bold=True).render(rank, True, r_col)
+                    r_txt.set_alpha(rank_alpha)
+                    
+                    # Pulse effect for S rank
+                    if rank == "S":
+                        r_scale = 1.0 + math.sin(elapsed_end * 0.01) * 0.1
+                        r_txt = pygame.transform.smoothscale(r_txt, (int(r_txt.get_width()*r_scale), int(r_txt.get_height()*r_scale)))
+                        
+                    screen.blit(r_txt, (SCREEN_WIDTH//2 - r_txt.get_width()//2, SCREEN_HEIGHT//2 + 20 + float_y))
+                    
+                    hp_txt = font_medium.render(f"Health Remaining: {int(hp)}%", True, COLORS['white'])
+                    hp_txt.set_alpha(rank_alpha)
+                    screen.blit(hp_txt, (SCREEN_WIDTH//2 - hp_txt.get_width()//2, SCREEN_HEIGHT//2 + 180 + float_y))
 
-            if elapsed_end > 3000:
+            if elapsed_end > 4000:
                 sub = font_medium.render("PRESS ANY KEY TO CONTINUE", True, COLORS['white'])
                 if (elapsed_end // 500) % 2 == 0:
-                    screen.blit(sub, (SCREEN_WIDTH//2 - sub.get_width()//2, SCREEN_HEIGHT//2 + 100))
+                    screen.blit(sub, (SCREEN_WIDTH//2 - sub.get_width()//2, SCREEN_HEIGHT//2 + 250))
 
         pygame.display.flip()
 
@@ -2430,31 +2846,50 @@ def start_game(app):
     app.fade_alpha = 0
     app.players = [Player(1, app.p1_shape)]
     if app.is_p2_enabled: app.players.append(Player(2, app.p2_shape))
-    level_classes = {"Cool Friends": CoolFriendsLevel, "Annihilate": AnnihilateLevel, "CLOSE TO ME": CloseToMeLevel, "Final Boss": FinalBossLevel, "Never Gonna Give You Up": NeverGonnaGiveYouUpLevel}
-    if SONGS[name].get("class") == CustomLevel:
-        app.active_level = CustomLevel(name, app, SONGS[name]["json_path"])
+    level_classes = {"Annihilate": AnnihilateLevel, "CLOSE TO ME": CloseToMeLevel, "Never Gonna Give You Up": NeverGonnaGiveYouUpLevel}
+    
+    song_cls = SONGS[name].get("class")
+    if song_cls == CustomLevel:
+        app.active_level = CustomLevel(name, app, SONGS[name].get("json_path_current", SONGS[name]["json_path"]))
+    elif song_cls == "DynamicLevel":
+        py_path = SONGS[name].get("py_path")
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("DynamicLevelModule", py_path)
+        dyn_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(dyn_module)
+        app.active_level = dyn_module.DynamicLevel(name, app)
+        if hasattr(app, 'custom_bpms') and name in app.custom_bpms:
+            app.active_level.bpm = app.custom_bpms[name]
     else:
         app.active_level = level_classes[name](name, app)
+        
     load_music_safely(SONGS[name]["path"])
     pygame.mixer.music.set_volume(1.0)
-    pygame.mixer.music.play()
+    app.level_start_countdown_timer = 3000
+
 
 def run_level_maker(app, query):
-    import subprocess, sys, os, glob, json, math, random, shutil
+    import subprocess, sys, os, glob, json, math, random, shutil, time
+    start_time = time.time()
+    app.lm_start_time = start_time
     custom_dir = os.path.join(os.path.dirname(__file__), "CustomLevels")
     os.makedirs(custom_dir, exist_ok=True)
     
-    app.lm_progress = 0.1
-    hq_on = getattr(app, 'hq_processing', False)
+    app.lm_progress = 0.02
+    app.lm_status = "Checking dependencies..."
     try:
-        pkgs = ["spotdl", "soundfile"]
-        if hq_on: pkgs.extend(["librosa", "lazy_loader"])
+        pkgs = ["spotdl", "soundfile", "librosa", "lazy_loader"]
+        app.lm_status = "Installing SpotDL and audio libraries..."
+        app.lm_progress = 0.06
         subprocess.check_call([sys.executable, "-m", "pip", "install"] + pkgs + ["--upgrade", "--break-system-packages"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        
+        app.lm_status = "Initializing audio converters (FFmpeg)..."
+        subprocess.run([sys.executable, "-m", "spotdl", "--download-ffmpeg"], input=b"n\n", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except Exception:
         pass
         
-    app.lm_status = "Downloading audio with SpotDL..."
-    app.lm_progress = 0.2
+    app.lm_status = "SpotDL ready. Preparing search..."
+    app.lm_progress = 0.10
     
     try:
         tmp_dir = os.path.join(custom_dir, "tmp")
@@ -2462,43 +2897,83 @@ def run_level_maker(app, query):
         for f in glob.glob(os.path.join(tmp_dir, "*")): 
             if os.path.isfile(f): os.remove(f)
         
-        cmd = [sys.executable, "-m", "spotdl", query, "--output", tmp_dir, "--generate-lrc"]
+        app.lm_status = f"Searching for: {query}"
+        app.lm_progress = 0.14
+        
+        cmd = [sys.executable, "-m", "spotdl", query, "--output", tmp_dir, "--generate-lrc", "--format", "ogg"]
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
         import re
+        
+        app.lm_status = "Found song. Starting download..."
+        app.lm_progress = 0.18
+        
         for line in process.stdout:
-            if "Downloaded" in line: app.lm_progress = 0.6
+            m = re.search(r'(\d+)%', line)
+            if m:
+                app.lm_status = f"Downloading audio track... {m.group(1)}%"
+                pct = int(m.group(1))
+                app.lm_progress = 0.24 + (pct / 100.0) * 0.18
         process.wait()
     except Exception as e:
         app.lm_status = f"Error downloading: {e}"
         app.lm_state = 2
         return
 
+    app.lm_status = "Download complete. Verifying file..."
+    app.lm_progress = 0.42
+
     audio_file = None
-    lrc_file = None
-    for f in glob.glob(os.path.join(tmp_dir, "*")):
-        if f.endswith('.lrc'): lrc_file = f
-        elif f.endswith('.mp3') or f.endswith('.m4a') or f.endswith('.wav'): audio_file = f
-        
+    for ext in ["*.ogg", "*.mp3", "*.m4a", "*.wav", "*.webm"]:
+        files = glob.glob(os.path.join(tmp_dir, ext))
+        if files:
+            audio_file = files[0]
+            break
+
+    if audio_file and not audio_file.endswith(".ogg"):
+        app.lm_status = "Converting audio to perfect-sync OGG..."
+        app.lm_progress = 0.45
+        ogg_file = os.path.splitext(audio_file)[0] + ".ogg"
+        try:
+            subprocess.check_call(["ffmpeg", "-y", "-i", audio_file, "-vn", "-acodec", "libvorbis", ogg_file], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            os.remove(audio_file)
+            audio_file = ogg_file
+        except Exception as e:
+            app.lm_status = f"Warning: Conversion to OGG failed: {e}"
+            import time; time.sleep(2)
+                
     if not audio_file:
         app.lm_status = "Error: SpotDL did not download an audio file."
         app.lm_state = 2
         return
         
     base_name = os.path.splitext(os.path.basename(audio_file))[0]
-    base_name = "".join(c for c in base_name if c.isalnum() or c in " _-").strip()
+    base_name_clean = "".join(c for c in base_name if c.isalnum() or c in " _-").strip()
     
-    final_audio = os.path.join(custom_dir, f"{base_name}.mp3")
-    final_lrc = os.path.join(custom_dir, f"{base_name}.lrc")
-    cover_path = os.path.join(custom_dir, f"{base_name}.jpg")
+    for lvl in list(SONGS.keys()):
+        if lvl == base_name_clean:
+            if lvl in app.levels: app.levels.remove(lvl)
+            if lvl in SONGS: del SONGS[lvl]
     
+    song_dir = os.path.join(custom_dir, base_name_clean)
+    os.makedirs(song_dir, exist_ok=True)
+    
+    ext = os.path.splitext(audio_file)[1]
+    final_audio = os.path.join(song_dir, f"{base_name_clean}{ext}")
+    cover_path = os.path.join(song_dir, f"{base_name_clean}.jpg")
+    
+    app.lm_status = "Moving files..."
+    app.lm_progress = 0.50
     if os.path.exists(final_audio): os.remove(final_audio)
-    if os.path.exists(final_lrc): os.remove(final_lrc)
-    
     shutil.move(audio_file, final_audio)
-    if lrc_file: shutil.move(lrc_file, final_lrc)
+    
+    lrc_files = glob.glob(os.path.join(tmp_dir, "*.lrc"))
+    if lrc_files:
+        final_lrc = os.path.join(song_dir, f"{base_name_clean}.lrc")
+        if os.path.exists(final_lrc): os.remove(final_lrc)
+        shutil.move(lrc_files[0], final_lrc)
 
     # Fetch Album Cover
-    app.lm_status = "Fetching Album Cover..."
+    app.lm_status = "Fetching album artwork..."
     try:
         import urllib.request, urllib.parse
         url = f"https://itunes.apple.com/search?term={urllib.parse.quote(base_name)}&entity=song&limit=1"
@@ -2508,513 +2983,352 @@ def run_level_maker(app, query):
         if data['resultCount'] > 0:
             artwork_url = data['results'][0].get('artworkUrl100', '')
             if artwork_url:
-                artwork_url = artwork_url.replace("100x100bb", "600x600bb")
-                urllib.request.urlretrieve(artwork_url, cover_path)
+                urllib.request.urlretrieve(artwork_url.replace("100x100bb", "600x600bb"), cover_path)
     except: pass
 
+    app.lm_status = "Advanced Audio Analysis..."
+    app.lm_progress = 0.55
+
+    # Librosa is disabled due to Python 3.13 numba incompatibility.
+    # Native NumPy onset detection handles beat tracking in 15ms high-precision chunks instead.
     import numpy as np
-    
-    def get_audio_array(audio_path):
-        temp_wav = os.path.join(custom_dir, "temp_analysis.wav")
-        try:
-            subprocess.check_call(["ffmpeg", "-y", "-i", audio_path, "-ac", "1", "-ar", "22050", temp_wav], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            import wave
-            with wave.open(temp_wav, 'rb') as wf:
-                n_frames = wf.getnframes()
-                audio_data = wf.readframes(n_frames)
-                arr = np.frombuffer(audio_data, dtype=np.int16).astype(np.float32) / 32768.0
-            if os.path.exists(temp_wav): os.remove(temp_wav)
-            return arr
-        except Exception as e:
-            print("Audio array extraction failed:", e)
-            return np.zeros(100)
+    import pygame
+    try:
+        import pygame.sndarray
+    except:
+        pass
 
-    def native_rms(audio_path):
-        arr = get_audio_array(audio_path)
-        sr = 22050
-        chunk_size = int(sr * 0.1)
-        rms_list = []
-        max_r = 0.0001
-        for i in range(0, len(arr), chunk_size):
-            chunk = arr[i:i+chunk_size]
-            if len(chunk) == 0: continue
-            r = np.sqrt(np.mean(chunk**2))
-            rms_list.append(r)
-            if r > max_r: max_r = r
-        return [float(r / max_r) for r in rms_list]
-
-    def extract_peaks(rms_list, threshold=0.3):
-        peaks = []
-        for i in range(1, len(rms_list)-1):
-            window = rms_list[max(0, i-5):min(len(rms_list), i+5)]
-            local_avg = sum(window) / max(1, len(window))
-            if rms_list[i] > max(threshold, local_avg * 1.5) and rms_list[i] > rms_list[i-1] and rms_list[i] > rms_list[i+1]:
-                peaks.append(i * 100)
-        return peaks
-
-    app.lm_status = "Loading Audio Data..."
-    app.lm_progress = 0.65
-    
-    bass_hits = []
-    beat_times = []
-    rms_curve = []
-    chroma_curve = []
-    song_bpm = 120
-
-    if hq_on:
-        app.lm_status = "HQ MODE: Librosa HD Analysis..."
-        app.lm_progress = 0.70
-        try:
-            import librosa
-            import numpy as np
+    try:
+        app.lm_status = "Loading Audio via Pygame..."
+        snd = pygame.mixer.Sound(final_audio)
+        y_stereo = pygame.sndarray.array(snd)
+        
+        # Convert to mono float32
+        if len(y_stereo.shape) == 2:
+            y = np.mean(y_stereo, axis=1).astype(np.float32)
+        else:
+            y = y_stereo.astype(np.float32)
             
-            y, sr = librosa.load(final_audio, sr=22050)
+        m_val = np.max(np.abs(y))
+        if m_val > 0:
+            y /= m_val
             
-            app.lm_status = "HQ MODE: Extracting Beats & Onsets..."
-            app.lm_progress = 0.80
+        sr = pygame.mixer.get_init()[0]
+        if sr is None: sr = 44100
+        
+        # Process in 15ms chunks (hop size) for high-precision beat tracking
+        chunk_length_ms = 15.0
+        chunk_size = int(sr * (chunk_length_ms / 1000.0))
+        
+        app.lm_status = "Extracting Frequencies..."
+        dense_data = []
+        bands = [(10, 60), (60, 250), (250, 500), (500, 2000), (2000, 4000), (4000, 6000), (6000, 8000), (8000, 11025)]
+        freqs = np.fft.rfftfreq(chunk_size, 1.0/sr)
+        
+        rms_curve = []
+        total_chunks = len(y) // chunk_size
+        for i in range(total_chunks):
+            start = i * chunk_size
+            chunk = y[start:start+chunk_size]
             
-            D = librosa.stft(y)
-            H, P = librosa.decompose.hpss(D)
-            y_harm = librosa.istft(H)
-            y_perc = librosa.istft(P)
-            
-            onset_env = librosa.onset.onset_strength(y=y_perc, sr=sr)
-            onsets = librosa.onset.onset_detect(onset_envelope=onset_env, sr=sr, units='time')
-            beat_times = [int(t * 1000) for t in onsets]
-            
-            S = np.abs(librosa.stft(y))
-            freqs = librosa.fft_frequencies(sr=sr)
-            bass_idx = np.where((freqs >= 20) & (freqs <= 250))[0]
-            bass_energy = np.mean(S[bass_idx, :], axis=0)
-            bass_energy_norm = bass_energy / (np.max(bass_energy) + 1e-6)
-            
-            times = librosa.frames_to_time(np.arange(S.shape[1]), sr=sr)
-            bass_hits = [int(times[i] * 1000) for i in range(len(times)) if bass_energy_norm[i] > 0.6]
-            
-            app.lm_status = "HQ MODE: Extracting Chroma & Energy..."
-            app.lm_progress = 0.85
-            
-            rms_perc = librosa.feature.rms(y=y_perc)[0]
-            rms_harm = librosa.feature.rms(y=y_harm)[0]
-            rms_perc = rms_perc / (np.max(rms_perc) + 1e-6)
-            rms_harm = rms_harm / (np.max(rms_harm) + 1e-6)
-            
-            chroma = librosa.feature.chroma_stft(y=y_harm, sr=sr)
-            dom_pitch = np.argmax(chroma, axis=0)
-            
-            for i in range(len(rms_perc)):
-                t = int(times[i] * 1000)
-                d = float(rms_perc[i])
-                o = float(rms_harm[i])
-                b = float(bass_energy_norm[i]) if i < len(bass_energy_norm) else 0.0
-                tot = (d + b + o) / 3.0
-                rms_curve.append({"time": t, "energy": tot, "drums": d, "bass": b, "other": o})
-                chroma_curve.append({"time": t, "pitch": int(dom_pitch[i])})
+            sp = np.abs(np.fft.rfft(chunk))
+            e = []
+            for low, high in bands:
+                mask = (freqs >= low) & (freqs <= high)
+                e.append(float(np.mean(sp[mask])) if np.any(mask) else 0.0)
                 
-        except Exception as e:
-            print("Librosa HQ failed:", e)
-            hq_on = False
-    if not hq_on:
-        app.lm_status = "Native Mode: Fast Audio Analysis..."
-        app.lm_progress = 0.75
-        r_list = native_rms(final_audio)
-        for i, r in enumerate(r_list):
-            rms_curve.append({"time": i * 100, "energy": float(r)})
+            emax = max(e) if e else 1.0
+            if emax > 0: e = [v/emax for v in e]
+                
+            dense_data.append({"t": int((i * chunk_size / sr) * 1000), "e": e})
+            rms_curve.append(np.sqrt(np.mean(chunk**2)))
             
-        app.lm_status = "Native Mode: Extracting Beats..."
+            if i % max(1, total_chunks//10) == 0:
+                app.lm_progress = 0.55 + (i/total_chunks)*0.30
+                app.lm_waveforms = e
+                
+        app.lm_status = "Calculating Spectral Flux..."
         app.lm_progress = 0.85
-        beat_times = extract_peaks(r_list, 0.3)
-        bass_hits = [t for t in beat_times if r_list[int(t/100)] > 0.6]
+        
+        flux_curve = [0.0]
+        for i in range(1, len(dense_data)):
+            diff = 0.0
+            for b in range(len(bands)):
+                if dense_data[i]['e'][b] > dense_data[i-1]['e'][b]:
+                    diff += dense_data[i]['e'][b] - dense_data[i-1]['e'][b]
+            flux_curve.append(diff)
+            
+        flux = np.array(flux_curve)
+        beat_times = []
+        
+        # 2.0s window for local mean
+        window_size = int(2.0 / (chunk_length_ms / 1000.0)) 
+        for i in range(1, len(flux)-1):
+            start = max(0, i - window_size)
+            end = min(len(flux), i + window_size)
+            local_mean = np.mean(flux[start:end])
+            
+            # Spectral Flux Peak Detection (looks for transients, not just volume)
+            if flux[i] > flux[i-1] and flux[i] > flux[i+1] and flux[i] > local_mean * 1.8 and flux[i] > 0.08:
+                beat_times.append(int(dense_data[i]['t']))
+                
+        # Failsafe: if more than 2s passes with *any* audio energy, force a beat at the local peak
+        last_t = 0
+        new_beats = []
+        for i in range(len(dense_data)):
+            t_ms = int(dense_data[i]['t'])
+            if t_ms in beat_times:
+                last_t = t_ms
+            elif t_ms - last_t > 5000:
+                # Find the local peak in the last 5000ms
+                idx_start = max(0, i - 40)
+                best_idx = i
+                best_e = -1
+                for j in range(idx_start, i+1):
+                    e = sum(dense_data[j]['e'])
+                    if e > best_e and int(dense_data[j]['t']) not in beat_times and int(dense_data[j]['t']) not in new_beats:
+                        best_e = e
+                        best_idx = j
+                
+                if best_e > 0.1:
+                    t_new = int(dense_data[best_idx]['t'])
+                    new_beats.append(t_new)
+                    last_t = t_new
+                else:
+                    last_t = t_ms
+                    
+        beat_times.extend(new_beats)
+        
+        # Estimate BPM from detected beats
+        beat_times = sorted(list(set(beat_times)))
+        if len(beat_times) > 10:
+            intervals = np.diff(beat_times)
+            valid = intervals[(intervals > 150) & (intervals < 1000)]
+            if len(valid) > 0:
+                extracted_bpm = float(60000.0 / np.median(valid))
+            else:
+                extracted_bpm = 120.0
+        else:
+            extracted_bpm = 120.0
+            
+        song_bpm = extracted_bpm
+        beat_times = sorted(list(set(beat_times)))
+                
+        beat_patterns = []
+        for t in beat_times:
+            idx = int(t / 15.0)
+            if idx < len(dense_data):
+                energies = dense_data[idx]['e']
+                # Use standard max energy to maintain a stable core pattern, avoiding per-beat chaos
+                dom_band = int(np.argmax(energies))
+                beat_patterns.append(dom_band)
+            else:
+                beat_patterns.append(0)
+            
+        times = [d['t'] / 1000.0 for d in dense_data]
+        if not times: times = [0.0]
 
-    app.lm_status = "Generating Obstacles via Audio Maps..."
+    except Exception as e:
+        app.lm_status = f"Analysis failed: {e}"
+        app.lm_state = 2
+        return
+
+    app.lm_status = "Compiling Neural Patterns to Python Script..."
     app.lm_progress = 0.90
 
-    timestamps = []
-    if os.path.exists(final_lrc):
-        lyrics_data = parse_lrc(final_lrc)
-        timestamps = [item['time'] for item in lyrics_data]
-    
-    random.seed(base_name)
-    level_data = {
-        "name": base_name,
-        "path": final_audio,
-        "artist": "Custom Generator",
-        "bpm": float(song_bpm),
-        "rms_curve": rms_curve,
-        "chroma_curve": chroma_curve,
-        "obstacles": []
-    }
-    
-    all_hits = sorted(list(set(timestamps + bass_hits + beat_times)))
-    
-    def get_rms(t):
-        if not rms_curve: return 0.5
-        idx = int(t / 100)
-        if idx >= len(rms_curve): return rms_curve[-1]["energy"]
-        return rms_curve[idx]["energy"]
-        
-    # 1. Beat Clustering Algorithm
+    # 1. Beat Clustering & Global Intensity Curve
+    app.lm_status = "Mapping Audio Intensity & Clustering Beats..."
+    all_hits = sorted(list(set(beat_times)))
     clusters = []
     current_cluster = []
     for t in all_hits:
         if not current_cluster:
             current_cluster.append(t)
         else:
-            if t - current_cluster[-1] < 450: # Sequence threshold
+            if t - current_cluster[-1] < 450:
                 current_cluster.append(t)
             else:
                 clusters.append(current_cluster)
                 current_cluster = [t]
-    if current_cluster:
-        clusters.append(current_cluster)
+    if current_cluster: clusters.append(current_cluster)
 
-    # 0. Song Structure Analysis
-    window_size = 100
-    section_map = []
-    if rms_curve:
-        for i in range(len(rms_curve)):
-            start = max(0, i - window_size//2)
-            end = min(len(rms_curve), i + window_size//2)
-            avg = sum(x["energy"] for x in rms_curve[start:end]) / max(1, end-start)
-            if avg < 0.3:
-                sec_type = "intro"
-            elif avg < 0.6:
-                sec_type = "verse"
-            else:
-                sec_type = "chorus"
-            section_map.append({"time": rms_curve[i]["time"], "section": sec_type})
+    # Compute intensity curve: sampled every 100ms
+    raw_intensity = [sum(d['e'])/max(1, len(d['e'])) for d in dense_data]
+    max_raw = max(raw_intensity) if raw_intensity else 1.0
+    if max_raw == 0: max_raw = 1.0
+    
+    smoothed = []
+    window = 5
+    for i in range(len(raw_intensity)):
+        s = max(0, i-window)
+        e = min(len(raw_intensity), i+window)
+        smoothed.append((sum(raw_intensity[s:e]) / (e-s)) / max_raw)
         
-    def get_section(t):
-        idx = int(t / 100)
-        if not section_map: return "verse"
-        if idx >= len(section_map): return section_map[-1]["section"]
-        return section_map[idx]["section"]
-
-    # 2. Sequence Generation
-    last_spawn_time = -5000
-    last_heavy_pattern_time = -5000
-
-    for cluster in clusters:
-        seq_len = len(cluster)
-        avg_energy = sum(get_rms(t) for t in cluster) / seq_len
-        is_bass = any(t in bass_hits for t in cluster)
-        
-        d_energy = 0
-        b_energy = 0
-        o_energy = 0
-        
-        for t in cluster:
-            idx = int(t / 100)
-            if hq_on and rms_curve and idx < len(rms_curve) and "drums" in rms_curve[idx]:
-                d_energy = max(d_energy, rms_curve[idx]["drums"])
-                b_energy = max(b_energy, rms_curve[idx]["bass"])
-                o_energy = max(o_energy, rms_curve[idx]["other"])
-                
-        # Determine Sequence Pattern
-        sec = get_section(cluster[0])
-        
-        if not hq_on:
-            if avg_energy < 0.15 and random.random() > 0.2:
-                continue
-            if sec == "intro": patterns = ["barrage", "spiral", "flower_burst"]
-            elif sec == "verse": patterns = ["pincer", "homing_lasers", "double_helix"]
-            else: patterns = ["crossfire", "pulse_ring", "wall_gap", "grid_lock", "border_crush", "sine_wave"]
-            pattern_type = random.choice(patterns)
+    intensity_curve = []
+    for ms in range(0, int(times[-1]*1000) + 100, 100):
+        idx = int(ms / chunk_length_ms)
+        if idx < len(smoothed):
+            intensity_curve.append(round(smoothed[idx], 3))
         else:
-            if avg_energy < 0.05: continue
-            if sec == "intro":
-                pattern_type = random.choice(["spiral", "flower_burst", "double_helix", "snake"])
-                avg_energy = max(d_energy, b_energy, o_energy)
-            else:
-                if b_energy > 0.5:
-                    pattern_type = random.choice(["wall_gap", "laser_sweep", "crossfire", "grid_lock", "border_crush", "laser_grid"])
-                    avg_energy = b_energy
-                    is_bass = True
-                elif d_energy > 0.4:
-                    pattern_type = random.choice(["starburst", "barrage", "spiral", "pulse_ring", "flower_burst", "matrix_rain"])
-                    avg_energy = d_energy
-                    is_bass = False
-                elif o_energy > 0.5:
-                    pattern_type = random.choice(["sine_wave", "pincer", "homing_lasers", "double_helix", "chaser", "snake"])
-                    avg_energy = o_energy
-                    is_bass = False
-                else:
-                    if random.random() > 0.2: continue
-                    pattern_type = "pincer"
-                
-        # 10X IMPROVEMENT: Combo Attacks!
-        secondary_pattern = None
-        super_pattern = None
-        if avg_energy > 0.85 and len(cluster) > 2 and random.random() > 0.5:
-            super_pattern = random.choice(["laser_cage", "core_explosion", "vortex"])
-        elif avg_energy > 0.75 and random.random() > 0.3:
-            if pattern_type in ["laser_sweep", "wall_gap", "grid_lock", "border_crush", "laser_grid"]:
-                secondary_pattern = "matrix_rain"
-            elif pattern_type in ["starburst", "spiral", "pulse_ring", "flower_burst", "vortex"]:
-                secondary_pattern = "chaser"
-            else:
-                secondary_pattern = "pincer"
-                
-        # Throttle heavy patterns
-        if pattern_type in ["wall_gap", "sine_wave", "crossfire", "laser_sweep", "grid_lock", "border_crush", "laser_grid", "vortex"]:
-            if cluster[0] - last_heavy_pattern_time < 3000:
-                pattern_type = random.choice(["pincer", "barrage", "spiral", "homing_lasers", "snake", "matrix_rain"])
-                secondary_pattern = None
-                super_pattern = None
-            else:
-                last_heavy_pattern_time = cluster[0]
-                
-        # Execute Pattern identically across the Cluster (Sequence)
-        def spawn_pattern(ptype, t, i, energy):
-            def add_obs(obs):
-                # EXACT SYNC: Attack hits exactly at 't' by spawning early
-                w_time = obs.get("warning_time", 500)
-                obs["time"] = max(0, t - w_time)
-                level_data["obstacles"].append(obs)
+            intensity_curve.append(0.0)
 
-            def get_pitch(time_ms):
-                if not chroma_curve: return random.randint(0, 11)
-                idx = int(time_ms / 100)
-                if idx >= len(chroma_curve): return chroma_curve[-1]["pitch"]
-                return chroma_curve[idx]["pitch"]
+    # Generate unique theme based on song name
+    import hashlib
+    seed_val = int(hashlib.md5(base_name_clean.encode()).hexdigest(), 16)
+    random.seed(seed_val)
+    # Use all clean, focused patterns for maximum variance without being messy
+    all_patterns = [0, 2, 3, 6, 9, 10, 11, 14, 16, 17]
+    theme_patterns = all_patterns
 
-            pitch = get_pitch(t)
+    # Convert clusters and data into a raw list format that can be embedded into the python script directly.
+    import pprint
+    
+    python_script = f"""# GENERATED LEVEL: {base_name_clean}
+import random, math, pygame
+from game import Level, Obstacle, SCREEN_WIDTH, SCREEN_HEIGHT
 
-            if ptype == "wall_gap":
-                gap_x = random.randint(150, SCREEN_WIDTH - 150)
-                for x in range(0, SCREEN_WIDTH, 120):
-                    if abs(x - gap_x) > 150:
-                        add_obs({
-                            "type": "warning_line", "x": x, "y": -100,
-                            "warning_time": 600, "speed": 10 + (energy * 8), "vx": 0, "shape": "rect", "size": 100
-                        })
-            elif ptype == "sine_wave":
-                base_x = random.randint(200, SCREEN_WIDTH - 200)
-                add_obs({
-                    "type": "warning_line", "x": base_x + math.sin(i * 0.8) * 150, "y": -50,
-                    "warning_time": 400, "speed": 10 + (energy * 4), "vx": 0, "shape": "circle", "size": 30
-                })
-            elif ptype == "crossfire":
-                coords = [(SCREEN_WIDTH//2, -100, 0, 20), (SCREEN_WIDTH//2, SCREEN_HEIGHT+100, 0, -20), (-100, SCREEN_HEIGHT//2, 20, 0), (SCREEN_WIDTH+100, SCREEN_HEIGHT//2, -20, 0)]
-                cx, cy, cvx, cvy = coords[i % 4]
-                add_obs({
-                    "type": "warning_line", "x": cx, "y": cy,
-                    "warning_time": 800, "speed": abs(cvy) + abs(cvx), "vx": cvx, "shape": "rect", "size": 150
-                })
-            elif ptype == "starburst":
-                count = max(6, int(12 * energy))
-                for j in range(count):
-                    angle = j * (math.pi / (count / 2.0))
-                    speed = 12 * energy
-                    vx = math.cos(angle) * max(6, speed)
-                    vy = math.sin(angle) * max(6, speed)
-                    add_obs({
-                        "type": "warning_line", "x": SCREEN_WIDTH//2, "y": SCREEN_HEIGHT//2,
-                        "warning_time": 400, "speed": vy, "vx": vx, "shape": "triangle", "size": int(30 * energy)
-                    })
-            elif ptype == "laser_sweep":
-                sweep_x = 100 + (SCREEN_WIDTH - 200) * (i / max(1, seq_len - 1)) if seq_len > 1 else SCREEN_WIDTH//2
-                add_obs({
-                    "type": "warning_line", "x": sweep_x, "y": -100,
-                    "warning_time": 500, "speed": 35, "vx": 0, "shape": "rect", "size": 150
-                })
-            elif ptype == "barrage":
-                count = max(3, int(6 * energy))
-                for j in range(count):
-                    add_obs({
-                        "type": "warning_line", "x": random.randint(50, SCREEN_WIDTH-50), "y": -50,
-                        "warning_time": 400, "speed": random.uniform(8, 15), "vx": random.uniform(-5, 5), "shape": "circle", "size": 40
-                    })
-            elif ptype == "spiral":
-                count = max(4, int(8 * energy))
-                offset = i * 0.5
-                for j in range(count):
-                    angle = j * (math.pi / (count / 2.0)) + offset
-                    speed = 10 * energy
-                    vx = math.cos(angle) * max(5, speed)
-                    vy = math.sin(angle) * max(5, speed)
-                    add_obs({
-                        "type": "warning_line", "x": SCREEN_WIDTH//2, "y": SCREEN_HEIGHT//2,
-                        "warning_time": 500, "speed": vy, "vx": vx, "shape": "circle", "size": 30
-                    })
-            elif ptype == "pincer":
-                speed = 10 + energy * 5
-                add_obs({
-                    "type": "warning_line", "x": -50, "y": random.randint(100, SCREEN_HEIGHT-100),
-                    "warning_time": 600, "speed": 0, "vx": speed, "shape": "triangle", "size": 60
-                })
-                add_obs({
-                    "type": "warning_line", "x": SCREEN_WIDTH+50, "y": random.randint(100, SCREEN_HEIGHT-100),
-                    "warning_time": 600, "speed": 0, "vx": -speed, "shape": "triangle", "size": 60
-                })
-            elif ptype == "homing_lasers":
-                add_obs({
-                    "type": "warning_line", "x": "PLAYER_X", "y": -100,
-                    "warning_time": 600, "speed": 25 + energy * 10, "vx": 0, "shape": "rect", "size": 80
-                })
-            elif ptype == "pulse_ring":
-                count = max(8, int(16 * energy))
-                for j in range(count):
-                    angle = j * (2 * math.pi / count)
-                    speed = 8 + energy * 4
-                    vx = math.cos(angle) * speed
-                    vy = math.sin(angle) * speed
-                    add_obs({
-                        "type": "warning_line", "x": SCREEN_WIDTH//2, "y": SCREEN_HEIGHT//2,
-                        "warning_time": 600, "speed": vy, "vx": vx, "shape": "circle", "size": 40
-                    })
-            elif ptype == "grid_lock":
-                for x in [SCREEN_WIDTH//4, SCREEN_WIDTH*3//4]:
-                    add_obs({
-                        "type": "warning_line", "x": x, "y": -100,
-                        "warning_time": 800, "speed": 20, "vx": 0, "shape": "rect", "size": 150
-                    })
-                for y in [SCREEN_HEIGHT//4, SCREEN_HEIGHT*3//4]:
-                    add_obs({
-                        "type": "warning_line", "x": -100, "y": y,
-                        "warning_time": 800, "speed": 0, "vx": 20, "shape": "rect", "size": 150
-                    })
-            elif ptype == "laser_cage":
-                for cx, cy, cvx, cvy in [(SCREEN_WIDTH//2, -50, 0, 10), (SCREEN_WIDTH//2, SCREEN_HEIGHT+50, 0, -10), (-50, SCREEN_HEIGHT//2, 10, 0), (SCREEN_WIDTH+50, SCREEN_HEIGHT//2, -10, 0)]:
-                    add_obs({
-                        "type": "warning_line", "x": cx, "y": cy,
-                        "warning_time": 1000, "speed": abs(cvy)+abs(cvx), "vx": cvx, "shape": "rect", "size": 300,
-                        "lifespan": 4000
-                    })
-            elif ptype == "core_explosion":
-                add_obs({
-                    "type": "warning_line", "x": SCREEN_WIDTH//2, "y": SCREEN_HEIGHT//2,
-                    "warning_time": 1200, "speed": 0, "vx": 0, "shape": "circle", "size": 300,
-                    "lifespan": 5000
-                })
-            elif ptype == "flower_burst":
-                count = max(8, int(16 * energy))
-                for j in range(count):
-                    angle = j * (math.pi / (count / 2.0)) + (t/1000.0)
-                    speed = 6 + 4 * energy
-                    add_obs({
-                        "type": "warning_line", "x": SCREEN_WIDTH//2, "y": SCREEN_HEIGHT//2,
-                        "warning_time": 500, "speed": math.sin(angle)*speed, "vx": math.cos(angle)*speed, "shape": "circle", "size": 40
-                    })
-            elif ptype == "double_helix":
-                for j in range(2):
-                    angle = (t / 500.0) + j * math.pi
-                    speed = 12
-                    add_obs({
-                        "type": "warning_line", "x": SCREEN_WIDTH//2, "y": -50,
-                        "warning_time": 400, "speed": speed, "vx": math.cos(angle)*15, "shape": "circle", "size": 30
-                    })
-            elif ptype == "border_crush":
-                add_obs({
-                    "type": "warning_line", "x": 100, "y": -100,
-                    "warning_time": 800, "speed": 15, "vx": 0, "shape": "rect", "size": 250
-                })
-                add_obs({
-                    "type": "warning_line", "x": SCREEN_WIDTH-100, "y": -100,
-                    "warning_time": 800, "speed": 15, "vx": 0, "shape": "rect", "size": 250
-                })
-            elif ptype == "matrix_rain":
-                count = max(3, int(6 * energy))
-                for j in range(count):
-                    px = (pitch * 100 + random.randint(0, 200)) % SCREEN_WIDTH
-                    add_obs({
-                        "type": "warning_line", "x": px, "y": -50,
-                        "warning_time": 400, "speed": 15 + energy * 10, "vx": 0, "shape": "rect", "size": int(20 + 20 * energy)
-                    })
-            elif ptype == "vortex":
-                count = max(8, int(16 * energy))
-                for j in range(count):
-                    angle = j * (2 * math.pi / count) + (t / 500.0)
-                    speed = 6 + energy * 4
-                    add_obs({
-                        "type": "warning_line", "x": SCREEN_WIDTH//2 + math.cos(angle)*400, "y": SCREEN_HEIGHT//2 + math.sin(angle)*400,
-                        "warning_time": 800, "speed": -math.sin(angle)*speed, "vx": -math.cos(angle)*speed, "shape": "circle", "size": 50,
-                        "lifespan": 4000
-                    })
-            elif ptype == "chaser":
-                add_obs({
-                    "type": "warning_line", "x": "PLAYER_X", "y": -100,
-                    "warning_time": 600, "speed": 20 + energy * 10, "vx": 0, "shape": "triangle", "size": 60
-                })
-            elif ptype == "snake":
-                base_x = 200 + (pitch * 100) % (SCREEN_WIDTH - 400)
-                add_obs({
-                    "type": "warning_line", "x": base_x + math.sin(i * 0.5) * 200, "y": -50,
-                    "warning_time": 400, "speed": 12 + energy * 5, "vx": math.cos(i * 0.5) * 5, "shape": "circle", "size": 40
-                })
-            elif ptype == "laser_grid":
-                add_obs({
-                    "type": "warning_line", "x": (pitch * 150) % SCREEN_WIDTH, "y": -100,
-                    "warning_time": 800, "speed": 25, "vx": 0, "shape": "rect", "size": 120
-                })
-                add_obs({
-                    "type": "warning_line", "x": -100, "y": (pitch * 100) % SCREEN_HEIGHT,
-                    "warning_time": 800, "speed": 0, "vx": 25, "shape": "rect", "size": 120
-                })
-
-        for i, t in enumerate(cluster):
-            if t - last_spawn_time < 100: continue
-            last_spawn_time = t
-            energy = get_rms(t)
-            spawn_pattern(pattern_type, t, i, energy)
-            if secondary_pattern:
-                spawn_pattern(secondary_pattern, t, i, energy * 0.7)
-            if super_pattern and i == 0:
-                spawn_pattern(super_pattern, t, i, energy)
-
-    for _ in range(100):
-        t = random.randint(0, max(timestamps + beat_times) if timestamps else 180000)
-        energy = get_rms(t)
-        if energy > 0.2:
-            level_data["obstacles"].append({
-                "time": t, "type": "warning_line", "x": random.randint(100, SCREEN_WIDTH-100), "y": -50,
-                "warning_time": 1000, "speed": random.uniform(4, 9), "vx": random.uniform(-2, 2), "shape": random.choice(["circle", "rect"]), "size": random.randint(20, 50)
-            })
+class DynamicLevel(Level):
+    def __init__(self, name, app):
+        super().__init__(name, app)
+        self.bpm = {song_bpm}
+        self.clusters = {clusters}
+        self.intensity_curve = {intensity_curve}
+        self.theme_patterns = {theme_patterns}
+        self.beat_times = {beat_times}
+        self.beat_patterns = {beat_patterns}
+        self.cluster_idx = 0
+        self.beat_idx = 0
+        self.current_pattern_mode = 0
         
-    for obs in level_data["obstacles"]:
-        obs["lifespan"] = 3000
+    def get_band(self, t, band_idx):
+        pass
+
+    def on_beat(self, elapsed):
+        sync_offset = self.app.lyric_offsets.get(self.name, 0)
+        true_elapsed = elapsed - sync_offset
+        sec = true_elapsed / 1000.0
         
-    json_path = os.path.join(custom_dir, f"{base_name}.json")
-    with open(json_path, 'w') as f:
-        json.dump(level_data, f, indent=4)
+        idx = int(true_elapsed // 100)
+        if idx < 0: idx = 0
+        if idx >= len(self.intensity_curve): idx = len(self.intensity_curve) - 1
         
-    # Inject dynamically
-    if base_name not in app.levels:
-        app.levels.append(base_name)
-        if hasattr(app, 'item_offsets'):
-            app.item_offsets.append(0.0)
-    SONGS[base_name] = {
+        diff = getattr(self.app, 'config_diff', 'Normal')
+        diff_mult = 1.0
+        if diff == "Easy": diff_mult = 0.5
+        elif diff == "Hard": diff_mult = 1.5
+        
+        intro_mult = min(1.0, true_elapsed / 20000.0) 
+        global_intensity = self.intensity_curve[idx] * diff_mult * (0.5 + 0.5 * intro_mult)
+        
+        # Fast-forward cluster index
+        while self.cluster_idx < len(self.clusters) and self.clusters[self.cluster_idx][-1] < true_elapsed:
+            self.cluster_idx += 1
+            
+        if self.cluster_idx < len(self.clusters):
+            cluster = self.clusters[self.cluster_idx]
+        else:
+            cluster = [0]
+            
+        if hasattr(self, 'beat_patterns') and self.beat_idx - 1 < len(self.beat_patterns):
+            dom_band = self.beat_patterns[max(0, self.beat_idx - 1)]
+            # Phrase-based variance: Hold pattern for 8 beats to build rhythm, then shift to a new one
+            phrase_idx = self.beat_idx // 8
+            self.current_pattern_mode = self.theme_patterns[(dom_band + self.cluster_idx + phrase_idx) % len(self.theme_patterns)]
+        else:
+            phrase_idx = self.beat_idx // 8
+            self.current_pattern_mode = self.theme_patterns[(self.cluster_idx + phrase_idx) % len(self.theme_patterns)]
+            
+        # Hardest parts = massive density + high intensity
+        base_intensity = min(3, max(1, len(cluster) // 3))
+        peak_mult = 1.0 + global_intensity
+        intensity = int(base_intensity * peak_mult)
+        
+        ptype = self.current_pattern_mode
+        
+        # Clamp size to avoid giant unbeatable cubes
+        def clamp_size(sz):
+            max_h = 100  # Much smaller max size so nothing blocks the whole screen
+            return min(max(sz, 10), max_h)
+            
+        # CLEAN BUT DIFFICULT PATTERNS
+        if ptype == 0: # Sweeping Lasers
+            self.obstacles.append(Obstacle(random.randint(100, SCREEN_WIDTH-100), -100, clamp_size(100), 0, 15 + intensity*2, 'rect', 300))
+        elif ptype == 2: # Tracking Missiles
+            if self.app.players:
+                p = random.choice(self.app.players)
+                dx, dy = p.x - (-50), p.y - (-50)
+                mag = math.sqrt(dx*dx + dy*dy) if dx*dx+dy*dy > 0 else 1
+                self.obstacles.append(Obstacle(random.choice([-50, SCREEN_WIDTH+50]), random.choice([-50, SCREEN_HEIGHT+50]), 45, (dx/mag)*(10+intensity*2), (dy/mag)*(10+intensity*2), 'triangle', 200, rot_speed=10))
+        elif ptype == 3: # Bouncing Saws
+            self.obstacles.append(Obstacle(random.randint(100, SCREEN_WIDTH-100), -50, clamp_size(60 + intensity*5), random.choice([-15, 15]), 10 + intensity, 'rect', 0, rot_speed=15))
+        elif ptype == 6: # Zig-Zag Comets
+            self.obstacles.append(Obstacle(random.randint(100, SCREEN_WIDTH-100), -50, 50, 0, 20 + intensity*2, 'circle', 100))
+        elif ptype == 9: # Pulsar Beams
+            self.obstacles.append(Obstacle(-50, random.randint(100, SCREEN_HEIGHT-100), clamp_size(100), 20 + intensity*2, 0, 'rect', 200))
+        elif ptype == 10: # Boomerang Blades
+            self.obstacles.append(Obstacle(SCREEN_WIDTH+50, random.randint(100, SCREEN_HEIGHT-100), clamp_size(70 + intensity*5), -20, 0, 'triangle', 0, rot_speed=15))
+        elif ptype == 11: # Ricochet Triangles
+            self.obstacles.append(Obstacle(-50, random.randint(100, SCREEN_HEIGHT-100), clamp_size(50 + intensity*5), 15 + intensity, random.choice([-20, 20]), 'triangle', 0))
+        elif ptype == 14: # Homing Comets
+            if self.app.players:
+                p = random.choice(self.app.players)
+                dx, dy = p.x + p.speed*10 - random.choice([-50, SCREEN_WIDTH+50]), p.y + p.speed*10 - random.choice([-50, SCREEN_HEIGHT+50])
+                mag = math.sqrt(dx*dx + dy*dy) if dx*dx+dy*dy > 0 else 1
+                self.obstacles.append(Obstacle(random.choice([-50, SCREEN_WIDTH+50]), random.choice([-50, SCREEN_HEIGHT+50]), clamp_size(50+intensity*5), (dx/mag)*(15+intensity*2), (dy/mag)*(15+intensity*2), 'circle', 300))
+        elif ptype == 16: # Pinwheel Spinners
+            self.obstacles.append(Obstacle(random.choice([-100, SCREEN_WIDTH+100]), random.randint(100, SCREEN_HEIGHT-100), clamp_size(100 + intensity*5), 10+intensity, 0, 'rect', 0, rot_speed=10))
+        elif ptype == 17: # Stalker Blades
+            if self.app.players:
+                p = random.choice(self.app.players)
+                start_x, start_y = random.choice([-50, SCREEN_WIDTH+50]), random.choice([-50, SCREEN_HEIGHT+50])
+                dx, dy = p.x - start_x, p.y - start_y
+                mag = math.sqrt(dx*dx + dy*dy) if dx*dx+dy*dy > 0 else 1
+                self.obstacles.append(Obstacle(start_x, start_y, clamp_size(60+intensity*2), (dx/mag)*(5+intensity), (dy/mag)*(5+intensity), 'triangle', 0, rot_speed=5))
+"""
+    
+    script_path = os.path.join(song_dir, f"{base_name_clean}.py")
+    with open(script_path, "w", encoding="utf-8") as f:
+        f.write(python_script)
+
+    app.lm_status = "Registering executable Level Code..."
+    app.lm_progress = 0.99
+    
+    if base_name_clean not in app.levels:
+        app.levels.append(base_name_clean)
+        if hasattr(app, 'item_offsets'): app.item_offsets.append(0.0)
+    app.lm_last_song = base_name_clean
+    SONGS[base_name_clean] = {
         "path": final_audio,
-        "artist": "Custom Generator",
+        "artist": "Dynamic Python Generator",
         "surf": None,
-        "class": CustomLevel,
-        "json_path": json_path,
-        "bpm": 120
+        "class": "DynamicLevel",
+        "py_path": script_path,
+        "bpm": float(song_bpm)
     }
     if os.path.exists(cover_path):
         try:
             surf = pygame.image.load(cover_path).convert()
-            SONGS[base_name]["surf"] = pygame.transform.scale(surf, (400, 400))
+            SONGS[base_name_clean]["surf"] = pygame.transform.scale(surf, (400, 400))
         except: pass
         
-    app.lm_progress = 1.0
-    app.config_level_name = base_name
-    app.config_delay = 0
-    app.config_idx = 0
-    app.config_diff = "Normal"
-    app.config_boss = True
-    app.config_chroma = True
-    app.state = GameState.LEVEL_CONFIG
+    app.lm_last_generated_name = base_name_clean
+    
+    gen_duration = time.time() - start_time
     try:
-        pygame.mixer.music.load(final_audio)
-        start_pos = 0.0
-        if timestamps:
-            start_pos = max(0.0, (timestamps[0] - 2000) / 1000.0)
-        pygame.mixer.music.play(start=start_pos)
-        app.config_start_pos = int(start_pos * 1000)
-        app.config_start_time = pygame.time.get_ticks()
+        avg_file = os.path.join(custom_dir, "average_gen_time.txt")
+        times = []
+        if os.path.exists(avg_file):
+            with open(avg_file, "r") as f:
+                times = [float(x) for x in f.read().split() if x]
+        times.append(gen_duration)
+        if len(times) > 10: times = times[-10:]
+        with open(avg_file, "w") as f:
+            f.write("\n".join(str(t) for t in times))
+        app.avg_gen_time = sum(times) / len(times)
     except: pass
+
+    app.lm_status = "Done! Level Compiled Successfully."
+    app.lm_state = 2
 
 if __name__ == "__main__":
     main()
-    pygame.quit()
