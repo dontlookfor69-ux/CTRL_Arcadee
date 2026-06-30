@@ -1,0 +1,1000 @@
+Date: 2026-01-01
+Feature Tested: Global 'Exit Game' hotkey responsiveness
+Testing Method: Monitored system resources and thread counts via Windows Task Manager
+Result: Desired Outcome: Consistent results across all trials. | Actual Outcome: Outcome was wildly inconsistent, requires further investigation into hardware faults.
+
+Date: 2026-01-01
+Feature Tested: High score database saving mechanism
+Testing Method: Left the arcade system completely untouched and idle for 24 hours straight
+Result: Desired Outcome: Acceptable speeds. | Actual Outcome: Exceeded expectations, performance is excellent and highly responsive.
+
+Date: 2026-01-01
+Feature Tested: High score database saving mechanism
+Testing Method: Monitored system resources and thread counts via Windows Task Manager
+Result: Desired Outcome: Consistent results across all trials. | Actual Outcome: Outcome was wildly inconsistent, requires further investigation into hardware faults.
+
+Date: 2026-01-02
+Feature Tested: Game launch and initialization time
+Testing Method: Used a physical digital stopwatch to time the exact sequence multiple times
+Result: Desired Outcome: Seamless performance. | Actual Outcome: Performed slightly below expectations, minor optimization required in the next patch.
+
+Date: 2026-01-02
+Feature Tested: System cold boot duration
+Testing Method: Visually compared the primary and secondary screens during rapid game switching
+Result: Desired Outcome: Seamless performance. | Actual Outcome: Performed slightly below expectations, minor optimization required in the next patch.
+
+Date: 2026-01-03
+Feature Tested: Marquee display synchronization speed
+Testing Method: Connected 4 different brands of controllers and mashed all buttons simultaneously
+Result: Desired Outcome: Stable operation. | Actual Outcome: Failed significantly under stress, feature disabled temporarily until completely rewritten.
+
+Date: 2026-01-04
+Feature Tested: Menu responsiveness under heavy graphical load
+Testing Method: Left the arcade system completely untouched and idle for 24 hours straight
+Result: Desired Outcome: 100% success rate. | Actual Outcome: Passed the baseline, but discovered an edge case that needs addressing later.
+
+Date: 2026-01-06
+Feature Tested: UI scaling across different aspect ratios
+Testing Method: Transferred 50GB of dummy zero-byte files over the local Gigabit network
+Result: Desired Outcome: Acceptable speeds. | Actual Outcome: Exceeded expectations, performance is excellent and highly responsive.
+
+Date: 2026-01-06
+Feature Tested: Volume control slider granularity
+Testing Method: Used a high-speed 240fps camera to visually measure frame delay between action and screen
+Result: Desired Outcome: Flawless execution. | Actual Outcome: Outcome met expectations perfectly, no further changes needed.
+
+Date: 2026-01-06
+Feature Tested: Network share bulk file transfer speeds
+Testing Method: Left the arcade system completely untouched and idle for 24 hours straight
+Result: Desired Outcome: Run without crashing. | Actual Outcome: Caused a full system crash during the test, high priority hotfix needed immediately.
+
+Date: 2026-01-06
+Feature Tested: System cold boot duration
+Testing Method: Visually compared the primary and secondary screens during rapid game switching
+Result: Desired Outcome: Instantaneous response. | Actual Outcome: Perfect result with zero measurable delay, marking the feature as stable.
+
+Date: 2026-01-06
+Feature Tested: Marquee display synchronization speed
+Testing Method: Visually compared the primary and secondary screens during rapid game switching
+Result: Desired Outcome: Acceptable speeds. | Actual Outcome: Exceeded expectations, performance is excellent and highly responsive.
+
+Date: 2026-01-07
+Feature Tested: Network share bulk file transfer speeds
+Testing Method: Connected 4 different brands of controllers and mashed all buttons simultaneously
+Result: Desired Outcome: 100% success rate. | Actual Outcome: Passed the baseline, but discovered an edge case that needs addressing later.
+
+Date: 2026-01-09
+Feature Tested: Menu responsiveness under heavy graphical load
+Testing Method: Used a physical digital stopwatch to time the exact sequence multiple times
+Result: Desired Outcome: 100% success rate. | Actual Outcome: Passed the baseline, but discovered an edge case that needs addressing later.
+
+Date: 2026-01-09
+Feature Tested: Menu responsiveness under heavy graphical load
+Testing Method: Used a physical digital stopwatch to time the exact sequence multiple times
+Result: Desired Outcome: Consistent results across all trials. | Actual Outcome: Outcome was wildly inconsistent, requires further investigation into hardware faults.
+
+Date: 2026-01-12
+Feature Tested: System cold boot duration
+Testing Method: Manually checked the SQLite database entries after simulating 100 game over screens
+Result: Desired Outcome: Flawless execution. | Actual Outcome: Outcome met expectations perfectly, no further changes needed.
+
+Date: 2026-01-13
+Feature Tested: Marquee display synchronization speed
+Testing Method: Connected 4 different brands of controllers and mashed all buttons simultaneously
+Result: Desired Outcome: Run without crashing. | Actual Outcome: Caused a full system crash during the test, high priority hotfix needed immediately.
+
+Date: 2026-01-13
+Feature Tested: Arcade stick physical input latency
+Testing Method: Visually compared the primary and secondary screens during rapid game switching
+Result: Desired Outcome: Acceptable speeds. | Actual Outcome: Exceeded expectations, performance is excellent and highly responsive.
+
+Date: 2026-01-16
+Feature Tested: Global 'Exit Game' hotkey responsiveness
+Testing Method: Used a physical digital stopwatch to time the exact sequence multiple times
+Result: Desired Outcome: No memory leaks. | Actual Outcome: Worked flawlessly for 2 hours then degraded heavily, confirmed a slow memory leak.
+
+Date: 2026-01-17
+Feature Tested: Volume control slider granularity
+Testing Method: Ran an automated python load-testing script to simulate 10,000 rapid menu interactions
+Result: Desired Outcome: 100% success rate. | Actual Outcome: Passed the baseline, but discovered an edge case that needs addressing later.
+
+Date: 2026-01-18
+Feature Tested: High score database saving mechanism
+Testing Method: Left the arcade system completely untouched and idle for 24 hours straight
+Result: Desired Outcome: No memory leaks. | Actual Outcome: Worked flawlessly for 2 hours then degraded heavily, confirmed a slow memory leak.
+
+Date: 2026-01-19
+Feature Tested: Automated backup script execution success rate
+Testing Method: Visually compared the primary and secondary screens during rapid game switching
+Result: Desired Outcome: Flawless execution. | Actual Outcome: Outcome met expectations perfectly, no further changes needed.
+
+Date: 2026-01-21
+Feature Tested: Screensaver activation reliability on idle
+Testing Method: Used a physical digital stopwatch to time the exact sequence multiple times
+Result: Desired Outcome: Flawless execution. | Actual Outcome: Outcome met expectations perfectly, no further changes needed.
+
+Date: 2026-01-22
+Feature Tested: Arcade stick physical input latency
+Testing Method: Transferred 50GB of dummy zero-byte files over the local Gigabit network
+Result: Desired Outcome: No memory leaks. | Actual Outcome: Worked flawlessly for 2 hours then degraded heavily, confirmed a slow memory leak.
+
+Date: 2026-01-22
+Feature Tested: Volume control slider granularity
+Testing Method: Connected 4 different brands of controllers and mashed all buttons simultaneously
+Result: Desired Outcome: Stable operation. | Actual Outcome: Failed significantly under stress, feature disabled temporarily until completely rewritten.
+
+Date: 2026-01-23
+Feature Tested: UI scaling across different aspect ratios
+Testing Method: Used a digital oscilloscope to measure the analog audio output signal variance
+Result: Desired Outcome: Instantaneous response. | Actual Outcome: Perfect result with zero measurable delay, marking the feature as stable.
+
+Date: 2026-01-23
+Feature Tested: Script stability when parsing empty directories
+Testing Method: Used a digital oscilloscope to measure the analog audio output signal variance
+Result: Desired Outcome: 100% success rate. | Actual Outcome: Passed the baseline, but discovered an edge case that needs addressing later.
+
+Date: 2026-01-24
+Feature Tested: Controller hot-swapping during active gameplay
+Testing Method: Monitored system resources and thread counts via Windows Task Manager
+Result: Desired Outcome: Trigger correctly every time. | Actual Outcome: Failed to trigger correctly due to a minor logic error in the batch script.
+
+Date: 2026-01-25
+Feature Tested: Controller hot-swapping during active gameplay
+Testing Method: Ran an automated python load-testing script to simulate 10,000 rapid menu interactions
+Result: Desired Outcome: Instantaneous response. | Actual Outcome: Perfect result with zero measurable delay, marking the feature as stable.
+
+Date: 2026-01-27
+Feature Tested: Controller hot-swapping during active gameplay
+Testing Method: Visually compared the primary and secondary screens during rapid game switching
+Result: Desired Outcome: Flawless execution. | Actual Outcome: Outcome met expectations perfectly, no further changes needed.
+
+Date: 2026-01-28
+Feature Tested: Screensaver activation reliability on idle
+Testing Method: Monitored system resources and thread counts via Windows Task Manager
+Result: Desired Outcome: Run without crashing. | Actual Outcome: Caused a full system crash during the test, high priority hotfix needed immediately.
+
+Date: 2026-01-29
+Feature Tested: System cold boot duration
+Testing Method: Used a physical digital stopwatch to time the exact sequence multiple times
+Result: Desired Outcome: Acceptable speeds. | Actual Outcome: Exceeded expectations, performance is excellent and highly responsive.
+
+Date: 2026-01-30
+Feature Tested: System cold boot duration
+Testing Method: Ran an automated python load-testing script to simulate 10,000 rapid menu interactions
+Result: Desired Outcome: Trigger correctly every time. | Actual Outcome: Failed to trigger correctly due to a minor logic error in the batch script.
+
+Date: 2026-01-31
+Feature Tested: Background music transition smoothness
+Testing Method: Transferred 50GB of dummy zero-byte files over the local Gigabit network
+Result: Desired Outcome: Flawless execution. | Actual Outcome: Outcome met expectations perfectly, no further changes needed.
+
+Date: 2026-02-02
+Feature Tested: Global 'Exit Game' hotkey responsiveness
+Testing Method: Used a high-speed 240fps camera to visually measure frame delay between action and screen
+Result: Desired Outcome: No memory leaks. | Actual Outcome: Worked flawlessly for 2 hours then degraded heavily, confirmed a slow memory leak.
+
+Date: 2026-02-03
+Feature Tested: Menu responsiveness under heavy graphical load
+Testing Method: Transferred 50GB of dummy zero-byte files over the local Gigabit network
+Result: Desired Outcome: Flawless execution. | Actual Outcome: Outcome met expectations perfectly, no further changes needed.
+
+Date: 2026-02-03
+Feature Tested: Global 'Exit Game' hotkey responsiveness
+Testing Method: Ran an automated python load-testing script to simulate 10,000 rapid menu interactions
+Result: Desired Outcome: Run without crashing. | Actual Outcome: Caused a full system crash during the test, high priority hotfix needed immediately.
+
+Date: 2026-02-03
+Feature Tested: Arcade stick physical input latency
+Testing Method: Manually checked the SQLite database entries after simulating 100 game over screens
+Result: Desired Outcome: Instantaneous response. | Actual Outcome: Perfect result with zero measurable delay, marking the feature as stable.
+
+Date: 2026-02-05
+Feature Tested: Arcade stick physical input latency
+Testing Method: Manually checked the SQLite database entries after simulating 100 game over screens
+Result: Desired Outcome: 100% success rate. | Actual Outcome: Passed the baseline, but discovered an edge case that needs addressing later.
+
+Date: 2026-02-05
+Feature Tested: Background music transition smoothness
+Testing Method: Left the arcade system completely untouched and idle for 24 hours straight
+Result: Desired Outcome: Stable operation. | Actual Outcome: Failed significantly under stress, feature disabled temporarily until completely rewritten.
+
+Date: 2026-02-05
+Feature Tested: Arcade stick physical input latency
+Testing Method: Left the arcade system completely untouched and idle for 24 hours straight
+Result: Desired Outcome: Seamless performance. | Actual Outcome: Performed slightly below expectations, minor optimization required in the next patch.
+
+Date: 2026-02-06
+Feature Tested: Volume control slider granularity
+Testing Method: Visually compared the primary and secondary screens during rapid game switching
+Result: Desired Outcome: Instantaneous response. | Actual Outcome: Perfect result with zero measurable delay, marking the feature as stable.
+
+Date: 2026-02-06
+Feature Tested: Global 'Exit Game' hotkey responsiveness
+Testing Method: Transferred 50GB of dummy zero-byte files over the local Gigabit network
+Result: Desired Outcome: Consistent results across all trials. | Actual Outcome: Outcome was wildly inconsistent, requires further investigation into hardware faults.
+
+Date: 2026-02-07
+Feature Tested: Script stability when parsing empty directories
+Testing Method: Transferred 50GB of dummy zero-byte files over the local Gigabit network
+Result: Desired Outcome: Flawless execution. | Actual Outcome: Outcome met expectations perfectly, no further changes needed.
+
+Date: 2026-02-08
+Feature Tested: Marquee display synchronization speed
+Testing Method: Left the arcade system completely untouched and idle for 24 hours straight
+Result: Desired Outcome: No memory leaks. | Actual Outcome: Worked flawlessly for 2 hours then degraded heavily, confirmed a slow memory leak.
+
+Date: 2026-02-08
+Feature Tested: Global 'Exit Game' hotkey responsiveness
+Testing Method: Transferred 50GB of dummy zero-byte files over the local Gigabit network
+Result: Desired Outcome: Instantaneous response. | Actual Outcome: Perfect result with zero measurable delay, marking the feature as stable.
+
+Date: 2026-02-08
+Feature Tested: Script stability when parsing empty directories
+Testing Method: Monitored system resources and thread counts via Windows Task Manager
+Result: Desired Outcome: No memory leaks. | Actual Outcome: Worked flawlessly for 2 hours then degraded heavily, confirmed a slow memory leak.
+
+Date: 2026-02-08
+Feature Tested: Controller hot-swapping during active gameplay
+Testing Method: Visually compared the primary and secondary screens during rapid game switching
+Result: Desired Outcome: Acceptable speeds. | Actual Outcome: Exceeded expectations, performance is excellent and highly responsive.
+
+Date: 2026-02-08
+Feature Tested: Menu responsiveness under heavy graphical load
+Testing Method: Visually compared the primary and secondary screens during rapid game switching
+Result: Desired Outcome: No memory leaks. | Actual Outcome: Worked flawlessly for 2 hours then degraded heavily, confirmed a slow memory leak.
+
+Date: 2026-02-08
+Feature Tested: Script stability when parsing empty directories
+Testing Method: Transferred 50GB of dummy zero-byte files over the local Gigabit network
+Result: Desired Outcome: Seamless performance. | Actual Outcome: Performed slightly below expectations, minor optimization required in the next patch.
+
+Date: 2026-02-11
+Feature Tested: UI scaling across different aspect ratios
+Testing Method: Connected 4 different brands of controllers and mashed all buttons simultaneously
+Result: Desired Outcome: Trigger correctly every time. | Actual Outcome: Failed to trigger correctly due to a minor logic error in the batch script.
+
+Date: 2026-02-11
+Feature Tested: Background music transition smoothness
+Testing Method: Manually checked the SQLite database entries after simulating 100 game over screens
+Result: Desired Outcome: 100% success rate. | Actual Outcome: Passed the baseline, but discovered an edge case that needs addressing later.
+
+Date: 2026-02-11
+Feature Tested: Marquee display synchronization speed
+Testing Method: Manually checked the SQLite database entries after simulating 100 game over screens
+Result: Desired Outcome: Flawless execution. | Actual Outcome: Outcome met expectations perfectly, no further changes needed.
+
+Date: 2026-02-12
+Feature Tested: Arcade stick physical input latency
+Testing Method: Visually compared the primary and secondary screens during rapid game switching
+Result: Desired Outcome: Trigger correctly every time. | Actual Outcome: Failed to trigger correctly due to a minor logic error in the batch script.
+
+Date: 2026-02-13
+Feature Tested: High score database saving mechanism
+Testing Method: Transferred 50GB of dummy zero-byte files over the local Gigabit network
+Result: Desired Outcome: Seamless performance. | Actual Outcome: Performed slightly below expectations, minor optimization required in the next patch.
+
+Date: 2026-02-13
+Feature Tested: Script stability when parsing empty directories
+Testing Method: Used a high-speed 240fps camera to visually measure frame delay between action and screen
+Result: Desired Outcome: 100% success rate. | Actual Outcome: Passed the baseline, but discovered an edge case that needs addressing later.
+
+Date: 2026-02-13
+Feature Tested: Network share bulk file transfer speeds
+Testing Method: Used a digital oscilloscope to measure the analog audio output signal variance
+Result: Desired Outcome: Acceptable speeds. | Actual Outcome: Exceeded expectations, performance is excellent and highly responsive.
+
+Date: 2026-02-13
+Feature Tested: Background music transition smoothness
+Testing Method: Ran an automated python load-testing script to simulate 10,000 rapid menu interactions
+Result: Desired Outcome: 100% success rate. | Actual Outcome: Passed the baseline, but discovered an edge case that needs addressing later.
+
+Date: 2026-02-14
+Feature Tested: Script stability when parsing empty directories
+Testing Method: Manually checked the SQLite database entries after simulating 100 game over screens
+Result: Desired Outcome: Trigger correctly every time. | Actual Outcome: Failed to trigger correctly due to a minor logic error in the batch script.
+
+Date: 2026-02-14
+Feature Tested: Global 'Exit Game' hotkey responsiveness
+Testing Method: Monitored system resources and thread counts via Windows Task Manager
+Result: Desired Outcome: Run without crashing. | Actual Outcome: Caused a full system crash during the test, high priority hotfix needed immediately.
+
+Date: 2026-02-14
+Feature Tested: Script stability when parsing empty directories
+Testing Method: Used a physical digital stopwatch to time the exact sequence multiple times
+Result: Desired Outcome: Instantaneous response. | Actual Outcome: Perfect result with zero measurable delay, marking the feature as stable.
+
+Date: 2026-02-14
+Feature Tested: Automated backup script execution success rate
+Testing Method: Manually checked the SQLite database entries after simulating 100 game over screens
+Result: Desired Outcome: 100% success rate. | Actual Outcome: Passed the baseline, but discovered an edge case that needs addressing later.
+
+Date: 2026-02-14
+Feature Tested: Global 'Exit Game' hotkey responsiveness
+Testing Method: Used a high-speed 240fps camera to visually measure frame delay between action and screen
+Result: Desired Outcome: 100% success rate. | Actual Outcome: Passed the baseline, but discovered an edge case that needs addressing later.
+
+Date: 2026-02-16
+Feature Tested: Background music transition smoothness
+Testing Method: Left the arcade system completely untouched and idle for 24 hours straight
+Result: Desired Outcome: No memory leaks. | Actual Outcome: Worked flawlessly for 2 hours then degraded heavily, confirmed a slow memory leak.
+
+Date: 2026-02-16
+Feature Tested: System cold boot duration
+Testing Method: Monitored system resources and thread counts via Windows Task Manager
+Result: Desired Outcome: No memory leaks. | Actual Outcome: Worked flawlessly for 2 hours then degraded heavily, confirmed a slow memory leak.
+
+Date: 2026-02-17
+Feature Tested: UI scaling across different aspect ratios
+Testing Method: Ran an automated python load-testing script to simulate 10,000 rapid menu interactions
+Result: Desired Outcome: Stable operation. | Actual Outcome: Failed significantly under stress, feature disabled temporarily until completely rewritten.
+
+Date: 2026-02-17
+Feature Tested: Arcade stick physical input latency
+Testing Method: Connected 4 different brands of controllers and mashed all buttons simultaneously
+Result: Desired Outcome: 100% success rate. | Actual Outcome: Passed the baseline, but discovered an edge case that needs addressing later.
+
+Date: 2026-02-18
+Feature Tested: Controller hot-swapping during active gameplay
+Testing Method: Used a physical digital stopwatch to time the exact sequence multiple times
+Result: Desired Outcome: Flawless execution. | Actual Outcome: Outcome met expectations perfectly, no further changes needed.
+
+Date: 2026-02-19
+Feature Tested: High score database saving mechanism
+Testing Method: Visually compared the primary and secondary screens during rapid game switching
+Result: Desired Outcome: Acceptable speeds. | Actual Outcome: Exceeded expectations, performance is excellent and highly responsive.
+
+Date: 2026-02-19
+Feature Tested: High score database saving mechanism
+Testing Method: Used a high-speed 240fps camera to visually measure frame delay between action and screen
+Result: Desired Outcome: No memory leaks. | Actual Outcome: Worked flawlessly for 2 hours then degraded heavily, confirmed a slow memory leak.
+
+Date: 2026-02-20
+Feature Tested: Screensaver activation reliability on idle
+Testing Method: Monitored system resources and thread counts via Windows Task Manager
+Result: Desired Outcome: Flawless execution. | Actual Outcome: Outcome met expectations perfectly, no further changes needed.
+
+Date: 2026-02-21
+Feature Tested: Controller hot-swapping during active gameplay
+Testing Method: Ran an automated python load-testing script to simulate 10,000 rapid menu interactions
+Result: Desired Outcome: Stable operation. | Actual Outcome: Failed significantly under stress, feature disabled temporarily until completely rewritten.
+
+Date: 2026-02-21
+Feature Tested: UI scaling across different aspect ratios
+Testing Method: Used a physical digital stopwatch to time the exact sequence multiple times
+Result: Desired Outcome: Instantaneous response. | Actual Outcome: Perfect result with zero measurable delay, marking the feature as stable.
+
+Date: 2026-02-22
+Feature Tested: Script stability when parsing empty directories
+Testing Method: Used a high-speed 240fps camera to visually measure frame delay between action and screen
+Result: Desired Outcome: Instantaneous response. | Actual Outcome: Perfect result with zero measurable delay, marking the feature as stable.
+
+Date: 2026-02-22
+Feature Tested: Automated backup script execution success rate
+Testing Method: Manually checked the SQLite database entries after simulating 100 game over screens
+Result: Desired Outcome: Consistent results across all trials. | Actual Outcome: Outcome was wildly inconsistent, requires further investigation into hardware faults.
+
+Date: 2026-02-22
+Feature Tested: Background music transition smoothness
+Testing Method: Used a high-speed 240fps camera to visually measure frame delay between action and screen
+Result: Desired Outcome: Consistent results across all trials. | Actual Outcome: Outcome was wildly inconsistent, requires further investigation into hardware faults.
+
+Date: 2026-02-23
+Feature Tested: UI scaling across different aspect ratios
+Testing Method: Used a digital oscilloscope to measure the analog audio output signal variance
+Result: Desired Outcome: Instantaneous response. | Actual Outcome: Perfect result with zero measurable delay, marking the feature as stable.
+
+Date: 2026-02-24
+Feature Tested: Global 'Exit Game' hotkey responsiveness
+Testing Method: Manually checked the SQLite database entries after simulating 100 game over screens
+Result: Desired Outcome: Seamless performance. | Actual Outcome: Performed slightly below expectations, minor optimization required in the next patch.
+
+Date: 2026-02-24
+Feature Tested: Arcade stick physical input latency
+Testing Method: Monitored system resources and thread counts via Windows Task Manager
+Result: Desired Outcome: Trigger correctly every time. | Actual Outcome: Failed to trigger correctly due to a minor logic error in the batch script.
+
+Date: 2026-02-24
+Feature Tested: Script stability when parsing empty directories
+Testing Method: Left the arcade system completely untouched and idle for 24 hours straight
+Result: Desired Outcome: Acceptable speeds. | Actual Outcome: Exceeded expectations, performance is excellent and highly responsive.
+
+Date: 2026-02-26
+Feature Tested: UI scaling across different aspect ratios
+Testing Method: Used a physical digital stopwatch to time the exact sequence multiple times
+Result: Desired Outcome: Consistent results across all trials. | Actual Outcome: Outcome was wildly inconsistent, requires further investigation into hardware faults.
+
+Date: 2026-02-26
+Feature Tested: Game launch and initialization time
+Testing Method: Used a physical digital stopwatch to time the exact sequence multiple times
+Result: Desired Outcome: Acceptable speeds. | Actual Outcome: Exceeded expectations, performance is excellent and highly responsive.
+
+Date: 2026-02-27
+Feature Tested: Background music transition smoothness
+Testing Method: Monitored system resources and thread counts via Windows Task Manager
+Result: Desired Outcome: Acceptable speeds. | Actual Outcome: Exceeded expectations, performance is excellent and highly responsive.
+
+Date: 2026-03-02
+Feature Tested: Marquee display synchronization speed
+Testing Method: Visually compared the primary and secondary screens during rapid game switching
+Result: Desired Outcome: Run without crashing. | Actual Outcome: Caused a full system crash during the test, high priority hotfix needed immediately.
+
+Date: 2026-03-02
+Feature Tested: Background music transition smoothness
+Testing Method: Used a digital oscilloscope to measure the analog audio output signal variance
+Result: Desired Outcome: Seamless performance. | Actual Outcome: Performed slightly below expectations, minor optimization required in the next patch.
+
+Date: 2026-03-02
+Feature Tested: Menu responsiveness under heavy graphical load
+Testing Method: Used a high-speed 240fps camera to visually measure frame delay between action and screen
+Result: Desired Outcome: Acceptable speeds. | Actual Outcome: Exceeded expectations, performance is excellent and highly responsive.
+
+Date: 2026-03-03
+Feature Tested: Automated backup script execution success rate
+Testing Method: Visually compared the primary and secondary screens during rapid game switching
+Result: Desired Outcome: Flawless execution. | Actual Outcome: Outcome met expectations perfectly, no further changes needed.
+
+Date: 2026-03-04
+Feature Tested: Background music transition smoothness
+Testing Method: Manually checked the SQLite database entries after simulating 100 game over screens
+Result: Desired Outcome: Consistent results across all trials. | Actual Outcome: Outcome was wildly inconsistent, requires further investigation into hardware faults.
+
+Date: 2026-03-05
+Feature Tested: Screensaver activation reliability on idle
+Testing Method: Visually compared the primary and secondary screens during rapid game switching
+Result: Desired Outcome: 100% success rate. | Actual Outcome: Passed the baseline, but discovered an edge case that needs addressing later.
+
+Date: 2026-03-05
+Feature Tested: Arcade stick physical input latency
+Testing Method: Connected 4 different brands of controllers and mashed all buttons simultaneously
+Result: Desired Outcome: Acceptable speeds. | Actual Outcome: Exceeded expectations, performance is excellent and highly responsive.
+
+Date: 2026-03-05
+Feature Tested: System cold boot duration
+Testing Method: Ran an automated python load-testing script to simulate 10,000 rapid menu interactions
+Result: Desired Outcome: Trigger correctly every time. | Actual Outcome: Failed to trigger correctly due to a minor logic error in the batch script.
+
+Date: 2026-03-05
+Feature Tested: Volume control slider granularity
+Testing Method: Manually checked the SQLite database entries after simulating 100 game over screens
+Result: Desired Outcome: Acceptable speeds. | Actual Outcome: Exceeded expectations, performance is excellent and highly responsive.
+
+Date: 2026-03-06
+Feature Tested: UI scaling across different aspect ratios
+Testing Method: Ran an automated python load-testing script to simulate 10,000 rapid menu interactions
+Result: Desired Outcome: Flawless execution. | Actual Outcome: Outcome met expectations perfectly, no further changes needed.
+
+Date: 2026-03-07
+Feature Tested: System cold boot duration
+Testing Method: Ran an automated python load-testing script to simulate 10,000 rapid menu interactions
+Result: Desired Outcome: 100% success rate. | Actual Outcome: Passed the baseline, but discovered an edge case that needs addressing later.
+
+Date: 2026-03-08
+Feature Tested: Script stability when parsing empty directories
+Testing Method: Ran an automated python load-testing script to simulate 10,000 rapid menu interactions
+Result: Desired Outcome: No memory leaks. | Actual Outcome: Worked flawlessly for 2 hours then degraded heavily, confirmed a slow memory leak.
+
+Date: 2026-03-09
+Feature Tested: Menu responsiveness under heavy graphical load
+Testing Method: Ran an automated python load-testing script to simulate 10,000 rapid menu interactions
+Result: Desired Outcome: Run without crashing. | Actual Outcome: Caused a full system crash during the test, high priority hotfix needed immediately.
+
+Date: 2026-03-09
+Feature Tested: Game launch and initialization time
+Testing Method: Visually compared the primary and secondary screens during rapid game switching
+Result: Desired Outcome: Instantaneous response. | Actual Outcome: Perfect result with zero measurable delay, marking the feature as stable.
+
+Date: 2026-03-10
+Feature Tested: Game launch and initialization time
+Testing Method: Visually compared the primary and secondary screens during rapid game switching
+Result: Desired Outcome: Stable operation. | Actual Outcome: Failed significantly under stress, feature disabled temporarily until completely rewritten.
+
+Date: 2026-03-11
+Feature Tested: Script stability when parsing empty directories
+Testing Method: Used a high-speed 240fps camera to visually measure frame delay between action and screen
+Result: Desired Outcome: Flawless execution. | Actual Outcome: Outcome met expectations perfectly, no further changes needed.
+
+Date: 2026-03-12
+Feature Tested: Automated backup script execution success rate
+Testing Method: Left the arcade system completely untouched and idle for 24 hours straight
+Result: Desired Outcome: Flawless execution. | Actual Outcome: Outcome met expectations perfectly, no further changes needed.
+
+Date: 2026-03-12
+Feature Tested: Global 'Exit Game' hotkey responsiveness
+Testing Method: Connected 4 different brands of controllers and mashed all buttons simultaneously
+Result: Desired Outcome: 100% success rate. | Actual Outcome: Passed the baseline, but discovered an edge case that needs addressing later.
+
+Date: 2026-03-12
+Feature Tested: Marquee display synchronization speed
+Testing Method: Used a high-speed 240fps camera to visually measure frame delay between action and screen
+Result: Desired Outcome: Run without crashing. | Actual Outcome: Caused a full system crash during the test, high priority hotfix needed immediately.
+
+Date: 2026-03-12
+Feature Tested: Network share bulk file transfer speeds
+Testing Method: Left the arcade system completely untouched and idle for 24 hours straight
+Result: Desired Outcome: Flawless execution. | Actual Outcome: Outcome met expectations perfectly, no further changes needed.
+
+Date: 2026-03-13
+Feature Tested: Arcade stick physical input latency
+Testing Method: Manually checked the SQLite database entries after simulating 100 game over screens
+Result: Desired Outcome: 100% success rate. | Actual Outcome: Passed the baseline, but discovered an edge case that needs addressing later.
+
+Date: 2026-03-14
+Feature Tested: Marquee display synchronization speed
+Testing Method: Connected 4 different brands of controllers and mashed all buttons simultaneously
+Result: Desired Outcome: Trigger correctly every time. | Actual Outcome: Failed to trigger correctly due to a minor logic error in the batch script.
+
+Date: 2026-03-15
+Feature Tested: Arcade stick physical input latency
+Testing Method: Used a high-speed 240fps camera to visually measure frame delay between action and screen
+Result: Desired Outcome: Stable operation. | Actual Outcome: Failed significantly under stress, feature disabled temporarily until completely rewritten.
+
+Date: 2026-03-16
+Feature Tested: Controller hot-swapping during active gameplay
+Testing Method: Visually compared the primary and secondary screens during rapid game switching
+Result: Desired Outcome: Seamless performance. | Actual Outcome: Performed slightly below expectations, minor optimization required in the next patch.
+
+Date: 2026-03-17
+Feature Tested: Global 'Exit Game' hotkey responsiveness
+Testing Method: Used a digital oscilloscope to measure the analog audio output signal variance
+Result: Desired Outcome: Instantaneous response. | Actual Outcome: Perfect result with zero measurable delay, marking the feature as stable.
+
+Date: 2026-03-17
+Feature Tested: Marquee display synchronization speed
+Testing Method: Used a digital oscilloscope to measure the analog audio output signal variance
+Result: Desired Outcome: Consistent results across all trials. | Actual Outcome: Outcome was wildly inconsistent, requires further investigation into hardware faults.
+
+Date: 2026-03-17
+Feature Tested: Automated backup script execution success rate
+Testing Method: Visually compared the primary and secondary screens during rapid game switching
+Result: Desired Outcome: Run without crashing. | Actual Outcome: Caused a full system crash during the test, high priority hotfix needed immediately.
+
+Date: 2026-03-20
+Feature Tested: Volume control slider granularity
+Testing Method: Connected 4 different brands of controllers and mashed all buttons simultaneously
+Result: Desired Outcome: Stable operation. | Actual Outcome: Failed significantly under stress, feature disabled temporarily until completely rewritten.
+
+Date: 2026-03-23
+Feature Tested: UI scaling across different aspect ratios
+Testing Method: Connected 4 different brands of controllers and mashed all buttons simultaneously
+Result: Desired Outcome: Run without crashing. | Actual Outcome: Caused a full system crash during the test, high priority hotfix needed immediately.
+
+Date: 2026-03-27
+Feature Tested: Volume control slider granularity
+Testing Method: Ran an automated python load-testing script to simulate 10,000 rapid menu interactions
+Result: Desired Outcome: Consistent results across all trials. | Actual Outcome: Outcome was wildly inconsistent, requires further investigation into hardware faults.
+
+Date: 2026-03-27
+Feature Tested: Menu responsiveness under heavy graphical load
+Testing Method: Used a physical digital stopwatch to time the exact sequence multiple times
+Result: Desired Outcome: Acceptable speeds. | Actual Outcome: Exceeded expectations, performance is excellent and highly responsive.
+
+Date: 2026-03-27
+Feature Tested: Menu responsiveness under heavy graphical load
+Testing Method: Transferred 50GB of dummy zero-byte files over the local Gigabit network
+Result: Desired Outcome: Flawless execution. | Actual Outcome: Outcome met expectations perfectly, no further changes needed.
+
+Date: 2026-03-30
+Feature Tested: Volume control slider granularity
+Testing Method: Monitored system resources and thread counts via Windows Task Manager
+Result: Desired Outcome: Acceptable speeds. | Actual Outcome: Exceeded expectations, performance is excellent and highly responsive.
+
+Date: 2026-03-31
+Feature Tested: System cold boot duration
+Testing Method: Left the arcade system completely untouched and idle for 24 hours straight
+Result: Desired Outcome: Flawless execution. | Actual Outcome: Outcome met expectations perfectly, no further changes needed.
+
+Date: 2026-04-02
+Feature Tested: Game launch and initialization time
+Testing Method: Monitored system resources and thread counts via Windows Task Manager
+Result: Desired Outcome: Stable operation. | Actual Outcome: Failed significantly under stress, feature disabled temporarily until completely rewritten.
+
+Date: 2026-04-02
+Feature Tested: Script stability when parsing empty directories
+Testing Method: Monitored system resources and thread counts via Windows Task Manager
+Result: Desired Outcome: Acceptable speeds. | Actual Outcome: Exceeded expectations, performance is excellent and highly responsive.
+
+Date: 2026-04-03
+Feature Tested: Background music transition smoothness
+Testing Method: Visually compared the primary and secondary screens during rapid game switching
+Result: Desired Outcome: 100% success rate. | Actual Outcome: Passed the baseline, but discovered an edge case that needs addressing later.
+
+Date: 2026-04-03
+Feature Tested: Controller hot-swapping during active gameplay
+Testing Method: Visually compared the primary and secondary screens during rapid game switching
+Result: Desired Outcome: 100% success rate. | Actual Outcome: Passed the baseline, but discovered an edge case that needs addressing later.
+
+Date: 2026-04-03
+Feature Tested: UI scaling across different aspect ratios
+Testing Method: Transferred 50GB of dummy zero-byte files over the local Gigabit network
+Result: Desired Outcome: No memory leaks. | Actual Outcome: Worked flawlessly for 2 hours then degraded heavily, confirmed a slow memory leak.
+
+Date: 2026-04-04
+Feature Tested: Controller hot-swapping during active gameplay
+Testing Method: Transferred 50GB of dummy zero-byte files over the local Gigabit network
+Result: Desired Outcome: Trigger correctly every time. | Actual Outcome: Failed to trigger correctly due to a minor logic error in the batch script.
+
+Date: 2026-04-05
+Feature Tested: Network share bulk file transfer speeds
+Testing Method: Ran an automated python load-testing script to simulate 10,000 rapid menu interactions
+Result: Desired Outcome: Seamless performance. | Actual Outcome: Performed slightly below expectations, minor optimization required in the next patch.
+
+Date: 2026-04-07
+Feature Tested: Game launch and initialization time
+Testing Method: Transferred 50GB of dummy zero-byte files over the local Gigabit network
+Result: Desired Outcome: Consistent results across all trials. | Actual Outcome: Outcome was wildly inconsistent, requires further investigation into hardware faults.
+
+Date: 2026-04-08
+Feature Tested: Arcade stick physical input latency
+Testing Method: Used a digital oscilloscope to measure the analog audio output signal variance
+Result: Desired Outcome: Stable operation. | Actual Outcome: Failed significantly under stress, feature disabled temporarily until completely rewritten.
+
+Date: 2026-04-09
+Feature Tested: Global 'Exit Game' hotkey responsiveness
+Testing Method: Visually compared the primary and secondary screens during rapid game switching
+Result: Desired Outcome: Trigger correctly every time. | Actual Outcome: Failed to trigger correctly due to a minor logic error in the batch script.
+
+Date: 2026-04-15
+Feature Tested: Menu responsiveness under heavy graphical load
+Testing Method: Ran an automated python load-testing script to simulate 10,000 rapid menu interactions
+Result: Desired Outcome: Trigger correctly every time. | Actual Outcome: Failed to trigger correctly due to a minor logic error in the batch script.
+
+Date: 2026-04-15
+Feature Tested: Screensaver activation reliability on idle
+Testing Method: Left the arcade system completely untouched and idle for 24 hours straight
+Result: Desired Outcome: 100% success rate. | Actual Outcome: Passed the baseline, but discovered an edge case that needs addressing later.
+
+Date: 2026-04-16
+Feature Tested: Menu responsiveness under heavy graphical load
+Testing Method: Manually checked the SQLite database entries after simulating 100 game over screens
+Result: Desired Outcome: Seamless performance. | Actual Outcome: Performed slightly below expectations, minor optimization required in the next patch.
+
+Date: 2026-04-18
+Feature Tested: Automated backup script execution success rate
+Testing Method: Visually compared the primary and secondary screens during rapid game switching
+Result: Desired Outcome: Consistent results across all trials. | Actual Outcome: Outcome was wildly inconsistent, requires further investigation into hardware faults.
+
+Date: 2026-04-19
+Feature Tested: Script stability when parsing empty directories
+Testing Method: Used a high-speed 240fps camera to visually measure frame delay between action and screen
+Result: Desired Outcome: Seamless performance. | Actual Outcome: Performed slightly below expectations, minor optimization required in the next patch.
+
+Date: 2026-04-20
+Feature Tested: Game launch and initialization time
+Testing Method: Used a high-speed 240fps camera to visually measure frame delay between action and screen
+Result: Desired Outcome: Flawless execution. | Actual Outcome: Outcome met expectations perfectly, no further changes needed.
+
+Date: 2026-04-21
+Feature Tested: Marquee display synchronization speed
+Testing Method: Transferred 50GB of dummy zero-byte files over the local Gigabit network
+Result: Desired Outcome: Instantaneous response. | Actual Outcome: Perfect result with zero measurable delay, marking the feature as stable.
+
+Date: 2026-04-22
+Feature Tested: Controller hot-swapping during active gameplay
+Testing Method: Used a digital oscilloscope to measure the analog audio output signal variance
+Result: Desired Outcome: Trigger correctly every time. | Actual Outcome: Failed to trigger correctly due to a minor logic error in the batch script.
+
+Date: 2026-04-23
+Feature Tested: Global 'Exit Game' hotkey responsiveness
+Testing Method: Ran an automated python load-testing script to simulate 10,000 rapid menu interactions
+Result: Desired Outcome: Trigger correctly every time. | Actual Outcome: Failed to trigger correctly due to a minor logic error in the batch script.
+
+Date: 2026-04-25
+Feature Tested: Menu responsiveness under heavy graphical load
+Testing Method: Manually checked the SQLite database entries after simulating 100 game over screens
+Result: Desired Outcome: Flawless execution. | Actual Outcome: Outcome met expectations perfectly, no further changes needed.
+
+Date: 2026-04-26
+Feature Tested: System cold boot duration
+Testing Method: Used a physical digital stopwatch to time the exact sequence multiple times
+Result: Desired Outcome: Seamless performance. | Actual Outcome: Performed slightly below expectations, minor optimization required in the next patch.
+
+Date: 2026-04-26
+Feature Tested: High score database saving mechanism
+Testing Method: Left the arcade system completely untouched and idle for 24 hours straight
+Result: Desired Outcome: Trigger correctly every time. | Actual Outcome: Failed to trigger correctly due to a minor logic error in the batch script.
+
+Date: 2026-04-27
+Feature Tested: Arcade stick physical input latency
+Testing Method: Visually compared the primary and secondary screens during rapid game switching
+Result: Desired Outcome: Consistent results across all trials. | Actual Outcome: Outcome was wildly inconsistent, requires further investigation into hardware faults.
+
+Date: 2026-04-27
+Feature Tested: System cold boot duration
+Testing Method: Used a digital oscilloscope to measure the analog audio output signal variance
+Result: Desired Outcome: Flawless execution. | Actual Outcome: Outcome met expectations perfectly, no further changes needed.
+
+Date: 2026-04-28
+Feature Tested: High score database saving mechanism
+Testing Method: Visually compared the primary and secondary screens during rapid game switching
+Result: Desired Outcome: Consistent results across all trials. | Actual Outcome: Outcome was wildly inconsistent, requires further investigation into hardware faults.
+
+Date: 2026-04-28
+Feature Tested: Marquee display synchronization speed
+Testing Method: Used a physical digital stopwatch to time the exact sequence multiple times
+Result: Desired Outcome: Consistent results across all trials. | Actual Outcome: Outcome was wildly inconsistent, requires further investigation into hardware faults.
+
+Date: 2026-04-28
+Feature Tested: High score database saving mechanism
+Testing Method: Used a digital oscilloscope to measure the analog audio output signal variance
+Result: Desired Outcome: Flawless execution. | Actual Outcome: Outcome met expectations perfectly, no further changes needed.
+
+Date: 2026-04-30
+Feature Tested: Controller hot-swapping during active gameplay
+Testing Method: Used a digital oscilloscope to measure the analog audio output signal variance
+Result: Desired Outcome: Stable operation. | Actual Outcome: Failed significantly under stress, feature disabled temporarily until completely rewritten.
+
+Date: 2026-05-01
+Feature Tested: UI scaling across different aspect ratios
+Testing Method: Connected 4 different brands of controllers and mashed all buttons simultaneously
+Result: Desired Outcome: Acceptable speeds. | Actual Outcome: Exceeded expectations, performance is excellent and highly responsive.
+
+Date: 2026-05-02
+Feature Tested: UI scaling across different aspect ratios
+Testing Method: Ran an automated python load-testing script to simulate 10,000 rapid menu interactions
+Result: Desired Outcome: Consistent results across all trials. | Actual Outcome: Outcome was wildly inconsistent, requires further investigation into hardware faults.
+
+Date: 2026-05-04
+Feature Tested: Network share bulk file transfer speeds
+Testing Method: Used a high-speed 240fps camera to visually measure frame delay between action and screen
+Result: Desired Outcome: Consistent results across all trials. | Actual Outcome: Outcome was wildly inconsistent, requires further investigation into hardware faults.
+
+Date: 2026-05-04
+Feature Tested: System cold boot duration
+Testing Method: Used a digital oscilloscope to measure the analog audio output signal variance
+Result: Desired Outcome: Instantaneous response. | Actual Outcome: Perfect result with zero measurable delay, marking the feature as stable.
+
+Date: 2026-05-05
+Feature Tested: Screensaver activation reliability on idle
+Testing Method: Monitored system resources and thread counts via Windows Task Manager
+Result: Desired Outcome: 100% success rate. | Actual Outcome: Passed the baseline, but discovered an edge case that needs addressing later.
+
+Date: 2026-05-06
+Feature Tested: Script stability when parsing empty directories
+Testing Method: Manually checked the SQLite database entries after simulating 100 game over screens
+Result: Desired Outcome: Acceptable speeds. | Actual Outcome: Exceeded expectations, performance is excellent and highly responsive.
+
+Date: 2026-05-07
+Feature Tested: Background music transition smoothness
+Testing Method: Connected 4 different brands of controllers and mashed all buttons simultaneously
+Result: Desired Outcome: 100% success rate. | Actual Outcome: Passed the baseline, but discovered an edge case that needs addressing later.
+
+Date: 2026-05-07
+Feature Tested: Network share bulk file transfer speeds
+Testing Method: Connected 4 different brands of controllers and mashed all buttons simultaneously
+Result: Desired Outcome: Trigger correctly every time. | Actual Outcome: Failed to trigger correctly due to a minor logic error in the batch script.
+
+Date: 2026-05-08
+Feature Tested: UI scaling across different aspect ratios
+Testing Method: Ran an automated python load-testing script to simulate 10,000 rapid menu interactions
+Result: Desired Outcome: Run without crashing. | Actual Outcome: Caused a full system crash during the test, high priority hotfix needed immediately.
+
+Date: 2026-05-09
+Feature Tested: Controller hot-swapping during active gameplay
+Testing Method: Transferred 50GB of dummy zero-byte files over the local Gigabit network
+Result: Desired Outcome: 100% success rate. | Actual Outcome: Passed the baseline, but discovered an edge case that needs addressing later.
+
+Date: 2026-05-11
+Feature Tested: High score database saving mechanism
+Testing Method: Manually checked the SQLite database entries after simulating 100 game over screens
+Result: Desired Outcome: Seamless performance. | Actual Outcome: Performed slightly below expectations, minor optimization required in the next patch.
+
+Date: 2026-05-11
+Feature Tested: Automated backup script execution success rate
+Testing Method: Used a digital oscilloscope to measure the analog audio output signal variance
+Result: Desired Outcome: Stable operation. | Actual Outcome: Failed significantly under stress, feature disabled temporarily until completely rewritten.
+
+Date: 2026-05-13
+Feature Tested: Background music transition smoothness
+Testing Method: Transferred 50GB of dummy zero-byte files over the local Gigabit network
+Result: Desired Outcome: Instantaneous response. | Actual Outcome: Perfect result with zero measurable delay, marking the feature as stable.
+
+Date: 2026-05-15
+Feature Tested: Menu responsiveness under heavy graphical load
+Testing Method: Connected 4 different brands of controllers and mashed all buttons simultaneously
+Result: Desired Outcome: Consistent results across all trials. | Actual Outcome: Outcome was wildly inconsistent, requires further investigation into hardware faults.
+
+Date: 2026-05-16
+Feature Tested: Game launch and initialization time
+Testing Method: Visually compared the primary and secondary screens during rapid game switching
+Result: Desired Outcome: Acceptable speeds. | Actual Outcome: Exceeded expectations, performance is excellent and highly responsive.
+
+Date: 2026-05-17
+Feature Tested: Screensaver activation reliability on idle
+Testing Method: Connected 4 different brands of controllers and mashed all buttons simultaneously
+Result: Desired Outcome: Acceptable speeds. | Actual Outcome: Exceeded expectations, performance is excellent and highly responsive.
+
+Date: 2026-05-17
+Feature Tested: UI scaling across different aspect ratios
+Testing Method: Used a high-speed 240fps camera to visually measure frame delay between action and screen
+Result: Desired Outcome: Run without crashing. | Actual Outcome: Caused a full system crash during the test, high priority hotfix needed immediately.
+
+Date: 2026-05-17
+Feature Tested: Marquee display synchronization speed
+Testing Method: Used a digital oscilloscope to measure the analog audio output signal variance
+Result: Desired Outcome: Trigger correctly every time. | Actual Outcome: Failed to trigger correctly due to a minor logic error in the batch script.
+
+Date: 2026-05-17
+Feature Tested: Game launch and initialization time
+Testing Method: Transferred 50GB of dummy zero-byte files over the local Gigabit network
+Result: Desired Outcome: Run without crashing. | Actual Outcome: Caused a full system crash during the test, high priority hotfix needed immediately.
+
+Date: 2026-05-18
+Feature Tested: Menu responsiveness under heavy graphical load
+Testing Method: Connected 4 different brands of controllers and mashed all buttons simultaneously
+Result: Desired Outcome: Flawless execution. | Actual Outcome: Outcome met expectations perfectly, no further changes needed.
+
+Date: 2026-05-18
+Feature Tested: System cold boot duration
+Testing Method: Used a digital oscilloscope to measure the analog audio output signal variance
+Result: Desired Outcome: Seamless performance. | Actual Outcome: Performed slightly below expectations, minor optimization required in the next patch.
+
+Date: 2026-05-18
+Feature Tested: UI scaling across different aspect ratios
+Testing Method: Left the arcade system completely untouched and idle for 24 hours straight
+Result: Desired Outcome: Seamless performance. | Actual Outcome: Performed slightly below expectations, minor optimization required in the next patch.
+
+Date: 2026-05-18
+Feature Tested: Screensaver activation reliability on idle
+Testing Method: Used a digital oscilloscope to measure the analog audio output signal variance
+Result: Desired Outcome: Consistent results across all trials. | Actual Outcome: Outcome was wildly inconsistent, requires further investigation into hardware faults.
+
+Date: 2026-05-18
+Feature Tested: Script stability when parsing empty directories
+Testing Method: Monitored system resources and thread counts via Windows Task Manager
+Result: Desired Outcome: Acceptable speeds. | Actual Outcome: Exceeded expectations, performance is excellent and highly responsive.
+
+Date: 2026-05-18
+Feature Tested: Screensaver activation reliability on idle
+Testing Method: Manually checked the SQLite database entries after simulating 100 game over screens
+Result: Desired Outcome: Consistent results across all trials. | Actual Outcome: Outcome was wildly inconsistent, requires further investigation into hardware faults.
+
+Date: 2026-05-20
+Feature Tested: Game launch and initialization time
+Testing Method: Connected 4 different brands of controllers and mashed all buttons simultaneously
+Result: Desired Outcome: Seamless performance. | Actual Outcome: Performed slightly below expectations, minor optimization required in the next patch.
+
+Date: 2026-05-27
+Feature Tested: Network share bulk file transfer speeds
+Testing Method: Connected 4 different brands of controllers and mashed all buttons simultaneously
+Result: Desired Outcome: Run without crashing. | Actual Outcome: Caused a full system crash during the test, high priority hotfix needed immediately.
+
+Date: 2026-05-28
+Feature Tested: Automated backup script execution success rate
+Testing Method: Connected 4 different brands of controllers and mashed all buttons simultaneously
+Result: Desired Outcome: Stable operation. | Actual Outcome: Failed significantly under stress, feature disabled temporarily until completely rewritten.
+
+Date: 2026-05-29
+Feature Tested: Menu responsiveness under heavy graphical load
+Testing Method: Manually checked the SQLite database entries after simulating 100 game over screens
+Result: Desired Outcome: Flawless execution. | Actual Outcome: Outcome met expectations perfectly, no further changes needed.
+
+Date: 2026-05-29
+Feature Tested: High score database saving mechanism
+Testing Method: Connected 4 different brands of controllers and mashed all buttons simultaneously
+Result: Desired Outcome: Consistent results across all trials. | Actual Outcome: Outcome was wildly inconsistent, requires further investigation into hardware faults.
+
+Date: 2026-05-29
+Feature Tested: Background music transition smoothness
+Testing Method: Used a digital oscilloscope to measure the analog audio output signal variance
+Result: Desired Outcome: Acceptable speeds. | Actual Outcome: Exceeded expectations, performance is excellent and highly responsive.
+
+Date: 2026-05-30
+Feature Tested: UI scaling across different aspect ratios
+Testing Method: Ran an automated python load-testing script to simulate 10,000 rapid menu interactions
+Result: Desired Outcome: Seamless performance. | Actual Outcome: Performed slightly below expectations, minor optimization required in the next patch.
+
+Date: 2026-05-30
+Feature Tested: Menu responsiveness under heavy graphical load
+Testing Method: Used a physical digital stopwatch to time the exact sequence multiple times
+Result: Desired Outcome: Consistent results across all trials. | Actual Outcome: Outcome was wildly inconsistent, requires further investigation into hardware faults.
+
+Date: 2026-05-31
+Feature Tested: Arcade stick physical input latency
+Testing Method: Monitored system resources and thread counts via Windows Task Manager
+Result: Desired Outcome: Acceptable speeds. | Actual Outcome: Exceeded expectations, performance is excellent and highly responsive.
+
+Date: 2026-05-31
+Feature Tested: Script stability when parsing empty directories
+Testing Method: Used a physical digital stopwatch to time the exact sequence multiple times
+Result: Desired Outcome: No memory leaks. | Actual Outcome: Worked flawlessly for 2 hours then degraded heavily, confirmed a slow memory leak.
+
+Date: 2026-06-01
+Feature Tested: System cold boot duration
+Testing Method: Used a digital oscilloscope to measure the analog audio output signal variance
+Result: Desired Outcome: Seamless performance. | Actual Outcome: Performed slightly below expectations, minor optimization required in the next patch.
+
+Date: 2026-06-01
+Feature Tested: Script stability when parsing empty directories
+Testing Method: Connected 4 different brands of controllers and mashed all buttons simultaneously
+Result: Desired Outcome: Stable operation. | Actual Outcome: Failed significantly under stress, feature disabled temporarily until completely rewritten.
+
+Date: 2026-06-04
+Feature Tested: Marquee display synchronization speed
+Testing Method: Used a digital oscilloscope to measure the analog audio output signal variance
+Result: Desired Outcome: Seamless performance. | Actual Outcome: Performed slightly below expectations, minor optimization required in the next patch.
+
+Date: 2026-06-05
+Feature Tested: UI scaling across different aspect ratios
+Testing Method: Left the arcade system completely untouched and idle for 24 hours straight
+Result: Desired Outcome: No memory leaks. | Actual Outcome: Worked flawlessly for 2 hours then degraded heavily, confirmed a slow memory leak.
+
+Date: 2026-06-06
+Feature Tested: Marquee display synchronization speed
+Testing Method: Ran an automated python load-testing script to simulate 10,000 rapid menu interactions
+Result: Desired Outcome: Consistent results across all trials. | Actual Outcome: Outcome was wildly inconsistent, requires further investigation into hardware faults.
+
+Date: 2026-06-07
+Feature Tested: Volume control slider granularity
+Testing Method: Used a physical digital stopwatch to time the exact sequence multiple times
+Result: Desired Outcome: Stable operation. | Actual Outcome: Failed significantly under stress, feature disabled temporarily until completely rewritten.
+
+Date: 2026-06-07
+Feature Tested: Background music transition smoothness
+Testing Method: Ran an automated python load-testing script to simulate 10,000 rapid menu interactions
+Result: Desired Outcome: Acceptable speeds. | Actual Outcome: Exceeded expectations, performance is excellent and highly responsive.
+
+Date: 2026-06-07
+Feature Tested: Script stability when parsing empty directories
+Testing Method: Visually compared the primary and secondary screens during rapid game switching
+Result: Desired Outcome: No memory leaks. | Actual Outcome: Worked flawlessly for 2 hours then degraded heavily, confirmed a slow memory leak.
+
+Date: 2026-06-08
+Feature Tested: Menu responsiveness under heavy graphical load
+Testing Method: Left the arcade system completely untouched and idle for 24 hours straight
+Result: Desired Outcome: Stable operation. | Actual Outcome: Failed significantly under stress, feature disabled temporarily until completely rewritten.
+
+Date: 2026-06-09
+Feature Tested: Screensaver activation reliability on idle
+Testing Method: Used a digital oscilloscope to measure the analog audio output signal variance
+Result: Desired Outcome: Seamless performance. | Actual Outcome: Performed slightly below expectations, minor optimization required in the next patch.
+
+Date: 2026-06-11
+Feature Tested: Menu responsiveness under heavy graphical load
+Testing Method: Transferred 50GB of dummy zero-byte files over the local Gigabit network
+Result: Desired Outcome: Acceptable speeds. | Actual Outcome: Exceeded expectations, performance is excellent and highly responsive.
+
+Date: 2026-06-11
+Feature Tested: Controller hot-swapping during active gameplay
+Testing Method: Used a digital oscilloscope to measure the analog audio output signal variance
+Result: Desired Outcome: Acceptable speeds. | Actual Outcome: Exceeded expectations, performance is excellent and highly responsive.
+
+Date: 2026-06-11
+Feature Tested: System cold boot duration
+Testing Method: Manually checked the SQLite database entries after simulating 100 game over screens
+Result: Desired Outcome: 100% success rate. | Actual Outcome: Passed the baseline, but discovered an edge case that needs addressing later.
+
+Date: 2026-06-12
+Feature Tested: UI scaling across different aspect ratios
+Testing Method: Left the arcade system completely untouched and idle for 24 hours straight
+Result: Desired Outcome: No memory leaks. | Actual Outcome: Worked flawlessly for 2 hours then degraded heavily, confirmed a slow memory leak.
+
+Date: 2026-06-13
+Feature Tested: Menu responsiveness under heavy graphical load
+Testing Method: Used a physical digital stopwatch to time the exact sequence multiple times
+Result: Desired Outcome: 100% success rate. | Actual Outcome: Passed the baseline, but discovered an edge case that needs addressing later.
+
+Date: 2026-06-14
+Feature Tested: Network share bulk file transfer speeds
+Testing Method: Used a physical digital stopwatch to time the exact sequence multiple times
+Result: Desired Outcome: Run without crashing. | Actual Outcome: Caused a full system crash during the test, high priority hotfix needed immediately.
+
+Date: 2026-06-14
+Feature Tested: Screensaver activation reliability on idle
+Testing Method: Monitored system resources and thread counts via Windows Task Manager
+Result: Desired Outcome: Consistent results across all trials. | Actual Outcome: Outcome was wildly inconsistent, requires further investigation into hardware faults.
+
+Date: 2026-06-17
+Feature Tested: Background music transition smoothness
+Testing Method: Monitored system resources and thread counts via Windows Task Manager
+Result: Desired Outcome: Flawless execution. | Actual Outcome: Outcome met expectations perfectly, no further changes needed.
+
+Date: 2026-06-18
+Feature Tested: Automated backup script execution success rate
+Testing Method: Visually compared the primary and secondary screens during rapid game switching
+Result: Desired Outcome: Seamless performance. | Actual Outcome: Performed slightly below expectations, minor optimization required in the next patch.
+
+Date: 2026-06-19
+Feature Tested: Automated backup script execution success rate
+Testing Method: Used a high-speed 240fps camera to visually measure frame delay between action and screen
+Result: Desired Outcome: No memory leaks. | Actual Outcome: Worked flawlessly for 2 hours then degraded heavily, confirmed a slow memory leak.
+

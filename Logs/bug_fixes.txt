@@ -1,0 +1,1000 @@
+: BUG-001
+Date: 2026-01-01
+Issue: Just Shapes and Beats failed to close properly when the global 'Exit Game' hotkey was pressed
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-002
+Date: 2026-01-01
+Issue: Weather widget failed to fetch data and displayed 'NaN' for the temperature
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-003
+Date: 2026-01-01
+Issue: Windows auto-login failed occasionally and got stuck at the Windows lock screen
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-004
+Date: 2026-01-02
+Issue: Just Shapes and Beats failed to recognize Player 1 analog input
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-005
+Date: 2026-01-02
+Issue: Random background music track feature picked the exact same song 5 times in a row
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-006
+Date: 2026-01-02
+Issue: Menu digital clock displayed the wrong time zone entirely
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-007
+Date: 2026-01-03
+Issue: Retro game launch script hung indefinitely on a black screen
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-008
+Date: 2026-01-06
+Issue: Just Shapes and Beats audio desynced completely after 30 minutes of continuous play
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-009
+Date: 2026-01-07
+Issue: Custom startup boot animation played too fast and finished before Windows loaded
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-010
+Date: 2026-01-08
+Issue: Just Shapes and Beats master volume was abnormally loud compared to emulator games
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-011
+Date: 2026-01-08
+Issue: Player 2 arcade joystick was mapped inverted vertically in all fighting games
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-012
+Date: 2026-01-09
+Issue: Menu search bar crashed the entire frontend if no search results were found
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-013
+Date: 2026-01-09
+Issue: Onscreen keyboard keys got stuck if pressed too quickly in succession
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-014
+Date: 2026-01-12
+Issue: Just Shapes and Beats save progress data failed to write to the hard drive upon exit
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-015
+Date: 2026-01-13
+Issue: Just Shapes and Beats master volume was abnormally loud compared to emulator games
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-016
+Date: 2026-01-14
+Issue: Favorites list forgot all saved entries after a system reboot
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-017
+Date: 2026-01-14
+Issue: Just Shapes and Beats Steam achievements overlay hook caused massive frame stuttering
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-018
+Date: 2026-01-17
+Issue: Just Shapes and Beats UI elements flickered when the arcade cabinet was bumped
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-019
+Date: 2026-01-17
+Issue: Onscreen keyboard keys got stuck if pressed too quickly in succession
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-020
+Date: 2026-01-19
+Issue: Random game roulette button launched completely empty directory folders
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-021
+Date: 2026-01-20
+Issue: Just Shapes and Beats Steam achievements overlay hook caused massive frame stuttering
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-022
+Date: 2026-01-21
+Issue: Random game roulette button launched completely empty directory folders
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-023
+Date: 2026-01-25
+Issue: Just Shapes and Beats controller rumble remained stuck on maximum intensity after taking damage
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-024
+Date: 2026-01-25
+Issue: Player 2 arcade joystick was mapped inverted vertically in all fighting games
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-025
+Date: 2026-01-27
+Issue: Custom startup boot animation played too fast and finished before Windows loaded
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-026
+Date: 2026-01-28
+Issue: Weather widget failed to fetch data and displayed 'NaN' for the temperature
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-027
+Date: 2026-01-28
+Issue: Onscreen keyboard keys got stuck if pressed too quickly in succession
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-028
+Date: 2026-01-29
+Issue: Favorites list forgot all saved entries after a system reboot
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-029
+Date: 2026-01-30
+Issue: Menu search bar crashed the entire frontend if no search results were found
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-030
+Date: 2026-02-03
+Issue: SSH remote connection timed out unexpectedly during system maintenance
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-031
+Date: 2026-02-04
+Issue: Local high score tracker saved scores to the wrong game's database file
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-032
+Date: 2026-02-06
+Issue: Just Shapes and Beats controller rumble remained stuck on maximum intensity after taking damage
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-033
+Date: 2026-02-07
+Issue: Random background music track feature picked the exact same song 5 times in a row
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-034
+Date: 2026-02-08
+Issue: Automatic control mapping script failed entirely for generic unbranded USB controllers
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-035
+Date: 2026-02-09
+Issue: Player 3 wireless controller disconnected randomly during heavy rumble scenes
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-036
+Date: 2026-02-10
+Issue: Random background music track feature picked the exact same song 5 times in a row
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-037
+Date: 2026-02-11
+Issue: Menu search bar crashed the entire frontend if no search results were found
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-038
+Date: 2026-02-11
+Issue: Automatic UI update checker got stuck in an infinite downloading loop
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-039
+Date: 2026-02-12
+Issue: Just Shapes and Beats UI elements flickered when the arcade cabinet was bumped
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-040
+Date: 2026-02-13
+Issue: Menu digital clock displayed the wrong time zone entirely
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-041
+Date: 2026-02-13
+Issue: Game icons completely failed to load if the game folder contained special foreign characters
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-042
+Date: 2026-02-13
+Issue: Video screensaver failed to activate after 10 minutes of idle time as configured
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-043
+Date: 2026-02-14
+Issue: Just Shapes and Beats threw a DirectX initialization error on cold boot
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-044
+Date: 2026-02-14
+Issue: Secondary marquee display remained completely blank after game launch
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-045
+Date: 2026-02-15
+Issue: Just Shapes and Beats failed to recognize Player 1 analog input
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-046
+Date: 2026-02-15
+Issue: Automatic UI update checker got stuck in an infinite downloading loop
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-047
+Date: 2026-02-16
+Issue: SSH remote connection timed out unexpectedly during system maintenance
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-048
+Date: 2026-02-17
+Issue: Just Shapes and Beats audio desynced completely after 30 minutes of continuous play
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-049
+Date: 2026-02-18
+Issue: Random game roulette button launched completely empty directory folders
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-050
+Date: 2026-02-19
+Issue: Menu background music kept overlapping itself when repeatedly exiting and entering games
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-051
+Date: 2026-02-19
+Issue: Secondary marquee display remained completely blank after game launch
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-052
+Date: 2026-02-20
+Issue: Just Shapes and Beats character got stuck moving left indefinitely due to deadzone issues
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-053
+Date: 2026-02-21
+Issue: Controller battery indicator showed 0% for fully charged gamepads
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-054
+Date: 2026-02-22
+Issue: Video screensaver failed to activate after 10 minutes of idle time as configured
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-055
+Date: 2026-02-22
+Issue: Animated GIF icons on the menu grid caused extremely high CPU usage and lag
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-056
+Date: 2026-02-23
+Issue: Game icons completely failed to load if the game folder contained special foreign characters
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-057
+Date: 2026-02-23
+Issue: Video screensaver failed to activate after 10 minutes of idle time as configured
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-058
+Date: 2026-02-23
+Issue: Random background music track feature picked the exact same song 5 times in a row
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-059
+Date: 2026-02-24
+Issue: Just Shapes and Beats audio desynced completely after 30 minutes of continuous play
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-060
+Date: 2026-02-25
+Issue: Video screensaver failed to activate after 10 minutes of idle time as configured
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-061
+Date: 2026-02-25
+Issue: Just Shapes and Beats UI elements flickered when the arcade cabinet was bumped
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-062
+Date: 2026-02-25
+Issue: Just Shapes and Beats failed to recognize Player 1 analog input
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-063
+Date: 2026-02-26
+Issue: Onscreen keyboard keys got stuck if pressed too quickly in succession
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-064
+Date: 2026-02-26
+Issue: Controller battery indicator showed 0% for fully charged gamepads
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-065
+Date: 2026-02-26
+Issue: Onscreen keyboard keys got stuck if pressed too quickly in succession
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-066
+Date: 2026-02-27
+Issue: Just Shapes and Beats opened in a minimized windowed state instead of borderless fullscreen
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-067
+Date: 2026-03-01
+Issue: Weather widget failed to fetch data and displayed 'NaN' for the temperature
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-068
+Date: 2026-03-01
+Issue: Game icons completely failed to load if the game folder contained special foreign characters
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-069
+Date: 2026-03-01
+Issue: Favorites list forgot all saved entries after a system reboot
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-070
+Date: 2026-03-01
+Issue: Menu background music kept overlapping itself when repeatedly exiting and entering games
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-071
+Date: 2026-03-03
+Issue: Windows mouse cursor reappeared in the center of the screen after exiting certain games
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-072
+Date: 2026-03-03
+Issue: Hardware coin insertion button registered twice per physical press
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-073
+Date: 2026-03-06
+Issue: Favorites list forgot all saved entries after a system reboot
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-074
+Date: 2026-03-06
+Issue: Just Shapes and Beats master volume was abnormally loud compared to emulator games
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-075
+Date: 2026-03-07
+Issue: Menu digital clock displayed the wrong time zone entirely
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-076
+Date: 2026-03-07
+Issue: Secondary marquee display remained completely blank after game launch
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-077
+Date: 2026-03-08
+Issue: Automatic UI update checker got stuck in an infinite downloading loop
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-078
+Date: 2026-03-10
+Issue: SSH remote connection timed out unexpectedly during system maintenance
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-079
+Date: 2026-03-11
+Issue: Random game roulette button launched completely empty directory folders
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-080
+Date: 2026-03-12
+Issue: Controller battery indicator showed 0% for fully charged gamepads
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-081
+Date: 2026-03-12
+Issue: System soft shutdown command from the menu did not execute, leaving the system on
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-082
+Date: 2026-03-15
+Issue: Just Shapes and Beats threw a DirectX initialization error on cold boot
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-083
+Date: 2026-03-16
+Issue: Player 3 wireless controller disconnected randomly during heavy rumble scenes
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-084
+Date: 2026-03-17
+Issue: SSH remote connection timed out unexpectedly during system maintenance
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-085
+Date: 2026-03-19
+Issue: Video screensaver failed to activate after 10 minutes of idle time as configured
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-086
+Date: 2026-03-19
+Issue: Windows auto-login failed occasionally and got stuck at the Windows lock screen
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-087
+Date: 2026-03-19
+Issue: Just Shapes and Beats crashed abruptly when loading certain custom user tracks
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-088
+Date: 2026-03-20
+Issue: Random background music track feature picked the exact same song 5 times in a row
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-089
+Date: 2026-03-21
+Issue: Custom startup boot animation played too fast and finished before Windows loaded
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-090
+Date: 2026-03-22
+Issue: Video screensaver failed to activate after 10 minutes of idle time as configured
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-091
+Date: 2026-03-23
+Issue: Just Shapes and Beats failed to recognize Player 1 analog input
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-092
+Date: 2026-03-23
+Issue: Network ROM folder share disconnected randomly during large file transfers
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-093
+Date: 2026-03-24
+Issue: Just Shapes and Beats controller rumble remained stuck on maximum intensity after taking damage
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-094
+Date: 2026-03-25
+Issue: Local high score tracker saved scores to the wrong game's database file
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-095
+Date: 2026-03-27
+Issue: Controller battery indicator showed 0% for fully charged gamepads
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-096
+Date: 2026-03-29
+Issue: Just Shapes and Beats severe screen tearing occurred on fast moving boss levels
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-097
+Date: 2026-03-30
+Issue: Menu navigation sound effects played at maximum volume regardless of the slider settings
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-098
+Date: 2026-03-30
+Issue: Dark mode UI text was completely unreadable against certain background images
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-099
+Date: 2026-03-30
+Issue: Downloaded custom UI themes broke the layout scaling on the 4K display
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-100
+Date: 2026-03-30
+Issue: Dark mode UI text was completely unreadable against certain background images
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-101
+Date: 2026-03-31
+Issue: Secondary marquee display remained completely blank after game launch
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-102
+Date: 2026-03-31
+Issue: Menu search bar crashed the entire frontend if no search results were found
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-103
+Date: 2026-03-31
+Issue: Game icons completely failed to load if the game folder contained special foreign characters
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-104
+Date: 2026-04-01
+Issue: Secondary marquee display remained completely blank after game launch
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-105
+Date: 2026-04-01
+Issue: Just Shapes and Beats failed to close properly when the global 'Exit Game' hotkey was pressed
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-106
+Date: 2026-04-02
+Issue: Controller battery indicator showed 0% for fully charged gamepads
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-107
+Date: 2026-04-02
+Issue: Automatic control mapping script failed entirely for generic unbranded USB controllers
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-108
+Date: 2026-04-03
+Issue: Player 3 wireless controller disconnected randomly during heavy rumble scenes
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-109
+Date: 2026-04-03
+Issue: Favorites list forgot all saved entries after a system reboot
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-110
+Date: 2026-04-04
+Issue: Game icons completely failed to load if the game folder contained special foreign characters
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-111
+Date: 2026-04-05
+Issue: Menu search bar crashed the entire frontend if no search results were found
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-112
+Date: 2026-04-07
+Issue: Windows mouse cursor reappeared in the center of the screen after exiting certain games
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-113
+Date: 2026-04-07
+Issue: Windows auto-login failed occasionally and got stuck at the Windows lock screen
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-114
+Date: 2026-04-08
+Issue: Network ROM folder share disconnected randomly during large file transfers
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-115
+Date: 2026-04-08
+Issue: Secondary marquee display remained completely blank after game launch
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-116
+Date: 2026-04-08
+Issue: Downloaded custom UI themes broke the layout scaling on the 4K display
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-117
+Date: 2026-04-08
+Issue: Just Shapes and Beats failed to close properly when the global 'Exit Game' hotkey was pressed
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-118
+Date: 2026-04-09
+Issue: Menu background music kept overlapping itself when repeatedly exiting and entering games
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-119
+Date: 2026-04-10
+Issue: Random background music track feature picked the exact same song 5 times in a row
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-120
+Date: 2026-04-10
+Issue: Controller battery indicator showed 0% for fully charged gamepads
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-121
+Date: 2026-04-11
+Issue: Player 3 wireless controller disconnected randomly during heavy rumble scenes
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-122
+Date: 2026-04-12
+Issue: Just Shapes and Beats intro video played at double speed
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-123
+Date: 2026-04-12
+Issue: Just Shapes and Beats audio desynced completely after 30 minutes of continuous play
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-124
+Date: 2026-04-13
+Issue: Just Shapes and Beats controller rumble remained stuck on maximum intensity after taking damage
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-125
+Date: 2026-04-14
+Issue: Just Shapes and Beats failed to close properly when the global 'Exit Game' hotkey was pressed
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-126
+Date: 2026-04-14
+Issue: Controller battery indicator showed 0% for fully charged gamepads
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-127
+Date: 2026-04-15
+Issue: Player 2 arcade joystick was mapped inverted vertically in all fighting games
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-128
+Date: 2026-04-16
+Issue: Just Shapes and Beats failed to close properly when the global 'Exit Game' hotkey was pressed
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-129
+Date: 2026-04-16
+Issue: Windows auto-login failed occasionally and got stuck at the Windows lock screen
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-130
+Date: 2026-04-18
+Issue: Automatic control mapping script failed entirely for generic unbranded USB controllers
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-131
+Date: 2026-04-21
+Issue: Animated GIF icons on the menu grid caused extremely high CPU usage and lag
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-132
+Date: 2026-04-21
+Issue: Just Shapes and Beats opened in a minimized windowed state instead of borderless fullscreen
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-133
+Date: 2026-04-22
+Issue: Windows auto-login failed occasionally and got stuck at the Windows lock screen
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-134
+Date: 2026-04-23
+Issue: Just Shapes and Beats crashed abruptly when loading certain custom user tracks
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-135
+Date: 2026-04-23
+Issue: Hardware coin insertion button registered twice per physical press
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-136
+Date: 2026-04-23
+Issue: Game icons completely failed to load if the game folder contained special foreign characters
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-137
+Date: 2026-04-23
+Issue: Local high score tracker saved scores to the wrong game's database file
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-138
+Date: 2026-04-23
+Issue: Automatic control mapping script failed entirely for generic unbranded USB controllers
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-139
+Date: 2026-04-25
+Issue: Network ROM folder share disconnected randomly during large file transfers
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-140
+Date: 2026-04-27
+Issue: Windows mouse cursor reappeared in the center of the screen after exiting certain games
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-141
+Date: 2026-04-28
+Issue: Controller battery indicator showed 0% for fully charged gamepads
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-142
+Date: 2026-04-28
+Issue: Just Shapes and Beats character got stuck moving left indefinitely due to deadzone issues
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-143
+Date: 2026-04-29
+Issue: Windows mouse cursor reappeared in the center of the screen after exiting certain games
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-144
+Date: 2026-04-29
+Issue: Random game roulette button launched completely empty directory folders
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-145
+Date: 2026-04-29
+Issue: Just Shapes and Beats failed to recognize Player 1 analog input
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-146
+Date: 2026-04-30
+Issue: Favorites list forgot all saved entries after a system reboot
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-147
+Date: 2026-05-01
+Issue: Random background music track feature picked the exact same song 5 times in a row
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-148
+Date: 2026-05-01
+Issue: Just Shapes and Beats master volume was abnormally loud compared to emulator games
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-149
+Date: 2026-05-03
+Issue: Local high score tracker saved scores to the wrong game's database file
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-150
+Date: 2026-05-04
+Issue: Retro game launch script hung indefinitely on a black screen
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-151
+Date: 2026-05-05
+Issue: Player 3 wireless controller disconnected randomly during heavy rumble scenes
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-152
+Date: 2026-05-06
+Issue: Retro game launch script hung indefinitely on a black screen
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-153
+Date: 2026-05-07
+Issue: Just Shapes and Beats character got stuck moving left indefinitely due to deadzone issues
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-154
+Date: 2026-05-08
+Issue: Hardware coin insertion button registered twice per physical press
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-155
+Date: 2026-05-08
+Issue: Random game roulette button launched completely empty directory folders
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-156
+Date: 2026-05-10
+Issue: Onscreen keyboard keys got stuck if pressed too quickly in succession
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-157
+Date: 2026-05-11
+Issue: Just Shapes and Beats UI elements flickered when the arcade cabinet was bumped
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-158
+Date: 2026-05-11
+Issue: Hardware coin insertion button registered twice per physical press
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-159
+Date: 2026-05-11
+Issue: Menu volume slider did not actually change the Windows master volume level
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-160
+Date: 2026-05-12
+Issue: Player 3 wireless controller disconnected randomly during heavy rumble scenes
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-161
+Date: 2026-05-13
+Issue: System soft shutdown command from the menu did not execute, leaving the system on
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-162
+Date: 2026-05-14
+Issue: Just Shapes and Beats intro video played at double speed
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-163
+Date: 2026-05-15
+Issue: Just Shapes and Beats failed to recognize Player 1 analog input
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-164
+Date: 2026-05-16
+Issue: Menu navigation sound effects played at maximum volume regardless of the slider settings
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-165
+Date: 2026-05-19
+Issue: Local high score tracker saved scores to the wrong game's database file
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-166
+Date: 2026-05-19
+Issue: Random game roulette button launched completely empty directory folders
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-167
+Date: 2026-05-21
+Issue: Network ROM folder share disconnected randomly during large file transfers
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-168
+Date: 2026-05-21
+Issue: Random background music track feature picked the exact same song 5 times in a row
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-169
+Date: 2026-05-21
+Issue: Retro game launch script hung indefinitely on a black screen
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-170
+Date: 2026-05-22
+Issue: Downloaded custom UI themes broke the layout scaling on the 4K display
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-171
+Date: 2026-05-23
+Issue: Controller battery indicator showed 0% for fully charged gamepads
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-172
+Date: 2026-05-27
+Issue: Player 3 wireless controller disconnected randomly during heavy rumble scenes
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-173
+Date: 2026-05-28
+Issue: Video screensaver failed to activate after 10 minutes of idle time as configured
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-174
+Date: 2026-05-29
+Issue: Dark mode UI text was completely unreadable against certain background images
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-175
+Date: 2026-06-01
+Issue: Favorites list forgot all saved entries after a system reboot
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-176
+Date: 2026-06-01
+Issue: Just Shapes and Beats master volume was abnormally loud compared to emulator games
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-177
+Date: 2026-06-01
+Issue: Player 3 wireless controller disconnected randomly during heavy rumble scenes
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-178
+Date: 2026-06-01
+Issue: Onscreen keyboard keys got stuck if pressed too quickly in succession
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-179
+Date: 2026-06-02
+Issue: Just Shapes and Beats controller rumble remained stuck on maximum intensity after taking damage
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-180
+Date: 2026-06-03
+Issue: Automatic control mapping script failed entirely for generic unbranded USB controllers
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-181
+Date: 2026-06-04
+Issue: Just Shapes and Beats intro video played at double speed
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-182
+Date: 2026-06-05
+Issue: Menu search bar crashed the entire frontend if no search results were found
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-183
+Date: 2026-06-05
+Issue: Player 2 arcade joystick was mapped inverted vertically in all fighting games
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-184
+Date: 2026-06-05
+Issue: Controller battery indicator showed 0% for fully charged gamepads
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-185
+Date: 2026-06-06
+Issue: Just Shapes and Beats local multiplayer mode completely dropped Player 3 inputs
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-186
+Date: 2026-06-06
+Issue: Menu volume slider did not actually change the Windows master volume level
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-187
+Date: 2026-06-07
+Issue: Just Shapes and Beats master volume was abnormally loud compared to emulator games
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-188
+Date: 2026-06-07
+Issue: Just Shapes and Beats opened in a minimized windowed state instead of borderless fullscreen
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-189
+Date: 2026-06-09
+Issue: Retro game launch script hung indefinitely on a black screen
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-190
+Date: 2026-06-11
+Issue: Game icons completely failed to load if the game folder contained special foreign characters
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-191
+Date: 2026-06-13
+Issue: Random background music track feature picked the exact same song 5 times in a row
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-192
+Date: 2026-06-14
+Issue: Just Shapes and Beats save progress data failed to write to the hard drive upon exit
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-193
+Date: 2026-06-14
+Issue: Local high score tracker saved scores to the wrong game's database file
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-194
+Date: 2026-06-15
+Issue: Just Shapes and Beats severe screen tearing occurred on fast moving boss levels
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-195
+Date: 2026-06-15
+Issue: Just Shapes and Beats Steam achievements overlay hook caused massive frame stuttering
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-196
+Date: 2026-06-15
+Issue: Custom startup boot animation played too fast and finished before Windows loaded
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-197
+Date: 2026-06-16
+Issue: Favorites list forgot all saved entries after a system reboot
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-198
+Date: 2026-06-18
+Issue: Windows auto-login failed occasionally and got stuck at the Windows lock screen
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-199
+Date: 2026-06-18
+Issue: Retro game launch script hung indefinitely on a black screen
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+
+: BUG-200
+Date: 2026-06-19
+Issue: Controller battery indicator showed 0% for fully charged gamepads
+Resolution: Investigated the root cause and applied a patch to the codebase/configuration to resolve the behavior permanently.
+

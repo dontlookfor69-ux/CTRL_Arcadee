@@ -7,7 +7,7 @@ echo Launching Godot Frontend in WSL...
 echo.
 
 :: Path to the Godot project within WSL
-set WSL_PROJECT_PATH=/mnt/c/Users/HP/Desktop/CTRL_Arcadee/frontend/godot_project
+set WSL_PROJECT_PATH=/mnt/d/Hoofd_Folder/CTRL_Arcadee/frontend/godot_project
 
 :: Launch Godot using WSLg (Windows 11 GUI support)
 :: We use -u root to ensure it has permissions for flag files in /tmp/

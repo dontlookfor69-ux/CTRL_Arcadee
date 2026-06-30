@@ -5,14 +5,8 @@
 [ext_resource path="res://shaders/scanline.shader" type="Shader" id=3]
 
 [sub_resource type="ShaderMaterial" id=4]
-shader = ExtResource( 2 )
-shader_param/curvature = 0.08
 
 [sub_resource type="ShaderMaterial" id=5]
-shader = ExtResource( 3 )
-shader_param/scanline_count   = 540.0
-shader_param/scanline_opacity = 0.18
-shader_param/flicker_speed    = 8.0
 
 [node name="Desktop" type="Control"]
 anchor_right  = 1.0
@@ -231,23 +225,6 @@ stretch_mode = 6
 
 [node name="BootTween" type="Tween" parent="BootScreen"]
 
-; ── CRT shaders ──────────────────────────────────────────────────────────
-[node name="CRT_Barrel" type="CanvasLayer" parent="."]
-layer = 10
-
-[node name="ShaderRect" type="ColorRect" parent="CRT_Barrel"]
-material     = SubResource( 4 )
-anchor_right  = 1.0
-anchor_bottom = 1.0
-mouse_filter  = 2
-
-[node name="CRT_Scanlines" type="CanvasLayer" parent="."]
-layer = 11
-
-[node name="ShaderRect" type="ColorRect" parent="CRT_Scanlines"]
-material     = SubResource( 5 )
-anchor_right  = 1.0
-anchor_bottom = 1.0
-mouse_filter  = 2
+; CRT Shaders removed for Pi 4 stability
 
 [connection signal="pressed" from="MainUI/DebugMenu/VBoxContainer/CloseButton" to="." method="_on_CloseDebugButton_pressed"]

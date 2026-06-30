@@ -15,10 +15,10 @@ run/main_scene="res://scenes/main_desktop.tscn"
 
 [display]
 
-window/size/width=1920
-window/size/height=1080
+window/size/width=1280
+window/size/height=720
 window/size/fullscreen=true
-window/stretch/mode="2d"
+window/stretch/mode="viewport"
 window/stretch/aspect="keep"
 
 [autoload]
@@ -40,8 +40,16 @@ debug_q={
 "events": [ Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"pressed":false,"scancode":81,"unicode":0,"echo":false,"script":null) ]
 }
 
+[audio]
+
+driver="ALSA"
+
 [rendering]
 
 quality/driver/driver_name="GLES2"
-vram_compression/import_etc=true
+environment/default_clear_color=Color( 0, 0, 0, 1 )
+vram_compression/import_etc=false
 vram_compression/import_etc2=false
+quality/shadows/filter_mode=0
+quality/directional_shadow/size=256
+quality/shadow_atlas/size=256

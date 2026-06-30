@@ -1,0 +1,600 @@
+Date: 2026-01-02
+Feature Added: Created the basic menu layout from scratch.
+
+Date: 2026-01-04
+Feature Added: Added standard game icons to populate the menu grid.
+
+Date: 2026-01-07
+Feature Added: Improved menu navigation with smoother scrolling transitions and polished UI elements.
+
+Date: 2026-01-04
+Feature Added: Added an in-menu downloader for custom UI themes and community artwork
+
+Date: 2026-01-04
+Feature Added: Configured automatic backup script for game save files to a cloud drive
+
+Date: 2026-01-05
+Feature Added: Added a splash screen with the cabinet logo before games launch
+
+Date: 2026-01-05
+Feature Added: Refactored the main navigation loop to be strictly controller-driven
+
+Date: 2026-01-06
+Feature Added: Added custom UI sound effects for menu navigation and selections
+
+Date: 2026-01-06
+Feature Added: Added an onscreen keyboard for searching games without a physical keyboard
+
+Date: 2026-01-07
+Feature Added: Added a splash screen with the cabinet logo before games launch
+
+Date: 2026-01-08
+Feature Added: Added a parental lock PIN feature for M-rated games
+
+Date: 2026-01-09
+Feature Added: Implemented screen brightness and contrast controls
+
+Date: 2026-01-10
+Feature Added: Added visual indicators for multiplayer-compatible games
+
+Date: 2026-01-11
+Feature Added: Configured Player 2 arcade stick controls mapping
+
+Date: 2026-01-12
+Feature Added: Added support for animated GIF icons in the game grid
+
+Date: 2026-01-12
+Feature Added: Created a diagnostic utility screen to check controller inputs and buttons
+
+Date: 2026-01-12
+Feature Added: Added a feature to randomize the background music track on every boot
+
+Date: 2026-01-13
+Feature Added: Added a video screensaver that plays random game trailers when idle
+
+Date: 2026-01-15
+Feature Added: Added a global volume mute hotkey combination on the arcade panel
+
+Date: 2026-01-15
+Feature Added: Added a feature to randomize the background music track on every boot
+
+Date: 2026-01-15
+Feature Added: Added a video screensaver that plays random game trailers when idle
+
+Date: 2026-01-17
+Feature Added: Added a feature to randomize the background music track on every boot
+
+Date: 2026-01-17
+Feature Added: Added a script to automatically remap controls depending on the active game
+
+Date: 2026-01-18
+Feature Added: Added an in-menu downloader for custom UI themes and community artwork
+
+Date: 2026-01-22
+Feature Added: Implemented a 'Favorites' list for quick access to top games
+
+Date: 2026-01-23
+Feature Added: Implemented shutdown, restart, and sleep options in the main menu power settings
+
+Date: 2026-01-25
+Feature Added: Configured a hardware microswitch button for arcade coin insertion
+
+Date: 2026-01-25
+Feature Added: Added a script to automatically remap controls depending on the active game
+
+Date: 2026-01-26
+Feature Added: Implemented a custom notification popup system for background events
+
+Date: 2026-01-27
+Feature Added: Implemented a 'Recently Played' carousel section on the home screen
+
+Date: 2026-01-28
+Feature Added: Created a script wrapper to launch retro emulator games
+
+Date: 2026-01-30
+Feature Added: Added a parental lock PIN feature for M-rated games
+
+Date: 2026-01-30
+Feature Added: Added an in-menu downloader for custom UI themes and community artwork
+
+Date: 2026-01-30
+Feature Added: Added custom UI sound effects for menu navigation and selections
+
+Date: 2026-01-30
+Feature Added: Added custom UI sound effects for menu navigation and selections
+
+Date: 2026-01-31
+Feature Added: Refactored the main navigation loop to be strictly controller-driven
+
+Date: 2026-02-04
+Feature Added: Implemented a screensaver timeout setting in the options menu
+
+Date: 2026-02-05
+Feature Added: Configured automatic backup script for game save files to a cloud drive
+
+Date: 2026-02-06
+Feature Added: Added a network shared folder for easy drag-and-drop game ROM installs
+
+Date: 2026-02-07
+Feature Added: Configured Player 2 arcade stick controls mapping
+
+Date: 2026-02-07
+Feature Added: Created a batch script to launch Windows-based PC games seamlessly
+
+Date: 2026-02-07
+Feature Added: Implemented a custom notification popup system for background events
+
+Date: 2026-02-08
+Feature Added: Implemented background music player to the main menu
+
+Date: 2026-02-09
+Feature Added: Created a batch script to launch Windows-based PC games seamlessly
+
+Date: 2026-02-11
+Feature Added: Implemented a 'Favorites' list for quick access to top games
+
+Date: 2026-02-13
+Feature Added: Implemented a custom notification popup system for background events
+
+Date: 2026-02-15
+Feature Added: Implemented a screensaver timeout setting in the options menu
+
+Date: 2026-02-16
+Feature Added: Added visual indicators for multiplayer-compatible games
+
+Date: 2026-02-16
+Feature Added: Implemented a dark mode UI theme for the menu system
+
+Date: 2026-02-17
+Feature Added: Implemented a 'Recently Played' carousel section on the home screen
+
+Date: 2026-02-18
+Feature Added: Implemented screen brightness and contrast controls
+
+Date: 2026-02-19
+Feature Added: Improved icon loading speed by generating and caching thumbnail sizes
+
+Date: 2026-02-19
+Feature Added: Implemented an automatic update fetcher for the frontend repository
+
+Date: 2026-02-19
+Feature Added: Configured a system-wide script to hide the Windows mouse cursor completely
+
+Date: 2026-02-19
+Feature Added: Added a visual Wi-Fi/Ethernet indicator for network connectivity status
+
+Date: 2026-02-19
+Feature Added: Added a search function to quickly find games by title
+
+Date: 2026-02-19
+Feature Added: Added a script to automatically remap controls depending on the active game
+
+Date: 2026-02-19
+Feature Added: Improved icon loading speed by generating and caching thumbnail sizes
+
+Date: 2026-02-20
+Feature Added: Added categories for different game genres (Fighters, Platformers, Puzzle)
+
+Date: 2026-02-21
+Feature Added: Implemented shutdown, restart, and sleep options in the main menu power settings
+
+Date: 2026-02-23
+Feature Added: Added custom boot animation video to hide the Windows startup logo
+
+Date: 2026-02-23
+Feature Added: Added a feature to randomize the background music track on every boot
+
+Date: 2026-02-24
+Feature Added: Configured Player 2 arcade stick controls mapping
+
+Date: 2026-02-24
+Feature Added: Implemented a 'Recently Played' carousel section on the home screen
+
+Date: 2026-02-25
+Feature Added: Added custom boot animation video to hide the Windows startup logo
+
+Date: 2026-02-25
+Feature Added: Added an onscreen keyboard for searching games without a physical keyboard
+
+Date: 2026-02-26
+Feature Added: Added a search function to quickly find games by title
+
+Date: 2026-02-28
+Feature Added: Added categories for different game genres (Fighters, Platformers, Puzzle)
+
+Date: 2026-02-28
+Feature Added: Added custom UI sound effects for menu navigation and selections
+
+Date: 2026-02-28
+Feature Added: Added custom UI sound effects for menu navigation and selections
+
+Date: 2026-02-28
+Feature Added: Added a visual Wi-Fi/Ethernet indicator for network connectivity status
+
+Date: 2026-02-28
+Feature Added: Added a video screensaver that plays random game trailers when idle
+
+Date: 2026-02-28
+Feature Added: Integrated a weather widget just for fun on the home screen
+
+Date: 2026-03-04
+Feature Added: Created a script to scrape game descriptions and metadata from the web
+
+Date: 2026-03-05
+Feature Added: Added a digital clock widget to the top right corner of the menu
+
+Date: 2026-03-07
+Feature Added: Added categories for different game genres (Fighters, Platformers, Puzzle)
+
+Date: 2026-03-07
+Feature Added: Configured automatic backup script for game save files to a cloud drive
+
+Date: 2026-03-07
+Feature Added: Configured an external secondary display to show game marquee artwork
+
+Date: 2026-03-08
+Feature Added: Added a search function to quickly find games by title
+
+Date: 2026-03-08
+Feature Added: Configured SSH server access for remote troubleshooting and updates
+
+Date: 2026-03-09
+Feature Added: Added an onscreen keyboard for searching games without a physical keyboard
+
+Date: 2026-03-10
+Feature Added: Added a parental lock PIN feature for M-rated games
+
+Date: 2026-03-11
+Feature Added: Added custom boot animation video to hide the Windows startup logo
+
+Date: 2026-03-11
+Feature Added: Added a network shared folder for easy drag-and-drop game ROM installs
+
+Date: 2026-03-12
+Feature Added: Added categories for different game genres (Fighters, Platformers, Puzzle)
+
+Date: 2026-03-13
+Feature Added: Added a search function to quickly find games by title
+
+Date: 2026-03-14
+Feature Added: Added custom boot animation video to hide the Windows startup logo
+
+Date: 2026-03-16
+Feature Added: Added a visual Wi-Fi/Ethernet indicator for network connectivity status
+
+Date: 2026-03-16
+Feature Added: Added a global volume mute hotkey combination on the arcade panel
+
+Date: 2026-03-16
+Feature Added: Added categories for different game genres (Fighters, Platformers, Puzzle)
+
+Date: 2026-03-18
+Feature Added: Added a script to automatically remap controls depending on the active game
+
+Date: 2026-03-18
+Feature Added: Created a batch script to launch Windows-based PC games seamlessly
+
+Date: 2026-03-19
+Feature Added: Added custom boot animation video to hide the Windows startup logo
+
+Date: 2026-03-19
+Feature Added: Configured the system to automatically mount external USB drives for portable games
+
+Date: 2026-03-20
+Feature Added: Implemented background music player to the main menu
+
+Date: 2026-03-20
+Feature Added: Added categories for different game genres (Fighters, Platformers, Puzzle)
+
+Date: 2026-03-21
+Feature Added: Added a high score tracker overlay for local arcade high scores
+
+Date: 2026-03-22
+Feature Added: Refactored the main navigation loop to be strictly controller-driven
+
+Date: 2026-03-22
+Feature Added: Implemented screen brightness and contrast controls
+
+Date: 2026-03-23
+Feature Added: Configured an external secondary display to show game marquee artwork
+
+Date: 2026-03-25
+Feature Added: Added a global volume mute hotkey combination on the arcade panel
+
+Date: 2026-03-26
+Feature Added: Added a video screensaver that plays random game trailers when idle
+
+Date: 2026-03-27
+Feature Added: Refactored the main navigation loop to be strictly controller-driven
+
+Date: 2026-03-28
+Feature Added: Implemented a screensaver timeout setting in the options menu
+
+Date: 2026-03-28
+Feature Added: Added support for video backgrounds behind the main menu UI
+
+Date: 2026-03-29
+Feature Added: Added support for animated GIF icons in the game grid
+
+Date: 2026-04-01
+Feature Added: Configured the system to automatically mount external USB drives for portable games
+
+Date: 2026-04-01
+Feature Added: Created a script wrapper to launch retro emulator games
+
+Date: 2026-04-01
+Feature Added: Added a visual Wi-Fi/Ethernet indicator for network connectivity status
+
+Date: 2026-04-02
+Feature Added: Implemented a dark mode UI theme for the menu system
+
+Date: 2026-04-03
+Feature Added: Implemented a 'Favorites' list for quick access to top games
+
+Date: 2026-04-03
+Feature Added: Implemented a 'Recently Played' carousel section on the home screen
+
+Date: 2026-04-04
+Feature Added: Configured the system to automatically mount external USB drives for portable games
+
+Date: 2026-04-04
+Feature Added: Configured auto-login for the dedicated Windows arcade user account
+
+Date: 2026-04-04
+Feature Added: Configured SSH server access for remote troubleshooting and updates
+
+Date: 2026-04-07
+Feature Added: Implemented a 'Favorites' list for quick access to top games
+
+Date: 2026-04-09
+Feature Added: Added categories for different game genres (Fighters, Platformers, Puzzle)
+
+Date: 2026-04-09
+Feature Added: Added a parental lock PIN feature for M-rated games
+
+Date: 2026-04-09
+Feature Added: Configured a global 'Exit Game' hotkey to instantly kill any running game process
+
+Date: 2026-04-11
+Feature Added: Added a script to automatically remap controls depending on the active game
+
+Date: 2026-04-11
+Feature Added: Added a volume control slider to the settings page
+
+Date: 2026-04-12
+Feature Added: Added a digital clock widget to the top right corner of the menu
+
+Date: 2026-04-12
+Feature Added: Implemented a 'Recently Played' carousel section on the home screen
+
+Date: 2026-04-14
+Feature Added: Added a global volume mute hotkey combination on the arcade panel
+
+Date: 2026-04-15
+Feature Added: Configured initial Player 1 arcade stick controls mapping
+
+Date: 2026-04-15
+Feature Added: Configured SSH server access for remote troubleshooting and updates
+
+Date: 2026-04-16
+Feature Added: Improved icon loading speed by generating and caching thumbnail sizes
+
+Date: 2026-04-16
+Feature Added: Implemented screen brightness and contrast controls
+
+Date: 2026-04-18
+Feature Added: Added a global volume mute hotkey combination on the arcade panel
+
+Date: 2026-04-21
+Feature Added: Added a feature to randomize the background music track on every boot
+
+Date: 2026-04-22
+Feature Added: Configured initial Player 1 arcade stick controls mapping
+
+Date: 2026-04-22
+Feature Added: Added a video screensaver that plays random game trailers when idle
+
+Date: 2026-04-22
+Feature Added: Configured a hardware microswitch button for arcade coin insertion
+
+Date: 2026-04-23
+Feature Added: Added a splash screen with the cabinet logo before games launch
+
+Date: 2026-04-23
+Feature Added: Implemented a 'Favorites' list for quick access to top games
+
+Date: 2026-04-24
+Feature Added: Improved icon loading speed by generating and caching thumbnail sizes
+
+Date: 2026-04-24
+Feature Added: Added a feature to randomize the background music track on every boot
+
+Date: 2026-04-25
+Feature Added: Added a visual Wi-Fi/Ethernet indicator for network connectivity status
+
+Date: 2026-04-26
+Feature Added: Implemented a battery level warning indicator for connected wireless controllers
+
+Date: 2026-04-27
+Feature Added: Added a visual Wi-Fi/Ethernet indicator for network connectivity status
+
+Date: 2026-04-28
+Feature Added: Refactored the main navigation loop to be strictly controller-driven
+
+Date: 2026-04-28
+Feature Added: Improved icon loading speed by generating and caching thumbnail sizes
+
+Date: 2026-04-29
+Feature Added: Added a feature to randomize the background music track on every boot
+
+Date: 2026-04-30
+Feature Added: Added an onscreen keyboard for searching games without a physical keyboard
+
+Date: 2026-05-01
+Feature Added: Configured auto-login for the dedicated Windows arcade user account
+
+Date: 2026-05-02
+Feature Added: Configured Player 2 arcade stick controls mapping
+
+Date: 2026-05-03
+Feature Added: Implemented an automatic update fetcher for the frontend repository
+
+Date: 2026-05-05
+Feature Added: Implemented a screensaver timeout setting in the options menu
+
+Date: 2026-05-05
+Feature Added: Created a diagnostic utility screen to check controller inputs and buttons
+
+Date: 2026-05-05
+Feature Added: Added support for animated GIF icons in the game grid
+
+Date: 2026-05-06
+Feature Added: Created a script to scrape game descriptions and metadata from the web
+
+Date: 2026-05-09
+Feature Added: Added an in-menu downloader for custom UI themes and community artwork
+
+Date: 2026-05-10
+Feature Added: Added a video screensaver that plays random game trailers when idle
+
+Date: 2026-05-10
+Feature Added: Added a splash screen with the cabinet logo before games launch
+
+Date: 2026-05-11
+Feature Added: Added custom UI sound effects for menu navigation and selections
+
+Date: 2026-05-12
+Feature Added: Added a digital clock widget to the top right corner of the menu
+
+Date: 2026-05-12
+Feature Added: Added support for video backgrounds behind the main menu UI
+
+Date: 2026-05-13
+Feature Added: Configured auto-login for the dedicated Windows arcade user account
+
+Date: 2026-05-14
+Feature Added: Refactored the main navigation loop to be strictly controller-driven
+
+Date: 2026-05-16
+Feature Added: Added an onscreen keyboard for searching games without a physical keyboard
+
+Date: 2026-05-16
+Feature Added: Added a 'Random Game' roulette button for undecided players
+
+Date: 2026-05-17
+Feature Added: Configured a global 'Exit Game' hotkey to instantly kill any running game process
+
+Date: 2026-05-17
+Feature Added: Configured a global 'Exit Game' hotkey to instantly kill any running game process
+
+Date: 2026-05-18
+Feature Added: Configured SSH server access for remote troubleshooting and updates
+
+Date: 2026-05-19
+Feature Added: Added a script to automatically remap controls depending on the active game
+
+Date: 2026-05-19
+Feature Added: Added an in-menu downloader for custom UI themes and community artwork
+
+Date: 2026-05-20
+Feature Added: Configured an external secondary display to show game marquee artwork
+
+Date: 2026-05-21
+Feature Added: Configured an external secondary display to show game marquee artwork
+
+Date: 2026-05-21
+Feature Added: Configured Player 2 arcade stick controls mapping
+
+Date: 2026-05-22
+Feature Added: Configured a global 'Exit Game' hotkey to instantly kill any running game process
+
+Date: 2026-05-23
+Feature Added: Added custom UI sound effects for menu navigation and selections
+
+Date: 2026-05-24
+Feature Added: Implemented a custom notification popup system for background events
+
+Date: 2026-05-24
+Feature Added: Improved icon loading speed by generating and caching thumbnail sizes
+
+Date: 2026-05-24
+Feature Added: Added a digital clock widget to the top right corner of the menu
+
+Date: 2026-05-26
+Feature Added: Implemented shutdown, restart, and sleep options in the main menu power settings
+
+Date: 2026-05-28
+Feature Added: Added a 'Clear Cache' utility tool to free up disk space from temporary thumbnails
+
+Date: 2026-05-28
+Feature Added: Added visual indicators for multiplayer-compatible games
+
+Date: 2026-05-29
+Feature Added: Configured Player 3 and 4 USB controllers for party games
+
+Date: 2026-05-30
+Feature Added: Added an onscreen keyboard for searching games without a physical keyboard
+
+Date: 2026-05-30
+Feature Added: Implemented a battery level warning indicator for connected wireless controllers
+
+Date: 2026-06-01
+Feature Added: Added a volume control slider to the settings page
+
+Date: 2026-06-02
+Feature Added: Created a batch script to launch Windows-based PC games seamlessly
+
+Date: 2026-06-02
+Feature Added: Configured Player 2 arcade stick controls mapping
+
+Date: 2026-06-05
+Feature Added: Configured Player 2 arcade stick controls mapping
+
+Date: 2026-06-07
+Feature Added: Added a parental lock PIN feature for M-rated games
+
+Date: 2026-06-07
+Feature Added: Implemented a 'Favorites' list for quick access to top games
+
+Date: 2026-06-08
+Feature Added: Implemented a 'Recently Played' carousel section on the home screen
+
+Date: 2026-06-10
+Feature Added: Implemented a screensaver timeout setting in the options menu
+
+Date: 2026-06-11
+Feature Added: Configured initial Player 1 arcade stick controls mapping
+
+Date: 2026-06-11
+Feature Added: Added a script to automatically remap controls depending on the active game
+
+Date: 2026-06-13
+Feature Added: Configured a system-wide script to hide the Windows mouse cursor completely
+
+Date: 2026-06-14
+Feature Added: Added a video screensaver that plays random game trailers when idle
+
+Date: 2026-06-14
+Feature Added: Added custom UI sound effects for menu navigation and selections
+
+Date: 2026-06-14
+Feature Added: Implemented a screensaver timeout setting in the options menu
+
+Date: 2026-06-14
+Feature Added: Configured Player 2 arcade stick controls mapping
+
+Date: 2026-06-15
+Feature Added: Refactored the main navigation loop to be strictly controller-driven
+
+Date: 2026-06-16
+Feature Added: Implemented a screensaver timeout setting in the options menu
+
+Date: 2026-06-17
+Feature Added: Configured an external secondary display to show game marquee artwork
+
+Date: 2026-06-19
+Feature Added: Configured SSH server access for remote troubleshooting and updates
+
+Date: 2026-06-19
+Feature Added: Configured initial Player 1 arcade stick controls mapping
+

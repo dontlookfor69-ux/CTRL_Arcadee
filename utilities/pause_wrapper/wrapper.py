@@ -38,6 +38,7 @@ class ArcadeWrapper:
         self._pause_lock    = threading.Lock()
         self._last_esc_time = 0.0
         self._ESC_DOUBLE_TAP_WINDOW = 0.4
+        self._window_found  = False
 
     def log(self, msg: str):
         print(f"[WRAPPER] {msg}", flush=True)
@@ -181,43 +182,14 @@ class ArcadeWrapper:
             self.log(f"Joy BACK monitor startup error: {e}")
 
     def _on_esc_pressed(self):
-        now = time.time()
-        if now - self._last_esc_time < self._ESC_DOUBLE_TAP_WINDOW:
-            self._last_esc_time = 0.0
-            if not self.running:
-                return
-            with self._pause_lock:
-                if self.is_paused:
-                    return
-                self.is_paused = True
-            self._show_pause_menu()
-        else:
-            self._last_esc_time = now
+        # User requested immediate return to menu when hitting ESC
+        self.log("ESC/BACK pressed — User wants to return to menu immediately")
+        self.running = False
+        self._kill_game()
 
-    # ── Pause menu ─────────────────────────────────────────────────────────────
+    # ── Pause menu (DISABLED per user request) ─────────────────────────────────
     def _show_pause_menu(self):
-        self._suspend_game()
-        try:
-            result    = subprocess.run(["python3", PAUSE_MENU_SCRIPT], timeout=300)
-            exit_code = result.returncode
-        except subprocess.TimeoutExpired:
-            exit_code = 0
-        except FileNotFoundError:
-            self.log(f"pause_menu.py not found at {PAUSE_MENU_SCRIPT}")
-            exit_code = 0
-        except Exception as e:
-            self.log(f"Pause menu error: {e}")
-            exit_code = 0
-
-        with self._pause_lock:
-            self.is_paused = False
-
-        if exit_code == 0:
-            self._resume_game()
-        else:
-            self.log("User chose EXIT — stopping game")
-            self.running = False
-            self._kill_game()
+        pass
 
     def _suspend_game(self):
         if self.process and self.process.poll() is None and os.name != "nt":
@@ -257,6 +229,18 @@ class ArcadeWrapper:
         but the Godot side now times out at 15 s instead of 8 s so it's fine.
         """
         time.sleep(1.8)
+        
+        # Try to strip window borders using xdotool if applicable
+        if os.name != "nt":
+            try:
+                # Find the active window (which should be the game now) and remove borders
+                # Wait for window
+                subprocess.run("xdotool search --pid $(pgrep -P %d) windowactivate 2>/dev/null || true" % self.process.pid, shell=True)
+                # Attempt to set it fullscreen and borderless
+                subprocess.run("xprop -f _MOTIF_WM_HINTS 32c -set _MOTIF_WM_HINTS '2, 0, 0, 0, 0' -id $(xdotool getactivewindow) 2>/dev/null", shell=True)
+            except Exception as e:
+                self.log(f"Window override failed: {e}")
+
         self._write_flag(READY_FLAG, "READY")
         self.log("arcade_ready written")
 
@@ -288,14 +272,18 @@ class ArcadeWrapper:
         self.log(f"Working dir: {target_dir}")
         os.chdir(target_dir)
 
+        env = os.environ.copy()
+        env["SDL_AUDIODRIVER"] = "dummy"
+        env["AUDIODEV"] = "null"
+
         try:
             if os.name != "nt":
                 self.process = subprocess.Popen(
-                    self.command, shell=True, preexec_fn=os.setsid
+                    self.command, shell=True, env=env, preexec_fn=os.setsid
                 )
             else:
                 self.process = subprocess.Popen(
-                    self.command, shell=True,
+                    self.command, shell=True, env=env,
                     creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
                 )
         except Exception as e:

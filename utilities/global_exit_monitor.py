@@ -80,30 +80,33 @@ class GlobalExitMonitor:
         while self.running:
             r, _, _ = select.select(joy_devices, [], [], 0.1)
             for dev in r:
-                for event in dev.read():
-                    if event.type == ecodes.EV_KEY and event.value == 1:
-                        if event.code == code_maps[dev.fd]["A"]:
-                            self.on_input("A")
-                        elif event.code == code_maps[dev.fd]["C"]:
-                            self.on_input("C")
-                            
-                    elif event.type == ecodes.EV_ABS:
-                        if dev.fd not in axis_state:
-                            axis_state[dev.fd] = {"Y": 0, "HAT_Y": 0}
-                            
-                        if event.code == ecodes.ABS_Y:
-                            if event.value > 200 and axis_state[dev.fd]["Y"] <= 200:
-                                self.on_input("DOWN")
-                            elif event.value < 55 and axis_state[dev.fd]["Y"] >= 55:
-                                self.on_input("UP")
-                            axis_state[dev.fd]["Y"] = event.value
-                            
-                        elif event.code == ecodes.ABS_HAT0Y:
-                            if event.value == 1 and axis_state[dev.fd]["HAT_Y"] != 1:
-                                self.on_input("DOWN")
-                            elif event.value == -1 and axis_state[dev.fd]["HAT_Y"] != -1:
-                                self.on_input("UP")
-                            axis_state[dev.fd]["HAT_Y"] = event.value
+                try:
+                    for event in dev.read():
+                        if event.type == ecodes.EV_KEY and event.value == 1:
+                            if event.code == code_maps[dev.fd]["A"]:
+                                self.on_input("A")
+                            elif event.code == code_maps[dev.fd]["C"]:
+                                self.on_input("C")
+                                
+                        elif event.type == ecodes.EV_ABS:
+                            if dev.fd not in axis_state:
+                                axis_state[dev.fd] = {"Y": 0, "HAT_Y": 0}
+                                
+                            if event.code == ecodes.ABS_Y:
+                                if event.value > 200 and axis_state[dev.fd]["Y"] <= 200:
+                                    self.on_input("DOWN")
+                                elif event.value < 55 and axis_state[dev.fd]["Y"] >= 55:
+                                    self.on_input("UP")
+                                axis_state[dev.fd]["Y"] = event.value
+                                
+                            elif event.code == ecodes.ABS_HAT0Y:
+                                if event.value == 1 and axis_state[dev.fd]["HAT_Y"] != 1:
+                                    self.on_input("DOWN")
+                                elif event.value == -1 and axis_state[dev.fd]["HAT_Y"] != -1:
+                                    self.on_input("UP")
+                                axis_state[dev.fd]["HAT_Y"] = event.value
+                except OSError:
+                    joy_devices.remove(dev)
 
 if __name__ == "__main__":
     monitor = GlobalExitMonitor()

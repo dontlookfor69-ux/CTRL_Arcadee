@@ -50,10 +50,9 @@ var C_NEON_GREEN = Color("#39FF14")
 var game_paths = {
 	"Pacman": {"path": "games/pacman/launch_pacman.sh", "icon": "res://assets/icons/pacman.png"},
 	"Tetris": {"path": "games/tetris/main.py", "icon": "res://assets/icons/tetris.png"},
-	"DOOM": {"path": "games/doom/launch_doom.sh", "icon": "res://assets/icons/doom.png"},
 	"Undertale": {"path": "games/undertale/launch_undertale.sh", "icon": "res://assets/icons/undertale.png"},
 	"Just Shapes & Beats": {"path": "games/just_shapes_and_beats/Just Shapes And Beats for arcade Linux/game.py", "icon": "res://assets/icons/Just_Shapes_And_Beats.png"},
-	"Minecraft Pi": {"path": "games/minecraft_pi/launch_mcpi.sh", "icon": "res://assets/icons/minecraft.png"},
+	"Flappy Bird": {"path": "games/flappybird/flappybird/main.py", "icon": "res://assets/icons/flappybird.png"},
 	"Etch A Sketch AI": {"path": "utilities/etch_a_sketch_ai/main.py", "icon": "res://assets/icons/etch_a_sketch.png"},
 	"Media Player": {"scene": "res://scenes/media_player.tscn", "icon": "res://assets/icons/Media_Player.png"},
 	"Tennis for 2": {"path": "games/tennis_for_2/main.py", "icon": "res://assets/icons/tennis_icon.png"}
@@ -86,8 +85,8 @@ func _ready():
 	boot_screen.show()
 	boot_screen.modulate.a = 1.0
 	
-	var title_font = _get_ui_font(56)
-	var hint_font = _get_ui_font(28)
+	var title_font = _get_ui_font(38)
+	var hint_font = _get_ui_font(20)
 	if game_name_label:
 		game_name_label.add_font_override("font", title_font)
 	var launch_hint = $MainUI/LaunchHint
@@ -180,9 +179,9 @@ func _build_carousel():
 		var info = game_paths[game_name]
 		var node = Control.new()
 		node.name = "Slot_" + str(i)
-		node.rect_min_size = Vector2(400, 400)
-		node.rect_size = Vector2(400, 400)
-		node.rect_pivot_offset = Vector2(200, 200)
+		node.rect_min_size = Vector2(266, 266)
+		node.rect_size = Vector2(266, 266)
+		node.rect_pivot_offset = Vector2(133, 133)
 		
 		var is_installed = true
 		if info.has("path"):
@@ -208,10 +207,10 @@ func _build_carousel():
 		ir.anchor_top = 0.5
 		ir.anchor_right = 0.5
 		ir.anchor_bottom = 0.5
-		ir.margin_left = -120
-		ir.margin_right = 120
-		ir.margin_top = -120
-		ir.margin_bottom = 120
+		ir.margin_left = -80
+		ir.margin_right = 80
+		ir.margin_top = -80
+		ir.margin_bottom = 80
 		if not is_installed:
 			ir.modulate = Color(0.3, 0.3, 0.3)
 		node.add_child(ir)
@@ -249,8 +248,8 @@ func _update_carousel_layout():
 	var total = _carousel_nodes.size()
 	if total == 0: return
 	
-	var center_x = 1920 / 2.0
-	var center_y = 540.0 - 100.0
+	var center_x = 1280 / 2.0
+	var center_y = 360.0 - 66.0
 	
 	# Current active name/score is updated based on the closest item
 	var closest_idx = int(round(scroll_offset)) % total
@@ -272,16 +271,19 @@ func _update_carousel_layout():
 		
 	draw_order.sort_custom(self, "_sort_by_dist")
 	
+	var z_idx = 0
 	for d_item in draw_order:
 		var i = d_item["index"]
 		var dist = d_item["signed_dist"]
 		var node = _carousel_nodes[i]["node"]
 		
-		# Move node to end of parent so it renders on top of previously processed nodes
-		carousel.move_child(node, carousel.get_child_count() - 1)
+		# Move node to correct Z-order only if it changed, to save CPU layout updates
+		if node.get_index() != z_idx:
+			carousel.move_child(node, z_idx)
+		z_idx += 1
 		
-		var target_x = center_x - 200
-		var target_y = center_y - 200
+		var target_x = center_x - 133
+		var target_y = center_y - 133
 		var target_scale = Vector2(1,1)
 		var target_alpha = 1.0
 		var target_color = C_ACCENT
@@ -292,19 +294,19 @@ func _update_carousel_layout():
 			target_scale = Vector2(1.2, 1.2).linear_interpolate(Vector2(0.8, 0.8), t)
 			target_alpha = lerp(1.0, 0.6, t)
 			target_color = Color(1.0, 1.0, 1.0, 1.0).linear_interpolate(C_ACCENT, t)
-			target_x = center_x - 200 + (450 * dist)
+			target_x = center_x - 133 + (300.0 * dist)
 		elif abs_dist <= 2.0:
 			var t = abs_dist - 1.0
 			target_scale = Vector2(0.8, 0.8).linear_interpolate(Vector2(0.6, 0.6), t)
 			target_alpha = lerp(0.6, 0.3, t)
 			target_color = C_ACCENT
-			target_x = center_x - 200 + (lerp(450.0, 700.0, t) * sign(dist))
+			target_x = center_x - 133 + (lerp(300.0, 466.0, t) * sign(dist))
 		else:
 			var t = min(1.0, abs_dist - 2.0)
 			target_scale = Vector2(0.6, 0.6).linear_interpolate(Vector2(0.4, 0.4), t)
 			target_alpha = lerp(0.3, 0.0, t)
 			target_color = C_ACCENT
-			target_x = center_x - 200 + (lerp(700.0, 900.0, t) * sign(dist))
+			target_x = center_x - 133 + (lerp(466.0, 600.0, t) * sign(dist))
 			
 		var panel = node.get_child(0)
 		var sb = panel.get_stylebox("panel").duplicate()
@@ -429,116 +431,6 @@ func _connect_input_debug_button():
 
 func play_boot_sequence():
 	_set_shaders_visible(true)
-	if Global.has_booted:
-		boot_screen.hide()
-		main_ui.show()
-		_build_carousel()
-		return
-	
-	var cl = CanvasLayer.new()
-	cl.layer = 5
-	add_child(cl)
-	var bg = ColorRect.new()
-	bg.color = Color(0,0,0,1)
-	bg.anchor_right = 1.0
-	bg.anchor_bottom = 1.0
-	cl.add_child(bg)
-	
-	var bios = RichTextLabel.new()
-	bios.bbcode_enabled = true
-	bios.anchor_right = 1.0
-	bios.anchor_bottom = 1.0
-	bios.margin_left = 20
-	bios.margin_top = 20
-	bios.add_color_override("default_color", C_NEON_GREEN)
-	bg.add_child(bios)
-	
-	bg.color = Color(1, 1, 1, 1)
-	yield(get_tree().create_timer(0.08), "timeout")
-	bg.color = Color(0,0,0,1)
-	
-	var log_pool = ["BOOT_OS_V8", "DISK_MOUNT_OK", "VIDEO_DRIVER_V3D", "INPUT_MAPPING", "NEURAL_LINK_ESTABLISHED"]
-	for i in range(250):
-		bios.bbcode_text += ">>> " + log_pool[randi() % log_pool.size()] + " 0x" + str(randi()).left(8) + " [READY]\n"
-		var vs = bios.get_v_scroll()
-		if vs:
-			vs.value = vs.max_value
-		if i % 10 == 0:
-			yield(get_tree(), "idle_frame")
-	
-	yield(get_tree().create_timer(0.2), "timeout")
-	bios.hide()
-	
-	var pb_frame = ColorRect.new()
-	pb_frame.color = Color(0,1,0,0.2)
-	pb_frame.rect_min_size = Vector2(900, 50)
-	pb_frame.anchor_left = 0.5
-	pb_frame.anchor_top = 0.5
-	pb_frame.margin_left = -450
-	pb_frame.margin_top = -25
-	bg.add_child(pb_frame)
-	var pb = ProgressBar.new()
-	pb.anchor_right = 1.0
-	pb.anchor_bottom = 1.0
-	var bsb = StyleBoxFlat.new()
-	bsb.bg_color = C_NEON_GREEN
-	pb.add_stylebox_override("fg", bsb)
-	pb.percent_visible = false
-	pb_frame.add_child(pb)
-	for i in range(101):
-		pb.value = i
-		if i % 5 == 0:
-			yield(get_tree(), "idle_frame")
-	yield(get_tree().create_timer(0.2), "timeout")
-	pb_frame.queue_free()
-	
-	var font = _get_ui_font(180)
-	
-	var logo_container = VBoxContainer.new()
-	logo_container.anchor_left = 0.0
-	logo_container.anchor_right = 1.0
-	logo_container.anchor_top = 0.0
-	logo_container.anchor_bottom = 1.0
-	logo_container.alignment = BoxContainer.ALIGN_CENTER
-	logo_container.add_constant_override("separation", -20)
-	bg.add_child(logo_container)
-	
-	var lbl_ctrl = Label.new()
-	lbl_ctrl.text = "CTRL"
-	lbl_ctrl.align = Label.ALIGN_CENTER
-	lbl_ctrl.add_font_override("font", font)
-	lbl_ctrl.add_color_override("font_color", C_NEON_GREEN)
-	logo_container.add_child(lbl_ctrl)
-	
-	var lbl_arcade = Label.new()
-	lbl_arcade.text = "ARCADE"
-	lbl_arcade.align = Label.ALIGN_CENTER
-	lbl_arcade.add_font_override("font", font)
-	lbl_arcade.add_color_override("font_color", C_NEON_GREEN)
-	logo_container.add_child(lbl_arcade)
-	
-	var start_ms = OS.get_ticks_msec()
-	while OS.get_ticks_msec() - start_ms < 2000:
-		if randf() > 0.95:
-			logo_container.rect_position = Vector2(rand_range(-500, 500), rand_range(-100, 100))
-			logo_container.modulate = Color(1, 0, 1)
-		elif randf() > 0.90:
-			logo_container.rect_position = Vector2(rand_range(-50, 50), 0)
-			logo_container.modulate = Color(1, 1, 1)
-		else:
-			logo_container.rect_position = Vector2(0, 0)
-			logo_container.modulate = C_NEON_GREEN
-		logo_container.visible = (randf() > 0.05)
-		yield(get_tree().create_timer(0.04), "timeout")
-	
-	var tw = Tween.new()
-	add_child(tw)
-	tw.interpolate_property(cl.get_child(0), "modulate:a", 1.0, 0.0, 0.2)
-	tw.start()
-	yield(tw, "tween_all_completed")
-	cl.queue_free()
-	tw.queue_free()
-	
 	Global.has_booted = true
 	_build_carousel()
 	boot_screen.hide()
@@ -628,6 +520,9 @@ func launch_game():
 	lbl.text = "LAUNCHING..."
 	_perform_actual_launch(game_name)
 	
+	# Purge Godot memory and suspend while game runs
+	_free_memory_for_game()
+	
 	var start_ms = OS.get_ticks_msec()
 	var got_ready = false
 	while true:
@@ -668,6 +563,8 @@ func launch_game():
 			break
 		yield(get_tree().create_timer(0.5), "timeout")
 	
+	_restore_memory_after_game()
+	
 	$ReturnOverlay.show()
 	var console = $ReturnOverlay/Console
 	console.bbcode_text = ""
@@ -698,6 +595,23 @@ func _restore_menu_after_exit():
 	$MainUI/LaunchHint.visible = true
 	_set_shaders_visible(true)
 	is_launching = false
+
+func _free_memory_for_game():
+	for child in carousel.get_children():
+		child.queue_free()
+	_carousel_nodes.clear()
+	if bgm_player.playing:
+		bgm_player.stop()
+	OS.window_minimized = true
+	Engine.target_fps = 5
+
+func _restore_memory_after_game():
+	Engine.target_fps = 60
+	OS.window_minimized = false
+	OS.window_fullscreen = true
+	_build_carousel()
+	if bgm_player.stream:
+		bgm_player.play()
 
 func _show_game_not_available():
 	var lo = $MainUI/LoadingOverlay

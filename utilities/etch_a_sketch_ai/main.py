@@ -479,10 +479,17 @@ class MagicEtch:
 
                 if self.joysticks:
                     joy = self.joysticks[0]
-                    ax = joy.get_axis(0)
-                    ay = joy.get_axis(1)
-                    if abs(ax) > _DIAL_DEADZONE: dx += ax * _DIAL_SPEED
-                    if abs(ay) > _DIAL_DEADZONE: dy += ay * _DIAL_SPEED
+                    if joy.get_numaxes() >= 2:
+                        ax = joy.get_axis(0)
+                        ay = joy.get_axis(1)
+                        if abs(ax) > _DIAL_DEADZONE: dx += ax * _DIAL_SPEED
+                        if abs(ay) > _DIAL_DEADZONE: dy += ay * _DIAL_SPEED
+                    if joy.get_numhats() > 0:
+                        hx, hy = joy.get_hat(0)
+                        if hx < -0.5: dx -= _DIAL_SPEED
+                        elif hx > 0.5: dx += _DIAL_SPEED
+                        if hy < -0.5: dy += _DIAL_SPEED # In Pygame, HAT up is (0,1), but screen up is -y
+                        elif hy > 0.5: dy -= _DIAL_SPEED
 
                 dx += self._mouse_accum_x
                 dy += self._mouse_accum_y

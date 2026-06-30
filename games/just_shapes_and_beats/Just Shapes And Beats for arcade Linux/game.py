@@ -3,8 +3,14 @@ import random
 import math
 import sys
 import os
-import cv2
-import numpy as np
+try:
+    import cv2
+except ImportError:
+    cv2 = None
+try:
+    import numpy as np
+except ImportError:
+    np = None
 import json
 
 LYRIC_OFFSETS_FILE = "lyric_offsets.json"
@@ -25,14 +31,20 @@ def save_lyric_offsets(offsets):
 # (Removed low-latency buffer constraint as it silently breaks WSL audio backends)
 pygame.init()
 pygame.mixer.pre_init(44100, -16, 2, 512)
-pygame.mixer.init()
+try:
+    pygame.mixer.init()
+except:
+    pass
 pygame.mouse.set_visible(False)
 
-# Set resolution to 1920x1080
-SCREEN_WIDTH = 1920
-SCREEN_HEIGHT = 1080
-# Force full screen with scaling to match 1920x1080 logically
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.FULLSCREEN | pygame.SCALED | pygame.DOUBLEBUF | pygame.HWSURFACE)
+# Set resolution to 1280x720 to perfectly match the arcade cabinet display
+SCREEN_WIDTH = 1280
+SCREEN_HEIGHT = 720
+# Force full screen
+try:
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.FULLSCREEN)
+except:
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.FULLSCREEN)
 pygame.display.set_caption("Just Shapes & Beats Remake")
 clock = pygame.time.Clock()
 
@@ -43,7 +55,7 @@ COLORS = {
     'yellow': (255, 235, 59),
     'orange': (255, 152, 0),
     'pink': (255, 40, 105),
-    'enemy': (255, 0, 102),
+    'enemy': (255, 57, 112),
     'white': (255, 255, 255),
     'ui_bg': (20, 20, 20, 180),
     'green': (76, 175, 80)
@@ -132,60 +144,50 @@ for name, data in SONGS.items():
         data["surf"] = None
 
 # --- Fonts ---
-_font_cache = {}
+import functools
+
+@functools.lru_cache(maxsize=32)
 def get_font(size, bold=True):
-    key = (size, bold)
-    if key not in _font_cache:
-        try:
-            _font_cache[key] = pygame.font.SysFont('Arial', size, bold=bold)
-        except:
-            _font_cache[key] = pygame.font.Font(None, size)
-    return _font_cache[key]
+    try:
+        return pygame.font.SysFont('Arial', size, bold=bold)
+    except:
+        return pygame.font.Font(None, size)
 
 font_xl = get_font(120)
 font_large = get_font(80)
 font_medium = get_font(40)
 font_small = get_font(24, False)
 
-_text_cache = {}
+@functools.lru_cache(maxsize=128)
 def get_rendered_text(text, size, color, bold=True):
-    key = (text, size, color, bold)
-    if key not in _text_cache:
-        f = get_font(size, bold)
-        _text_cache[key] = f.render(text, True, color)
-    return _text_cache[key]
+    f = get_font(size, bold)
+    return f.render(text, True, color)
 
-_shape_cache = {}
+@functools.lru_cache(maxsize=256)
 def get_shape_surf(shape, size, color, alpha):
-    key = (shape, size, color, alpha)
-    if key not in _shape_cache:
-        surf = pygame.Surface((size, size), pygame.SRCALPHA)
-        draw_color = (*color, alpha)
-        if shape == 'square':
-            pygame.draw.rect(surf, draw_color, (0, 0, size, size))
-        elif shape == 'triangle':
-            pygame.draw.polygon(surf, draw_color, [(size/2, 0), (size, size), (0, size)])
-        elif shape == 'circle':
-            pygame.draw.circle(surf, draw_color, (size/2, size/2), size/2)
-        elif shape == 'octagon':
-            draw_octagon(surf, draw_color, (0, 0, size, size))
-        _shape_cache[key] = surf
-    return _shape_cache[key]
+    surf = pygame.Surface((size, size), pygame.SRCALPHA)
+    draw_color = (*color, alpha)
+    if shape == 'square':
+        pygame.draw.rect(surf, draw_color, (0, 0, size, size))
+    elif shape == 'triangle':
+        pygame.draw.polygon(surf, draw_color, [(size/2, 0), (size, size), (0, size)])
+    elif shape == 'circle':
+        pygame.draw.circle(surf, draw_color, (size/2, size/2), size/2)
+    elif shape == 'octagon':
+        draw_octagon(surf, draw_color, (0, 0, size, size))
+    return surf
 
-_obs_cache = {}
+@functools.lru_cache(maxsize=256)
 def get_obs_surf(type, size, color, alpha):
-    key = (type, size, color, alpha)
-    if key not in _obs_cache:
-        s = max(1, int(size))
-        surf = pygame.Surface((s, s), pygame.SRCALPHA)
-        if type == 'rect':
-            pygame.draw.rect(surf, (*color, alpha), (0, 0, s, s))
-        elif type == 'circle':
-            pygame.draw.circle(surf, (*color, alpha), (s/2, s/2), s/2)
-        elif type == 'triangle':
-            pygame.draw.polygon(surf, (*color, alpha), [(s/2, 0), (s, s), (0, s)])
-        _obs_cache[key] = surf
-    return _obs_cache[key]
+    s = max(1, int(size))
+    surf = pygame.Surface((s, s), pygame.SRCALPHA)
+    if type == 'rect':
+        pygame.draw.rect(surf, (*color, alpha), (0, 0, s, s))
+    elif type == 'circle':
+        pygame.draw.circle(surf, (*color, alpha), (s/2, s/2), s/2)
+    elif type == 'triangle':
+        pygame.draw.polygon(surf, (*color, alpha), [(s/2, 0), (s, s), (0, s)])
+    return surf
 # --- Global State ---
 class GameState:
     SHATTER_DEATH = 9
@@ -212,8 +214,9 @@ class App:
         self.selected_level_idx = 0
         self.levels = list(SONGS.keys())
         self.shake_amount = 0
-        self.health = 100
-        self.max_health = 100
+        self.lives = 3
+        self.score = 0
+        self.continues = 3
         self.last_beat_time = 0
         self.beat_interval = 500
         self.active_level = None
@@ -262,9 +265,19 @@ class App:
             })
 
         self.menu_idx = 0
-        self.menu_options = ["Level Selection", "Skins", "Settings", "Toggle Player 2: OFF", "Exit Game"]
+        self.menu_options = ["Level Selection", "Skins", "Settings", "Level Maker", "Exit Game"]
         self.players = []
         self.menu_sel_lerp = [0.0] * len(self.menu_options)
+        
+        # Onscreen Keyboard state
+        self.kb_layout = [
+            ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+            ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', '<'],
+            ['Z', 'X', 'C', 'V', 'B', 'N', 'M', '_', 'OK']
+        ]
+        self.kb_x = 0
+        self.kb_y = 0
+        self.kb_cooldown = 0
         
         # Audio / Settings state
         self.global_volume = 0.8
@@ -272,7 +285,7 @@ class App:
         
         # Pause state variables
         self.pause_idx = 0
-        self.pause_options = ["Resume", f"Volume: {int(self.global_volume * 100)}%", "Exit Level"]
+        self.pause_options = ["Resume", "Restart Level", "Exit to Menu"]
         self.pause_scale = 0.0
         self.pause_exiting = False
         self.pause_exit_action = 'resume'
@@ -331,11 +344,9 @@ class Player:
         self.shape = shape
         self.size = 25
         self.speed = 11
-        self.dash_dist = 200
+        self.dash_dist = 180
         self.dash_cooldown = 0
         self.dash_timer = 0
-        self.dash_energy = 100
-        self.max_dash_energy = 100
         self.invuln_timer = 0
         self.is_dashing = False
         self.dash_target_x = 0
@@ -344,8 +355,6 @@ class Player:
         self.dash_start_y = 0
         self.trail = []
         self.dash_particles = []
-        self.shield_active = False
-        self.shield_cooldown = 0
         self.reset()
 
     def reset(self):
@@ -353,20 +362,14 @@ class Player:
         self.y = SCREEN_HEIGHT // 2
         self.dash_cooldown = 0
         self.dash_timer = 0
-        self.dash_energy = 100
         self.invuln_timer = 0
         self.is_dashing = False
         self.trail = []
         self.dash_particles = []
-        self.shield_active = False
-        self.shield_cooldown = 0
 
     def update(self, dt, app):
         if self.dash_cooldown > 0: self.dash_cooldown -= dt
-        if self.shield_cooldown > 0: self.shield_cooldown -= dt
         if self.invuln_timer > 0: self.invuln_timer -= dt
-        if self.dash_energy < self.max_dash_energy:
-            self.dash_energy = min(self.max_dash_energy, self.dash_energy + 0.05 * dt)
 
         keys = pygame.key.get_pressed()
         dx, dy = 0, 0
@@ -387,6 +390,12 @@ class Player:
                     elif j.get_axis(0) > 0.3: dx += 1
                     if j.get_axis(1) < -0.3: dy -= 1
                     elif j.get_axis(1) > 0.3: dy += 1
+                if j.get_numhats() > 0:
+                    hx, hy = j.get_hat(0)
+                    if hx < -0.5: dx -= 1
+                    elif hx > 0.5: dx += 1
+                    if hy < -0.5: dy += 1
+                    elif hy > 0.5: dy -= 1
                 if j.get_button(0) or j.get_button(1) or j.get_button(9): dash_key = True
                 if j.get_button(2) or j.get_button(3): shield_key = True
         else:
@@ -407,10 +416,7 @@ class Player:
                 if j.get_button(0) or j.get_button(1) or j.get_button(9): dash_key = True
                 if j.get_button(2) or j.get_button(3): shield_key = True
 
-        if shield_key and self.shield_cooldown <= 0 and not self.shield_active and self.dash_energy >= 50:
-            self.shield_active = True
-            self.dash_energy -= 50
-            self.shield_cooldown = 5000 # 5 seconds cooldown before you can shield again
+
 
         if self.is_dashing:
             self.dash_timer -= dt
@@ -438,7 +444,7 @@ class Player:
                 self.x += (dx / mag) * self.speed
                 self.y += (dy / mag) * self.speed
             
-            if dash_key and self.dash_cooldown <= 0 and self.dash_energy >= 35:
+            if dash_key and self.dash_cooldown <= 0:
                 self.start_dash(dx, dy, app)
 
         self.x = max(self.size, min(SCREEN_WIDTH - self.size, self.x))
@@ -468,9 +474,8 @@ class Player:
         self.dash_target_y = max(self.size, min(SCREEN_HEIGHT - self.size, self.dash_target_y))
         
         self.is_dashing = True
-        self.dash_energy -= 35
-        self.dash_timer = 200
-        self.dash_cooldown = 150
+        self.dash_timer = 150
+        self.dash_cooldown = 220
         self.invuln_timer = 300
         # Remove dash burst particles
         app.shake_amount = 12
@@ -504,11 +509,7 @@ class Player:
             else:
                 draw_shape(surface, self.shape, color, (self.x, self.y), self.size)
             
-        if self.shield_active:
-            pulse = abs(math.sin(pygame.time.get_ticks() * 0.01)) * 5
-            shield_surf = pygame.Surface((self.size + 30 + pulse*2, self.size + 30 + pulse*2), pygame.SRCALPHA)
-            pygame.draw.circle(shield_surf, (0, 255, 255, 150), (shield_surf.get_width()//2, shield_surf.get_height()//2), self.size//2 + 10 + pulse, 3)
-            surface.blit(shield_surf, (self.x - shield_surf.get_width()//2, self.y - shield_surf.get_height()//2))
+
 class Obstacle:
     def __init__(self, x, y, size, vx, vy, type='rect', warning=1000, damage=10, alpha=255, rot_speed=None, lifespan=None):
         self.x = x
@@ -540,8 +541,14 @@ class Obstacle:
 
     def draw(self, surface, app):
         level_elapsed = app.active_level.elapsed_ms if app.active_level else pygame.time.get_ticks()
+        
+        # Offscreen culling
+        s = int(self.size)
+        if self.x < -s or self.x > SCREEN_WIDTH + s or self.y < -s or self.y > SCREEN_HEIGHT + s:
+            return
+
         if not self.active:
-            alpha = int(abs(math.sin(level_elapsed / 100)) * 100) + 50
+            alpha = int(abs(math.sin(level_elapsed / 100)) * 50) + 30
             warn_color = (*COLORS['enemy'], alpha)
             if self.type == 'rect':
                 pygame.draw.rect(surface, warn_color, (self.x - self.size/2, self.y - self.size/2, self.size, self.size), 2)
@@ -552,7 +559,8 @@ class Obstacle:
         else:
             color = COLORS['enemy']
             last_beat = app.active_level.last_beat_time if app.active_level else 0
-            pulse = max(0, 1 - (level_elapsed - last_beat) / 200) * 10
+            beat_flash = max(0, 1.0 - (level_elapsed - last_beat) / 200.0)
+            pulse = self.size * 0.08 * beat_flash
             s = int(self.size + pulse)
             
             if self.alpha == 255:
@@ -607,6 +615,266 @@ class Obstacle:
         else:
             return dist < (s * 0.40) + hit_radius
 
+class FullScreenLaser(Obstacle):
+    def __init__(self, axis, position, warning_ms):
+        super().__init__(0, 0, 0, 0, 0, 'laser', warning_ms, 1, 255, 0, 400 + warning_ms)
+        self.axis = axis
+        self.position = position
+        self.active_duration = 400
+        self.fade_duration = 200
+        self.warning_ms = warning_ms
+        if self.axis == 'h':
+            self.rect_y = position * SCREEN_HEIGHT
+        else:
+            self.rect_x = position * SCREEN_WIDTH
+
+    def update(self, dt, app=None):
+        self.timer += dt
+        if self.timer >= self.warning_ms:
+            self.active = True
+        if self.lifespan is not None:
+            self.lifespan -= dt
+
+    def draw(self, surface, app):
+        level_elapsed = app.active_level.elapsed_ms if app.active_level else pygame.time.get_ticks()
+        color = COLORS['enemy']
+        last_beat = app.active_level.last_beat_time if app.active_level else 0
+        beat_flash = max(0, 1.0 - (level_elapsed - last_beat) / 200.0)
+        pulse = 40 * 0.08 * beat_flash
+        s = int(40 + pulse)
+        
+        if not self.active:
+            alpha = int(abs(math.sin(level_elapsed / 100)) * 50) + 30
+            warn_color = (*color, alpha)
+            if self.axis == 'h':
+                pygame.draw.line(surface, warn_color, (0, self.rect_y), (SCREEN_WIDTH, self.rect_y), 2)
+            else:
+                pygame.draw.line(surface, warn_color, (self.rect_x, 0), (self.rect_x, SCREEN_HEIGHT), 2)
+        else:
+            time_active = self.timer - self.warning_ms
+            if time_active > self.active_duration:
+                fade_alpha = max(0, 255 - int(255 * (time_active - self.active_duration) / self.fade_duration))
+                draw_color = (*color, fade_alpha)
+                temp_surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+                if self.axis == 'h':
+                    pygame.draw.rect(temp_surf, draw_color, (0, self.rect_y - s/2, SCREEN_WIDTH, s))
+                else:
+                    pygame.draw.rect(temp_surf, draw_color, (self.rect_x - s/2, 0, s, SCREEN_HEIGHT))
+                surface.blit(temp_surf, (0, 0))
+            else:
+                if self.axis == 'h':
+                    pygame.draw.rect(surface, color, (0, self.rect_y - s/2, SCREEN_WIDTH, s))
+                else:
+                    pygame.draw.rect(surface, color, (self.rect_x - s/2, 0, s, SCREEN_HEIGHT))
+
+    def check_collision(self, player, app):
+        if not self.active or player.invuln_timer > 0 or self.damage == 0: return False
+        time_active = self.timer - self.warning_ms
+        if time_active > self.active_duration: return False
+        
+        hit_radius = player.size * 0.4
+        s = 40
+        if self.axis == 'h':
+            return abs(player.y - self.rect_y) < (s/2 + hit_radius)
+        else:
+            return abs(player.x - self.rect_x) < (s/2 + hit_radius)
+
+class WallSlam(Obstacle):
+    def __init__(self, side, thickness_frac, warning_ms):
+        super().__init__(0, 0, 0, 0, 0, 'wall', warning_ms, 1, 255, 0, 600 + warning_ms)
+        self.side = side
+        self.thickness_frac = thickness_frac
+        self.hold_ms = 400
+        self.warning_ms = warning_ms
+        if side == 'top': self.rect = (0, 0, SCREEN_WIDTH, SCREEN_HEIGHT * thickness_frac)
+        elif side == 'bottom': self.rect = (0, SCREEN_HEIGHT*(1-thickness_frac), SCREEN_WIDTH, SCREEN_HEIGHT * thickness_frac)
+        elif side == 'left': self.rect = (0, 0, SCREEN_WIDTH * thickness_frac, SCREEN_HEIGHT)
+        elif side == 'right': self.rect = (SCREEN_WIDTH*(1-thickness_frac), 0, SCREEN_WIDTH * thickness_frac, SCREEN_HEIGHT)
+        
+    def update(self, dt, app=None):
+        self.timer += dt
+        if self.timer >= self.warning_ms:
+            self.active = True
+        if self.lifespan is not None:
+            self.lifespan -= dt
+
+    def draw(self, surface, app):
+        level_elapsed = app.active_level.elapsed_ms if app.active_level else pygame.time.get_ticks()
+        color = COLORS['enemy']
+        
+        if not self.active:
+            alpha = int(abs(math.sin(level_elapsed / 100)) * 50) + 30
+            warn_color = (*color, alpha)
+            if self.side == 'top': pygame.draw.line(surface, warn_color, (0, self.rect[3]), (SCREEN_WIDTH, self.rect[3]), 2)
+            elif self.side == 'bottom': pygame.draw.line(surface, warn_color, (0, self.rect[1]), (SCREEN_WIDTH, self.rect[1]), 2)
+            elif self.side == 'left': pygame.draw.line(surface, warn_color, (self.rect[2], 0), (self.rect[2], SCREEN_HEIGHT), 2)
+            elif self.side == 'right': pygame.draw.line(surface, warn_color, (self.rect[0], 0), (self.rect[0], SCREEN_HEIGHT), 2)
+        else:
+            time_active = self.timer - self.warning_ms
+            slide_in = min(1.0, time_active / 150.0)
+            slide_out = min(1.0, max(0.0, (time_active - self.hold_ms) / 200.0))
+            if slide_out >= 1.0: return
+            
+            x, y, w, h = self.rect
+            if self.side == 'top': h *= (slide_in - slide_out)
+            elif self.side == 'bottom': 
+                new_h = h * (slide_in - slide_out)
+                y = SCREEN_HEIGHT - new_h
+                h = new_h
+            elif self.side == 'left': w *= (slide_in - slide_out)
+            elif self.side == 'right':
+                new_w = w * (slide_in - slide_out)
+                x = SCREEN_WIDTH - new_w
+                w = new_w
+            
+            pygame.draw.rect(surface, color, (x, y, w, h))
+
+    def check_collision(self, player, app):
+        if not self.active or player.invuln_timer > 0 or self.damage == 0: return False
+        time_active = self.timer - self.warning_ms
+        if time_active > self.hold_ms: return False
+        
+        x, y, w, h = self.rect
+        hit_radius = player.size * 0.4
+        return (x < player.x + hit_radius and 
+                x + w > player.x - hit_radius and 
+                y < player.y + hit_radius and 
+                y + h > player.y - hit_radius)
+
+class ParticleBurst(Obstacle):
+    def __init__(self, cx, cy, count, speed, warning_ms):
+        super().__init__(cx, cy, 0, 0, 0, 'burst', warning_ms, 1, 255, 0, 2000 + warning_ms)
+        self.cx = cx
+        self.cy = cy
+        self.count = count
+        self.speed = speed
+        self.warning_ms = warning_ms
+        self.particles = []
+        for i in range(count):
+            angle = (math.pi * 2 * i / count) + random.uniform(-0.1, 0.1)
+            self.particles.append({'x': cx, 'y': cy, 'vx': math.cos(angle)*speed, 'vy': math.sin(angle)*speed})
+
+    def update(self, dt, app=None):
+        self.timer += dt
+        if self.timer >= self.warning_ms:
+            self.active = True
+            for p in self.particles:
+                p['x'] += p['vx'] * (dt / 16.0)
+                p['y'] += p['vy'] * (dt / 16.0)
+        if self.lifespan is not None:
+            self.lifespan -= dt
+
+    def draw(self, surface, app):
+        level_elapsed = app.active_level.elapsed_ms if app.active_level else pygame.time.get_ticks()
+        color = COLORS['enemy']
+        
+        if not self.active:
+            alpha = int(abs(math.sin(level_elapsed / 100)) * 50) + 30
+            warn_color = (*color, alpha)
+            pulse_rad = 10 + int(abs(math.sin(level_elapsed / 100)) * 5)
+            pygame.draw.circle(surface, warn_color, (self.cx, self.cy), pulse_rad, 2)
+        else:
+            last_beat = app.active_level.last_beat_time if app.active_level else 0
+            beat_flash = max(0, 1.0 - (level_elapsed - last_beat) / 200.0)
+            pulse = 16 * 0.08 * beat_flash
+            r = int(8 + pulse)
+            for p in self.particles:
+                if 0 <= p['x'] <= SCREEN_WIDTH and 0 <= p['y'] <= SCREEN_HEIGHT:
+                    pygame.draw.circle(surface, color, (int(p['x']), int(p['y'])), r)
+
+    def check_collision(self, player, app):
+        if not self.active or player.invuln_timer > 0 or self.damage == 0: return False
+        hit_radius = player.size * 0.4
+        for p in self.particles:
+            dist = math.sqrt((p['x'] - player.x)**2 + (p['y'] - player.y)**2)
+            if dist < 8 + hit_radius: return True
+        return False
+
+class PillarDrop(Obstacle):
+    def __init__(self, x_positions, warning_ms):
+        super().__init__(0, 0, 0, 0, 0, 'pillar', warning_ms, 1, 255, 0, 2000 + warning_ms)
+        self.x_positions = x_positions
+        self.warning_ms = warning_ms
+        self.pillar_width = 30
+        self.speed = 20
+
+    def update(self, dt, app=None):
+        self.timer += dt
+        if self.timer >= self.warning_ms:
+            self.active = True
+        if self.lifespan is not None:
+            self.lifespan -= dt
+
+    def draw(self, surface, app):
+        level_elapsed = app.active_level.elapsed_ms if app.active_level else pygame.time.get_ticks()
+        color = COLORS['enemy']
+        last_beat = app.active_level.last_beat_time if app.active_level else 0
+        beat_flash = max(0, 1.0 - (level_elapsed - last_beat) / 200.0)
+        pulse = self.pillar_width * 0.08 * beat_flash
+        w = int(self.pillar_width + pulse)
+
+        if not self.active:
+            alpha = int(abs(math.sin(level_elapsed / 100)) * 50) + 30
+            warn_color = (*color, alpha)
+            for px in self.x_positions:
+                pygame.draw.line(surface, warn_color, (px, 0), (px, SCREEN_HEIGHT), 2)
+        else:
+            time_active = self.timer - self.warning_ms
+            y_head = time_active * self.speed * 0.06
+            for px in self.x_positions:
+                pygame.draw.rect(surface, color, (px - w/2, 0, w, y_head))
+
+    def check_collision(self, player, app):
+        if not self.active or player.invuln_timer > 0 or self.damage == 0: return False
+        time_active = self.timer - self.warning_ms
+        y_head = time_active * self.speed * 0.06
+        hit_radius = player.size * 0.4
+        
+        for px in self.x_positions:
+            if player.y - hit_radius < y_head:
+                if abs(player.x - px) < (self.pillar_width/2 + hit_radius):
+                    return True
+        return False
+
+class ShockwaveRing(Obstacle):
+    def __init__(self, cx, cy, max_radius, speed, thickness, warning_ms):
+        super().__init__(cx, cy, 0, 0, 0, 'shockwave', warning_ms, 1, 255, 0, 3000 + warning_ms)
+        self.cx = cx
+        self.cy = cy
+        self.max_radius = max_radius
+        self.speed = speed
+        self.thickness = thickness
+        self.warning_ms = warning_ms
+        self.current_radius = 0
+
+    def update(self, dt, app=None):
+        self.timer += dt
+        if self.timer >= self.warning_ms:
+            self.active = True
+            self.current_radius += self.speed * (dt / 16.0)
+            if self.current_radius > self.max_radius:
+                self.lifespan = 0
+        if self.lifespan is not None:
+            self.lifespan -= dt
+
+    def draw(self, surface, app):
+        level_elapsed = app.active_level.elapsed_ms if app.active_level else pygame.time.get_ticks()
+        color = COLORS['enemy']
+        if not self.active:
+            alpha = int(abs(math.sin(level_elapsed / 100)) * 50) + 30
+            warn_color = (*color, alpha)
+            pulse_rad = 5 + int(abs(math.sin(level_elapsed / 100)) * 3)
+            pygame.draw.circle(surface, warn_color, (self.cx, self.cy), pulse_rad)
+        else:
+            if self.current_radius > 0:
+                pygame.draw.circle(surface, color, (self.cx, self.cy), int(self.current_radius), self.thickness)
+
+    def check_collision(self, player, app):
+        if not self.active or player.invuln_timer > 0 or self.damage == 0: return False
+        dist = math.sqrt((self.cx - player.x)**2 + (self.cy - player.y)**2)
+        hit_radius = player.size * 0.4
+        return abs(dist - self.current_radius) < (self.thickness/2 + hit_radius)
+
 # --- Levels ---
 class Level:
     def __init__(self, name, app):
@@ -617,6 +885,10 @@ class Level:
         self.parallax_grids = [y for y in range(0, SCREEN_HEIGHT, 100)]
         self.elapsed_ms = 0
         self.last_beat_time = 0
+        self.checkpoints = []
+        self.last_checkpoint_ms = 0
+        self.checkpoint_lives = 3
+        self.show_checkpoint_text_timer = 0
         if name in SONGS:
             self.config = SONGS[name]
         else:
@@ -651,6 +923,15 @@ class Level:
     def update(self, dt):
         self.elapsed_ms += dt
         
+        if self.show_checkpoint_text_timer > 0:
+            self.show_checkpoint_text_timer -= dt
+
+        for cp in self.checkpoints:
+            if self.elapsed_ms >= cp and self.last_checkpoint_ms < cp:
+                self.last_checkpoint_ms = cp
+                self.checkpoint_lives = self.app.lives
+                self.show_checkpoint_text_timer = 1500
+
         # Audio Sync Fix: Snap to actual music playback position to prevent drift
         if pygame.mixer.music.get_busy():
             pos = pygame.mixer.music.get_pos()
@@ -661,6 +942,11 @@ class Level:
                 self.last_mixer_pos = pos
                 
         self.spawn_patterns(self.elapsed_ms)
+        
+        # Performance optimization for Raspberry Pi 400
+        if len(self.obstacles) > 80:
+            self.obstacles = self.obstacles[-80:]
+            
         alive_obstacles = []
         for obs in self.obstacles:
             obs.update(dt, self.app)
@@ -675,15 +961,19 @@ class Level:
             if self.app.players:
                 for p in self.app.players:
                     if obs.check_collision(p, self.app):
-                        if p.shield_active:
-                            p.shield_active = False
-                            p.invuln_timer = 1500
-                            self.app.shake_amount = 10
-                        else:
-                            self.app.health -= obs.damage
-                            self.app.shake_amount = 15
-                            p.invuln_timer = 1000
-                            if self.app.health <= 0:
+                        self.app.lives -= 1
+                        self.app.shake_amount = 15
+                        p.invuln_timer = 1500
+                        if self.app.lives <= 0:
+                            if self.last_checkpoint_ms > 0 and self.app.continues > 0:
+                                self.app.lives = self.checkpoint_lives
+                                self.app.continues -= 1
+                                self.elapsed_ms = self.last_checkpoint_ms
+                                pygame.mixer.music.play(start=self.elapsed_ms / 1000.0)
+                                self.obstacles.clear()
+                                for pl in self.app.players: pl.reset()
+                                return
+                            else:
                                 self.app.shatter_player = p
                                 self.app.shatter_timer = 0
                                 self.app.shatter_particles = []
@@ -717,54 +1007,47 @@ class Level:
             while self.beat_idx < len(self.beat_times) and true_elapsed >= self.beat_times[self.beat_idx]:
                 self.app.shake_amount = 4
                 self.beat_idx += 1
+                self.app.score += 10
                 self.on_beat(elapsed)
         else:
             if self.elapsed_ms - self.last_beat_time > self.app.beat_interval:
                 self.last_beat_time = self.elapsed_ms
                 self.app.shake_amount = 4
+                self.app.score += 10
                 self.on_beat(elapsed)
 
     def on_beat(self, elapsed): pass
 
-    def draw_background(self, surface):
-        # Draw Parallax Background
-        for star in self.parallax_stars:
-            pygame.draw.circle(surface, star['color'], (int(star['x']), int(star['y'])), int(star['size']))
-            
-        for y in self.parallax_grids:
-            pygame.draw.line(surface, (30, 10, 50), (0, int(y)), (SCREEN_WIDTH, int(y)), 2)
-            
-        for x in range(0, SCREEN_WIDTH, 100):
-            pygame.draw.line(surface, (30, 10, 50), (x, 0), (x, SCREEN_HEIGHT), 2)
-
-    def draw_extra(self, surface): pass
+    def draw_extra(self, surface): 
+        if self.show_checkpoint_text_timer > 0:
+            alpha = int(min(255, self.show_checkpoint_text_timer / 1500 * 255))
+            txt = get_rendered_text("CHECKPOINT", 80, (255, 255, 255))
+            txt.set_alpha(alpha)
+            r = txt.get_rect(center=(SCREEN_WIDTH//2, SCREEN_HEIGHT//3))
+            surface.blit(txt, r)
 
     def draw_background(self, surface):
-        level_progress = min(1.0, self.elapsed_ms / 210000.0)
-        beat_pulse = max(0, 1.0 - (self.elapsed_ms % 530) / 530.0) if self.name == "Never Gonna Give You Up" else 0
+        surface.fill((0, 0, 0))
+        if not hasattr(self, '_bg_surface'):
+            self._bg_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+            self._bg_surface.fill((0, 0, 0))
+            for x in range(0, SCREEN_WIDTH, 80):
+                pygame.draw.line(self._bg_surface, (20, 8, 35), (x, 0), (x, SCREEN_HEIGHT), 1)
+            for y in range(0, SCREEN_HEIGHT, 80):
+                pygame.draw.line(self._bg_surface, (20, 8, 35), (0, y), (SCREEN_WIDTH, y), 1)
+            self._flash_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+            self._flash_surface.fill((0, 0, 0))
+            self._flash_surface.set_colorkey((0, 0, 0))
+            for x in range(0, SCREEN_WIDTH, 80):
+                pygame.draw.line(self._flash_surface, (60, 20, 80), (x, 0), (x, SCREEN_HEIGHT), 1)
+            for y in range(0, SCREEN_HEIGHT, 80):
+                pygame.draw.line(self._flash_surface, (60, 20, 80), (0, y), (SCREEN_WIDTH, y), 1)
         
-        if hasattr(self, 'rms_curve') and self.rms_curve:
-            idx = int((self.elapsed_ms + self.app.lyric_offsets.get(self.name, 0)) / 100)
-            if idx >= 0 and idx < len(self.rms_curve):
-                energy = self.rms_curve[idx]["energy"]
-                beat_pulse += energy * 1.5
-                level_progress += energy * 0.5
-                
-        # Flash background slightly red on beats
-        bg_r = max(0, min(255, int(COLORS['bg'][0] + (COLORS['pink'][0] - COLORS['bg'][0]) * level_progress * 0.3 * beat_pulse)))
-        bg_g = max(0, min(255, int(COLORS['bg'][1] + (COLORS['pink'][1] - COLORS['bg'][1]) * level_progress * 0.3 * beat_pulse)))
-        bg_b = max(0, min(255, int(COLORS['bg'][2] + (COLORS['pink'][2] - COLORS['bg'][2]) * level_progress * 0.3 * beat_pulse)))
-        surface.fill((bg_r, bg_g, bg_b))
-        
-        # Dynamic Neon Grid
-        grid_offset = (self.elapsed_ms * 0.1) % 60
-        grid_alpha = int(20 + 40 * level_progress + 20 * beat_pulse)
-        grid_color = (max(0, min(255, bg_r+grid_alpha)), max(0, min(255, bg_g+grid_alpha)), max(0, min(255, bg_b+grid_alpha)))
-        
-        for x in range(int(-grid_offset), SCREEN_WIDTH, 60):
-            pygame.draw.line(surface, grid_color, (x, 0), (x, SCREEN_HEIGHT))
-        for y in range(int(-grid_offset), SCREEN_HEIGHT, 60):
-            pygame.draw.line(surface, grid_color, (0, y), (SCREEN_WIDTH, y))
+        beat_flash = max(0, 1.0 - (self.elapsed_ms - self.last_beat_time) / 200.0)
+        surface.blit(self._bg_surface, (0, 0))
+        if beat_flash > 0:
+            self._flash_surface.set_alpha(int(255 * beat_flash))
+            surface.blit(self._flash_surface, (0, 0))
 
     def draw_background_lyrics(self, surface):
         if not self.app.lyric_offsets.get(f"{self.name}_lyrics", True):
@@ -942,14 +1225,8 @@ class AnnihilateLevel(Level):
         self.app.shake_amount = 40
         level_progress = min(1.0, self.elapsed_ms / 300000.0)
         count = int(25 + 25 * level_progress)
-        for i in range(count):
-            angle = i * (math.pi / (count / 2.0)) + random.uniform(-0.1, 0.1)
-            speed = random.uniform(10 + 5*level_progress, 20 + 10*level_progress)
-            self.obstacles.append(Obstacle(
-                center_x, center_y, 30, 
-                math.cos(angle) * speed, math.sin(angle) * speed, 
-                type=random.choice(['circle', 'triangle']), warning=0, damage=10
-            ))
+        self.obstacles.append(ParticleBurst(center_x, center_y, count, 15 + 10*level_progress, 100))
+        self.obstacles.append(ShockwaveRing(center_x, center_y, 2000, 20, 20, 100))
 
     def update(self, dt):
         super().update(dt)
@@ -973,7 +1250,7 @@ class AnnihilateLevel(Level):
                     elif p.y < spikey_depth: hit = True
                     elif p.y > SCREEN_HEIGHT - spikey_depth: hit = True
                     if hit:
-                        self.app.health -= 15 # spikey damage
+                        self.app.lives -= 1 # spikey damage
                         self.app.shake_amount = 20
                         p.invuln_timer = 1000
 
@@ -1091,27 +1368,16 @@ class AnnihilateLevel(Level):
             block = int((sec - 95.0) // 15)
             mode = block % 3
             if mode == 0:
-                # Two top down stompers at once! (Slightly easier)
-                self.obstacles.append(Obstacle(random.randint(100, SCREEN_WIDTH//2), -100, 180, 0, 22, 'rect', 300, rot_speed=0))
-                self.obstacles.append(Obstacle(random.randint(SCREEN_WIDTH//2, SCREEN_WIDTH-100), -100, 180, 0, 22, 'rect', 300, rot_speed=0))
+                self.obstacles.append(PillarDrop([random.randint(100, SCREEN_WIDTH//2), random.randint(SCREEN_WIDTH//2, SCREEN_WIDTH-100)], 300))
             elif mode == 1:
-                # Expanding triangle rings (Slightly easier: 10 triangles, slower)
-                for i in range(10):
-                    angle = i * (math.pi / 5)
-                    self.obstacles.append(Obstacle(SCREEN_WIDTH//2, SCREEN_HEIGHT//2, 40, math.cos(angle)*13, math.sin(angle)*13, 'triangle', 250))
+                self.obstacles.append(ShockwaveRing(SCREEN_WIDTH//2, SCREEN_HEIGHT//2, 1000, 15, 20, 250))
             elif mode == 2:
-                # Dual tracking spiral attacks! (Slightly easier: slower, more warning)
-                if self.app.players:
-                    p = random.choice(self.app.players)
-                    dx, dy = p.x - SCREEN_WIDTH//2, p.y - SCREEN_HEIGHT//2
-                    mag = math.sqrt(dx*dx + dy*dy)
-                    if mag > 0:
-                        self.obstacles.append(Obstacle(SCREEN_WIDTH//3, SCREEN_HEIGHT//2, 40, (dx/mag)*11, (dy/mag)*11, 'circle', 250))
-                        self.obstacles.append(Obstacle((2*SCREEN_WIDTH)//3, SCREEN_HEIGHT//2, 40, (dx/mag)*11, (dy/mag)*11, 'circle', 250))
+                self.obstacles.append(ParticleBurst(SCREEN_WIDTH//3, SCREEN_HEIGHT//2, 15, 11, 250))
+                self.obstacles.append(ParticleBurst((2*SCREEN_WIDTH)//3, SCREEN_HEIGHT//2, 15, 11, 250))
         elif 186000 <= self.elapsed_ms < 199000:
             # Medium beat spawns during the heavy flicker sequence
             if self.attack_tick % 3 == 0:
-                self.obstacles.append(Obstacle(-50, random.randint(100, SCREEN_HEIGHT-100), 90, 22, 0, 'rect', 150))
+                self.obstacles.append(WallSlam('left', 0.2, 150))
         elif 199000 <= self.elapsed_ms < 290000:
             cycle_sec = (sec - 199.0) % 15.0
             if cycle_sec >= 11.0:
@@ -1121,21 +1387,19 @@ class AnnihilateLevel(Level):
             mode = block % 4
             if mode == 0:
                 for _ in range(intensity_mult):
-                    self.obstacles.append(Obstacle(-50, random.randint(100, SCREEN_HEIGHT-100), 120, 26 + 10*level_progress, 0, 'rect', 120))
+                    self.obstacles.append(FullScreenLaser('h', random.uniform(0.1, 0.9), 120))
             elif mode == 1:
-                count = 15 + int(10 * level_progress)
-                for i in range(count):
-                    angle = i * (math.pi / (count/2.0))
-                    speed = 14 + 10*level_progress
-                    self.obstacles.append(Obstacle(random.randint(100, SCREEN_WIDTH-100), 0, 30, math.cos(angle)*speed, math.sin(angle)*speed, 'circle', 100))
+                self.obstacles.append(ParticleBurst(random.randint(100, SCREEN_WIDTH-100), 0, 15 + int(10*level_progress), 14 + 10*level_progress, 100))
             elif mode == 2:
+                pxs = []
                 for _ in range(intensity_mult):
                     for p in self.app.players:
-                        self.obstacles.append(Obstacle(p.x + random.randint(-50, 50), -50, 60, 0, 25 + 15*level_progress, 'triangle', 90))
+                        pxs.append(p.x + random.randint(-50, 50))
+                if pxs: self.obstacles.append(PillarDrop(pxs, 90))
             elif mode == 3:
                 for _ in range(intensity_mult):
-                    self.obstacles.append(Obstacle(-50, random.randint(100, SCREEN_HEIGHT-100), 120, 25 + 10*level_progress, 0, 'rect', 120))
-                    self.obstacles.append(Obstacle(SCREEN_WIDTH+50, random.randint(100, SCREEN_HEIGHT-100), 120, -25 - 10*level_progress, 0, 'rect', 120))
+                    self.obstacles.append(WallSlam('left', 0.2, 120))
+                    self.obstacles.append(WallSlam('right', 0.2, 120))
         else:
             pass # No beat spawns in final explosion timeline
 
@@ -1206,23 +1470,22 @@ class CloseToMeLevel(Level):
         
         if sec < 25:
             if len(self.obstacles) < 5 + intensity * 2:
-                self.obstacles.append(Obstacle(SCREEN_WIDTH//2, SCREEN_HEIGHT//2, 60, random.uniform(-4 - 2*level_progress, 4 + 2*level_progress), random.uniform(-4 - 2*level_progress, 4 + 2*level_progress), 'rect', 800))
+                self.obstacles.append(ParticleBurst(SCREEN_WIDTH//2, SCREEN_HEIGHT//2, int(8 + intensity*2), 5 + level_progress*5, 800))
         
         if 25 <= sec < 26 and self.phase == 0:
             self.phase = 1
             self.obstacles.clear()
             self.app.shake_amount = 30
-            warn_h = SCREEN_HEIGHT * 0.9
-            # Warning block
-            self.obstacles.append(Obstacle(SCREEN_WIDTH//2, SCREEN_HEIGHT + warn_h//2, SCREEN_WIDTH * 2, 0, -20, 'rect', 0, damage=0, alpha=100, rot_speed=0))
+            # Massive WallSlams
+            pass
 
         if 26 <= sec < 38:
             if self.phase == 1: 
                 self.phase = 2
-                self.obstacles.append(Obstacle(SCREEN_WIDTH//2, SCREEN_HEIGHT + 500, SCREEN_WIDTH * 2, 0, -25 - 10*level_progress, 'rect', 500, rot_speed=0))
+                self.obstacles.append(WallSlam('bottom', 0.5, 500))
             elif self.phase == 2 and sec > 31:
                 self.phase = 3
-                self.obstacles.append(Obstacle(SCREEN_WIDTH//2, -500, SCREEN_WIDTH * 2, 0, 25 + 10*level_progress, 'rect', 500, rot_speed=0))
+                self.obstacles.append(WallSlam('top', 0.5, 500))
 
         if 38 <= sec < 60:
             arm_interval = max(200, 600 - int(level_progress * 300))
@@ -1235,9 +1498,9 @@ class CloseToMeLevel(Level):
                     self.obstacles.append(Obstacle(side, y, 40, (1 if side == 0 else -1) * (10 + 5*level_progress), random.uniform(-3, 3), 'rect', 0))
 
         if sec > 60:
-            count = max(1, 4 + intensity)
-            for _ in range(count):
-                self.obstacles.append(Obstacle(random.randint(0, SCREEN_WIDTH), -50, 20, 0, 12 + 8*level_progress, 'rect', 0))
+            count = max(1, 1 + int(intensity / 2))
+            pxs = [random.randint(50, SCREEN_WIDTH-50) for _ in range(count)]
+            self.obstacles.append(PillarDrop(pxs, 200))
             
             if not self.finished and not pygame.mixer.music.get_busy():
                 self.finished = True
@@ -1283,6 +1546,7 @@ class NeverGonnaGiveYouUpLevel(Level):
         super().__init__(name, app)
         self.phase = 0
         self.last_spawn = 0
+        self.checkpoints = [77000, 136000]
 
     def on_beat(self, elapsed):
         sec = elapsed / 1000.0
@@ -1321,89 +1585,77 @@ class NeverGonnaGiveYouUpLevel(Level):
         # 0:00 - 0:18 Intro
         if sec < 18:
             if elapsed - self.last_spawn > 1000:
-                x = random.randint(100, SCREEN_WIDTH-100)
-                self.obstacles.append(Obstacle(x, -50, 50, 0, 5, 'circle', 800))
+                self.obstacles.append(WallSlam(random.choice(['left', 'right', 'top', 'bottom']), 0.2, 800))
                 self.last_spawn = elapsed
 
         # 0:18 - 0:35 Verse 1: DVD Bouncing blocks
         elif 18 <= sec < 35:
             if len(self.obstacles) < 5:
-                self.obstacles.append(Obstacle(SCREEN_WIDTH//2, SCREEN_HEIGHT//2, 80, random.uniform(-6, 6), random.uniform(-6, 6), 'rect', 500))
+                self.obstacles.append(ParticleBurst(SCREEN_WIDTH//2, SCREEN_HEIGHT//2, 10, 6, 500))
 
         # 0:35 - 0:42 Pre-Chorus 1: Rising Bubbles
         elif 35 <= sec < 42:
-            for _ in range(3):
-                self.obstacles.append(Obstacle(random.randint(0, SCREEN_WIDTH), SCREEN_HEIGHT+50, random.randint(20, 50), 0, random.uniform(-8, -12), 'circle', 0))
+            pass # Replaced with shockwaves below if needed, or leave empty to build tension
+            if elapsed - self.last_spawn > 800:
+                self.obstacles.append(ShockwaveRing(random.randint(200, SCREEN_WIDTH-200), random.randint(200, SCREEN_HEIGHT-200), 1000, 10, 15, 300))
+                self.last_spawn = elapsed
 
         # 0:42 - 1:00 Chorus 1: Starbursts
         elif 42 <= sec < 60:
-            count = 8
-            for i in range(count):
-                angle = i * (math.pi / (count/2.0))
-                self.obstacles.append(Obstacle(SCREEN_WIDTH//2, SCREEN_HEIGHT//2, 40, math.cos(angle)*12, math.sin(angle)*12, 'triangle', 200))
+            if elapsed - self.last_spawn > 500:
+                self.obstacles.append(ParticleBurst(SCREEN_WIDTH//2, SCREEN_HEIGHT//2, 12, 12, 200))
+                self.last_spawn = elapsed
 
         # 1:00 - 1:17 Verse 2: Laser Sweeps
         elif 60 <= sec < 77:
             if elapsed - self.last_spawn > 1500:
                 is_horiz = random.random() < 0.5
-                if is_horiz:
-                    self.obstacles.append(Obstacle(-100, random.randint(100, SCREEN_HEIGHT-100), 200, 25, 0, 'rect', 400))
-                else:
-                    self.obstacles.append(Obstacle(random.randint(100, SCREEN_WIDTH-100), -100, 200, 0, 25, 'rect', 400))
+                self.obstacles.append(FullScreenLaser('h' if is_horiz else 'v', random.uniform(0.1, 0.9), 400))
                 self.last_spawn = elapsed
 
         # 1:17 - 1:25 Pre-Chorus 2: Bubbles + Slow Homing
         elif 77 <= sec < 85:
-            self.obstacles.append(Obstacle(random.randint(0, SCREEN_WIDTH), SCREEN_HEIGHT+50, 30, 0, -10, 'circle', 0))
             if elapsed - self.last_spawn > 2000 and self.app.players:
                 p = random.choice(self.app.players)
-                dx, dy = p.x - SCREEN_WIDTH//2, p.y - (-50)
-                mag = max(1, math.sqrt(dx*dx + dy*dy))
-                self.obstacles.append(Obstacle(SCREEN_WIDTH//2, -50, 80, (dx/mag)*6, (dy/mag)*6, 'circle', 400))
+                self.obstacles.append(PillarDrop([p.x], 400))
                 self.last_spawn = elapsed
 
         # 1:25 - 1:59 Chorus 2 & 3: Rotating Windmill
         elif 85 <= sec < 119:
             # Huge beam segments from center
-            for i in range(4):
-                angle = i * (math.pi / 2) + sec * 2
-                self.obstacles.append(Obstacle(SCREEN_WIDTH//2 + math.cos(angle)*150, SCREEN_HEIGHT//2 + math.sin(angle)*150, 100, math.cos(angle)*15, math.sin(angle)*15, 'rect', 100, rot_speed=5))
+            if elapsed - self.last_spawn > 200:
+                self.obstacles.append(ParticleBurst(SCREEN_WIDTH//2, SCREEN_HEIGHT//2, 4, 15, 100))
+                self.last_spawn = elapsed
 
         # 1:59 - 2:16 Bridge: Giant Pulses
         elif 119 <= sec < 136:
             if elapsed - self.last_spawn > 1200:
-                self.obstacles.append(Obstacle(random.randint(100, SCREEN_WIDTH-100), random.randint(100, SCREEN_HEIGHT-100), 250, 0, 0, 'circle', 800))
+                self.obstacles.append(ShockwaveRing(random.randint(200, SCREEN_WIDTH-200), random.randint(200, SCREEN_HEIGHT-200), 2000, 25, 20, 800))
                 self.last_spawn = elapsed
 
         # 2:16 - 2:32 Verse 3: Edges Closing In
         elif 136 <= sec < 152:
-            if sec < 137 and len([o for o in self.obstacles if o.size > 500]) == 0:
-                self.obstacles.append(Obstacle(-400, SCREEN_HEIGHT//2, 1000, 8, 0, 'rect', 100))
-                self.obstacles.append(Obstacle(SCREEN_WIDTH + 400, SCREEN_HEIGHT//2, 1000, -8, 0, 'rect', 100))
+            if sec < 137 and len(self.obstacles) == 0:
+                self.obstacles.append(WallSlam('left', 0.4, 100))
+                self.obstacles.append(WallSlam('right', 0.4, 100))
             
             # Spawn bouncy threats in the middle
             if elapsed - self.last_spawn > 1000:
-                self.obstacles.append(Obstacle(SCREEN_WIDTH//2, -50, 40, random.uniform(-4, 4), 10, 'triangle', 0))
+                self.obstacles.append(PillarDrop([SCREEN_WIDTH//2 + random.uniform(-100, 100)], 300))
                 self.last_spawn = elapsed
 
         # 2:32 - 2:40 Pre-Chorus 3: Fast Bubbles
         elif 152 <= sec < 160:
-            for _ in range(5):
-                self.obstacles.append(Obstacle(random.randint(0, SCREEN_WIDTH), SCREEN_HEIGHT+50, random.randint(15, 35), 0, random.uniform(-12, -20), 'circle', 0))
+            if elapsed - self.last_spawn > 300:
+                self.obstacles.append(ParticleBurst(random.randint(100, SCREEN_WIDTH-100), SCREEN_HEIGHT, 10, 15, 0))
+                self.last_spawn = elapsed
 
         # 2:40 - 3:14 Final Chorus: The Grand Finale (Starbursts + Lasers)
         elif 160 <= sec < 194:
-            count = 10
-            for i in range(count):
-                angle = i * (math.pi / (count/2.0)) - sec
-                self.obstacles.append(Obstacle(SCREEN_WIDTH//2, SCREEN_HEIGHT//2, 35, math.cos(angle)*15, math.sin(angle)*15, 'triangle', 150))
-            
             if elapsed - self.last_spawn > 1000:
                 is_horiz = random.random() < 0.5
-                if is_horiz:
-                    self.obstacles.append(Obstacle(-100, random.randint(100, SCREEN_HEIGHT-100), 150, 30, 0, 'rect', 300))
-                else:
-                    self.obstacles.append(Obstacle(random.randint(100, SCREEN_WIDTH-100), -100, 150, 0, 30, 'rect', 300))
+                self.obstacles.append(FullScreenLaser('h' if is_horiz else 'v', random.uniform(0.1, 0.9), 300))
+                self.obstacles.append(ParticleBurst(SCREEN_WIDTH//2, SCREEN_HEIGHT//2, 20, 15, 150))
                 self.last_spawn = elapsed
 
         # 3:14 - 3:30 Outro: Rain
@@ -1829,6 +2081,33 @@ class UI:
             
             f_input = get_font(35)
             # Text glitch effect occasionally
+            q_color = COLORS['pink'] if random.random() < 0.05 and app.text_glitches else COLORS['white']
+            q_surf = f_input.render(app.lm_query + ("_" if time_ms % 1000 < 500 else ""), True, q_color)
+            box_surf.blit(q_surf, (w//2 - q_surf.get_width()//2, 192))
+            
+            # Draw Onscreen Keyboard
+            key_size = 55
+            padding = 10
+            start_x = w//2 - (10 * (key_size + padding)) // 2
+            start_y = 280
+            for row_idx, row in enumerate(app.kb_layout):
+                for col_idx, key in enumerate(row):
+                    kx = start_x + col_idx * (key_size + padding)
+                    ky = start_y + row_idx * (key_size + padding)
+                    if key in ['<', '_', 'OK']:
+                        kx += 20
+                    is_selected = (app.kb_y == row_idx and app.kb_x == col_idx)
+                    bg_color = (100, 100, 100) if is_selected else (30, 30, 40)
+                    pygame.draw.rect(box_surf, bg_color, (kx, ky, key_size, key_size), border_radius=8)
+                    pygame.draw.rect(box_surf, COLORS['pink'] if is_selected else (50, 50, 60), (kx, ky, key_size, key_size), 2, border_radius=8)
+                    
+                    lbl = key if key != '_' else 'SP'
+                    k_surf = get_font(25).render(lbl, True, COLORS['white'])
+                    box_surf.blit(k_surf, (kx + key_size//2 - k_surf.get_width()//2, ky + key_size//2 - k_surf.get_height()//2))
+            
+            # Helper text
+            help_surf = get_font(20).render("Use Joystick to select, press X to type", True, (150, 150, 150))
+            box_surf.blit(help_surf, (w//2 - help_surf.get_width()//2, h - 40))
             disp_query = app.lm_query
             if getattr(app, 'text_glitches', True) and random.random() < 0.05 and len(disp_query) > 0:
                 glitch_idx = random.randint(0, len(disp_query)-1)
@@ -2078,7 +2357,7 @@ def main():
     app.last_joy_x = 0
     app.last_joy_y = 0
     while app.running:
-        dt = clock.tick(60)
+        dt = clock.tick(30)
         for event in pygame.event.get():
             if event.type == pygame.QUIT: app.running = False
             elif event.type == pygame.JOYAXISMOTION:
@@ -2165,12 +2444,6 @@ def main():
                     if event.key in [pygame.K_w, pygame.K_UP]: app.menu_idx = (app.menu_idx - 1) % len(app.menu_options)
                     if event.key in [pygame.K_s, pygame.K_DOWN]: app.menu_idx = (app.menu_idx + 1) % len(app.menu_options)
                     
-                    if event.key == pygame.K_z:
-                        if "Level Maker" not in app.menu_options:
-                            app.menu_options.insert(1, "Level Maker")
-                            app.menu_sel_lerp.insert(1, 0.0)
-                            app.level_maker_anim = 1.0
-                            
                     if event.key in [pygame.K_RETURN, pygame.K_SPACE]:
                         opt = app.menu_options[app.menu_idx]
                         if opt == "Level Selection": 
@@ -2302,8 +2575,29 @@ def main():
 
                 elif app.state == GameState.LEVEL_MAKER:
                     if app.lm_state == 0:
-                        if event.key == pygame.K_ESCAPE:
-                            app.state = GameState.MENU
+                        if event.type == pygame.JOYHATMOTION and event.value != (0,0):
+                            hx, hy = event.value
+                            if hx > 0.5: app.kb_x += 1
+                            elif hx < -0.5: app.kb_x -= 1
+                            if hy > 0.5: app.kb_y -= 1
+                            elif hy < -0.5: app.kb_y += 1
+                            app.kb_y = max(0, min(len(app.kb_layout)-1, app.kb_y))
+                            app.kb_x = max(0, min(len(app.kb_layout[app.kb_y])-1, app.kb_x))
+                        if event.type == pygame.JOYBUTTONDOWN and event.button in [0, 1, 9]:
+                            key = app.kb_layout[app.kb_y][app.kb_x]
+                            if key == '<': app.lm_query = app.lm_query[:-1]
+                            elif key == '_': app.lm_query += ' '
+                            elif key == 'OK' and len(app.lm_query) > 0:
+                                app.lm_state = 1
+                                app.lm_status = f"Searching SpotDL for: {app.lm_query}..."
+                                import threading
+                                threading.Thread(target=run_level_maker, args=(app, app.lm_query), daemon=True).start()
+                            elif len(key) == 1:
+                                app.lm_query += key
+                        
+                        if event.type == pygame.KEYDOWN:
+                            if event.key == pygame.K_ESCAPE:
+                                app.state = GameState.MENU
                         elif event.key == pygame.K_BACKSPACE:
                             app.lm_query = app.lm_query[:-1]
                         elif event.key in [pygame.K_RETURN, pygame.K_KP_ENTER] and len(app.lm_query) > 0:
@@ -2413,7 +2707,7 @@ def main():
             else:
                 app.active_level.update(dt)
                 for p in app.players: p.update(dt, app)
-            if app.health <= 0:
+            if app.lives <= 0:
                 app.state = GameState.SHATTER_DEATH
                 app.shatter_timer = 0
                 app.shatter_duration = 3000
@@ -2467,38 +2761,6 @@ def main():
                 app.end_screen_timer = pygame.time.get_ticks()
                 pygame.mixer.music.stop()
                 
-        elif app.state == GameState.VIDEO:
-            if not app.video_fps:
-                app.video_fps = app.video_cap.get(cv2.CAP_PROP_FPS)
-                if not app.video_fps or math.isnan(app.video_fps): app.video_fps = 30.0
-                app.video_start_time = pygame.time.get_ticks()
-                app.current_frame = -1
-                app.last_frame = None
-
-            target_frame = int((pygame.time.get_ticks() - app.video_start_time) / 1000.0 * app.video_fps)
-            ret = True
-            while app.current_frame < target_frame and ret:
-                ret, frame = app.video_cap.read()
-                if ret:
-                    app.current_frame += 1
-                    app.last_frame = frame
-            
-            if not ret and app.current_frame < target_frame:
-                app.state = GameState.MENU
-                app.video_cap.release()
-                app.video_cap = None
-                app.video_fps = None
-                pygame.mixer.music.stop()
-            else:
-                if app.last_frame is not None:
-                    f = cv2.cvtColor(app.last_frame, cv2.COLOR_BGR2RGB)
-                    f = np.rot90(f); f = np.flipud(f)
-                    frame_surf = pygame.surfarray.make_surface(f)
-                    frame_surf = pygame.transform.smoothscale(frame_surf, (SCREEN_WIDTH, SCREEN_HEIGHT))
-                    screen.blit(frame_surf, (0, 0))
-                pygame.display.flip()
-                continue
-
         screen.fill(COLORS['bg'])
         offset_x = random.uniform(-app.shake_amount, app.shake_amount)
         offset_y = random.uniform(-app.shake_amount, app.shake_amount)
@@ -2563,12 +2825,19 @@ def main():
                             flash.set_alpha(flash_alpha)
                             render_surf.blit(flash, (0, 0))
             
-            pygame.draw.rect(render_surf, (50, 50, 50), (50, 50, 300, 20))
-            pygame.draw.rect(render_surf, COLORS['pink'], (50, 50, (app.health/app.max_health)*300, 20))
-            if app.players:
-                p1 = app.players[0]
-                pygame.draw.rect(render_surf, (30, 30, 50), (50, 75, 200, 10))
-                pygame.draw.rect(render_surf, (0, 255, 200), (50, 75, (p1.dash_energy/p1.max_dash_energy)*200, 10))
+            # Draw lives as shapes
+            start_x = 50
+            start_y = 50
+            for i in range(3):
+                color = SHAPE_COLORS.get(app.players[0].shape, COLORS['blue']) if i < app.lives else (50, 50, 50)
+                draw_shape(render_surf, app.players[0].shape, color, (start_x + i * 40, start_y), 15)
+            
+            # Draw score & continues
+            font_ui = get_font(24)
+            score_txt = font_ui.render(f"SCORE: {app.score}", True, COLORS['white'])
+            cont_txt = font_ui.render(f"CONTINUES: {app.continues}", True, COLORS['white'])
+            render_surf.blit(score_txt, (50, 80))
+            render_surf.blit(cont_txt, (50, 110))
             
             # Debug UI
             if app.debug_menu:
@@ -2656,15 +2925,14 @@ def main():
                 for obs in app.active_level.obstacles: obs.draw(render_surf, app)
                 app.active_level.draw_extra(render_surf)
                 for p in app.players: p.draw(render_surf)
-                pygame.draw.rect(render_surf, (50, 50, 50), (50, 50, 300, 20))
-                pygame.draw.rect(render_surf, COLORS['pink'], (50, 50, (app.health/app.max_health)*300, 20))
+                # Draw lives as shapes
+                start_x = 50
+                start_y = 50
+                for i in range(3):
+                    color = SHAPE_COLORS.get(app.players[0].shape, COLORS['blue']) if i < app.lives else (50, 50, 50)
+                    draw_shape(render_surf, app.players[0].shape, color, (start_x + i * 40, start_y), 15)
+                
                 screen.blit(render_surf, (0, 0))
-            elif app.last_frame is not None:
-                f = cv2.cvtColor(app.last_frame, cv2.COLOR_BGR2RGB)
-                f = np.rot90(f); f = np.flipud(f)
-                frame_surf = pygame.surfarray.make_surface(f)
-                frame_surf = pygame.transform.smoothscale(frame_surf, (SCREEN_WIDTH, SCREEN_HEIGHT))
-                screen.blit(frame_surf, (0, 0))
             
             # Semi-transparent dark overlay fading
             overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
@@ -2793,12 +3061,11 @@ def main():
                 # Rank System
                 if elapsed_end > 1000:
                     rank_alpha = min(255, int(((elapsed_end-1000) / 1000) * 255))
-                    hp = app.health
-                    if hp >= 100: rank, r_col = "S", (255, 215, 0) # Gold
-                    elif hp >= 80: rank, r_col = "A", (0, 255, 0)
-                    elif hp >= 50: rank, r_col = "B", (0, 200, 255)
-                    elif hp >= 20: rank, r_col = "C", (255, 150, 0)
-                    else: rank, r_col = "D", (255, 0, 0)
+                    hp = app.lives
+                    if hp >= 3: rank, r_col = "S", (255, 215, 0) # Gold
+                    elif hp >= 2: rank, r_col = "A", (0, 255, 0)
+                    elif hp >= 1: rank, r_col = "B", (0, 200, 255)
+                    else: rank, r_col = "C", (255, 150, 0)
                     
                     r_txt = get_font(150, bold=True).render(rank, True, r_col)
                     r_txt.set_alpha(rank_alpha)
@@ -2833,16 +3100,12 @@ def start_level_preview(app):
 def start_game(app):
     name = app.levels[app.selected_level_idx]
     if name == "Secret":
-        app.state = GameState.VIDEO
-        app.video_cap = cv2.VideoCapture(SONGS[name]["path"])
-        app.video_fps = None
-        if "audio_path" in SONGS[name]:
-            load_music_safely(SONGS[name]["audio_path"])
-            pygame.mixer.music.set_volume(1.0)
-            pygame.mixer.music.play()
+        app.state = GameState.MENU
         return
     app.state = GameState.PLAYING
-    app.health = 100
+    app.lives = 3
+    app.score = 0
+    app.continues = 3
     app.fade_alpha = 0
     app.players = [Player(1, app.p1_shape)]
     if app.is_p2_enabled: app.players.append(Player(2, app.p2_shape))
@@ -2986,162 +3249,31 @@ def run_level_maker(app, query):
                 urllib.request.urlretrieve(artwork_url.replace("100x100bb", "600x600bb"), cover_path)
     except: pass
 
-    app.lm_status = "Advanced Audio Analysis..."
+    app.lm_status = "Audio Analysis (Heuristic Mode)..."
     app.lm_progress = 0.55
 
-    # Librosa is disabled due to Python 3.13 numba incompatibility.
-    # Native NumPy onset detection handles beat tracking in 15ms high-precision chunks instead.
-    import numpy as np
+    # Completely removed NumPy dependency for Pi 400 compatibility.
+    # Uses heuristic beat generation and intensity curve based on song length.
     import pygame
     try:
-        import pygame.sndarray
-    except:
-        pass
-
-    try:
-        app.lm_status = "Loading Audio via Pygame..."
         snd = pygame.mixer.Sound(final_audio)
-        y_stereo = pygame.sndarray.array(snd)
-        
-        # Convert to mono float32
-        if len(y_stereo.shape) == 2:
-            y = np.mean(y_stereo, axis=1).astype(np.float32)
-        else:
-            y = y_stereo.astype(np.float32)
-            
-        m_val = np.max(np.abs(y))
-        if m_val > 0:
-            y /= m_val
-            
-        sr = pygame.mixer.get_init()[0]
-        if sr is None: sr = 44100
-        
-        # Process in 15ms chunks (hop size) for high-precision beat tracking
-        chunk_length_ms = 15.0
-        chunk_size = int(sr * (chunk_length_ms / 1000.0))
-        
-        app.lm_status = "Extracting Frequencies..."
-        dense_data = []
-        bands = [(10, 60), (60, 250), (250, 500), (500, 2000), (2000, 4000), (4000, 6000), (6000, 8000), (8000, 11025)]
-        freqs = np.fft.rfftfreq(chunk_size, 1.0/sr)
-        
-        rms_curve = []
-        total_chunks = len(y) // chunk_size
-        for i in range(total_chunks):
-            start = i * chunk_size
-            chunk = y[start:start+chunk_size]
-            
-            sp = np.abs(np.fft.rfft(chunk))
-            e = []
-            for low, high in bands:
-                mask = (freqs >= low) & (freqs <= high)
-                e.append(float(np.mean(sp[mask])) if np.any(mask) else 0.0)
-                
-            emax = max(e) if e else 1.0
-            if emax > 0: e = [v/emax for v in e]
-                
-            dense_data.append({"t": int((i * chunk_size / sr) * 1000), "e": e})
-            rms_curve.append(np.sqrt(np.mean(chunk**2)))
-            
-            if i % max(1, total_chunks//10) == 0:
-                app.lm_progress = 0.55 + (i/total_chunks)*0.30
-                app.lm_waveforms = e
-                
-        app.lm_status = "Calculating Spectral Flux..."
-        app.lm_progress = 0.85
-        
-        flux_curve = [0.0]
-        for i in range(1, len(dense_data)):
-            diff = 0.0
-            for b in range(len(bands)):
-                if dense_data[i]['e'][b] > dense_data[i-1]['e'][b]:
-                    diff += dense_data[i]['e'][b] - dense_data[i-1]['e'][b]
-            flux_curve.append(diff)
-            
-        flux = np.array(flux_curve)
-        beat_times = []
-        
-        # 2.0s window for local mean
-        window_size = int(2.0 / (chunk_length_ms / 1000.0)) 
-        for i in range(1, len(flux)-1):
-            start = max(0, i - window_size)
-            end = min(len(flux), i + window_size)
-            local_mean = np.mean(flux[start:end])
-            
-            # Spectral Flux Peak Detection (looks for transients, not just volume)
-            if flux[i] > flux[i-1] and flux[i] > flux[i+1] and flux[i] > local_mean * 1.8 and flux[i] > 0.08:
-                beat_times.append(int(dense_data[i]['t']))
-                
-        # Failsafe: if more than 2s passes with *any* audio energy, force a beat at the local peak
-        last_t = 0
-        new_beats = []
-        for i in range(len(dense_data)):
-            t_ms = int(dense_data[i]['t'])
-            if t_ms in beat_times:
-                last_t = t_ms
-            elif t_ms - last_t > 5000:
-                # Find the local peak in the last 5000ms
-                idx_start = max(0, i - 40)
-                best_idx = i
-                best_e = -1
-                for j in range(idx_start, i+1):
-                    e = sum(dense_data[j]['e'])
-                    if e > best_e and int(dense_data[j]['t']) not in beat_times and int(dense_data[j]['t']) not in new_beats:
-                        best_e = e
-                        best_idx = j
-                
-                if best_e > 0.1:
-                    t_new = int(dense_data[best_idx]['t'])
-                    new_beats.append(t_new)
-                    last_t = t_new
-                else:
-                    last_t = t_ms
-                    
-        beat_times.extend(new_beats)
-        
-        # Estimate BPM from detected beats
-        beat_times = sorted(list(set(beat_times)))
-        if len(beat_times) > 10:
-            intervals = np.diff(beat_times)
-            valid = intervals[(intervals > 150) & (intervals < 1000)]
-            if len(valid) > 0:
-                extracted_bpm = float(60000.0 / np.median(valid))
-            else:
-                extracted_bpm = 120.0
-        else:
-            extracted_bpm = 120.0
-            
-        song_bpm = extracted_bpm
-        beat_times = sorted(list(set(beat_times)))
-                
-        beat_patterns = []
-        for t in beat_times:
-            idx = int(t / 15.0)
-            if idx < len(dense_data):
-                energies = dense_data[idx]['e']
-                # Use standard max energy to maintain a stable core pattern, avoiding per-beat chaos
-                dom_band = int(np.argmax(energies))
-                beat_patterns.append(dom_band)
-            else:
-                beat_patterns.append(0)
-            
-        times = [d['t'] / 1000.0 for d in dense_data]
-        if not times: times = [0.0]
+        length_sec = min(snd.get_length(), 240.0) # Cap at 240 seconds
+    except:
+        length_sec = 240.0
 
-    except Exception as e:
-        app.lm_status = f"Analysis failed: {e}"
-        app.lm_state = 2
-        return
+    song_bpm = 120.0
+    beat_interval = 60000.0 / song_bpm
+    beat_times = [int(i * beat_interval) for i in range(int(length_sec * 1000 / beat_interval))]
+    beat_patterns = [random.randint(0, 4) for _ in beat_times]
 
+    app.lm_progress = 0.85
     app.lm_status = "Compiling Neural Patterns to Python Script..."
     app.lm_progress = 0.90
 
-    # 1. Beat Clustering & Global Intensity Curve
-    app.lm_status = "Mapping Audio Intensity & Clustering Beats..."
-    all_hits = sorted(list(set(beat_times)))
+    # Section-aware scheduling (energy curve)
     clusters = []
     current_cluster = []
-    for t in all_hits:
+    for t in beat_times:
         if not current_cluster:
             current_cluster.append(t)
         else:
@@ -3152,40 +3284,26 @@ def run_level_maker(app, query):
                 current_cluster = [t]
     if current_cluster: clusters.append(current_cluster)
 
-    # Compute intensity curve: sampled every 100ms
-    raw_intensity = [sum(d['e'])/max(1, len(d['e'])) for d in dense_data]
-    max_raw = max(raw_intensity) if raw_intensity else 1.0
-    if max_raw == 0: max_raw = 1.0
-    
-    smoothed = []
-    window = 5
-    for i in range(len(raw_intensity)):
-        s = max(0, i-window)
-        e = min(len(raw_intensity), i+window)
-        smoothed.append((sum(raw_intensity[s:e]) / (e-s)) / max_raw)
-        
     intensity_curve = []
-    for ms in range(0, int(times[-1]*1000) + 100, 100):
-        idx = int(ms / chunk_length_ms)
-        if idx < len(smoothed):
-            intensity_curve.append(round(smoothed[idx], 3))
-        else:
-            intensity_curve.append(0.0)
+    for ms in range(0, int(length_sec * 1000) + 100, 100):
+        # Heuristic: slow build up, drops every 30 seconds
+        sec = ms / 1000.0
+        phase = (sec % 30) / 30.0
+        energy = min(1.0, (phase * 1.5) if phase < 0.8 else (1.0 - (phase - 0.8) * 5))
+        intensity_curve.append(round(energy, 3))
 
     # Generate unique theme based on song name
     import hashlib
     seed_val = int(hashlib.md5(base_name_clean.encode()).hexdigest(), 16)
     random.seed(seed_val)
-    # Use all clean, focused patterns for maximum variance without being messy
-    all_patterns = [0, 2, 3, 6, 9, 10, 11, 14, 16, 17]
-    theme_patterns = all_patterns
+    # JSAB Obstacle pattern vocabulary
+    theme_patterns = [0, 1, 2, 3, 4]
 
-    # Convert clusters and data into a raw list format that can be embedded into the python script directly.
     import pprint
     
     python_script = f"""# GENERATED LEVEL: {base_name_clean}
 import random, math, pygame
-from game import Level, Obstacle, SCREEN_WIDTH, SCREEN_HEIGHT
+from game import Level, Obstacle, FullScreenLaser, WallSlam, ParticleBurst, PillarDrop, ShockwaveRing, SCREEN_WIDTH, SCREEN_HEIGHT
 
 class DynamicLevel(Level):
     def __init__(self, name, app):
@@ -3198,92 +3316,55 @@ class DynamicLevel(Level):
         self.beat_patterns = {beat_patterns}
         self.cluster_idx = 0
         self.beat_idx = 0
-        self.current_pattern_mode = 0
         
-    def get_band(self, t, band_idx):
-        pass
-
+        # Calculate checkpoints at 1/3 and 2/3 of the song
+        song_length = self.beat_times[-1] if self.beat_times else 0
+        if song_length > 30000:
+            self.checkpoints = [int(song_length * 0.33), int(song_length * 0.66)]
+        
     def on_beat(self, elapsed):
         sync_offset = self.app.lyric_offsets.get(self.name, 0)
         true_elapsed = elapsed - sync_offset
-        sec = true_elapsed / 1000.0
+        
+        # Snap next pattern's warning_ms exactly to the beat
+        time_until_next_beat = 0
+        if self.beat_idx < len(self.beat_times):
+            time_until_next_beat = self.beat_times[self.beat_idx] - true_elapsed
+            
+        # Guarantee beat synchronization
+        warning_ms = max(400, min(1000, time_until_next_beat))
         
         idx = int(true_elapsed // 100)
         if idx < 0: idx = 0
         if idx >= len(self.intensity_curve): idx = len(self.intensity_curve) - 1
         
-        diff = getattr(self.app, 'config_diff', 'Normal')
-        diff_mult = 1.0
-        if diff == "Easy": diff_mult = 0.5
-        elif diff == "Hard": diff_mult = 1.5
-        
-        intro_mult = min(1.0, true_elapsed / 20000.0) 
-        global_intensity = self.intensity_curve[idx] * diff_mult * (0.5 + 0.5 * intro_mult)
+        global_intensity = self.intensity_curve[idx]
         
         # Fast-forward cluster index
         while self.cluster_idx < len(self.clusters) and self.clusters[self.cluster_idx][-1] < true_elapsed:
             self.cluster_idx += 1
             
-        if self.cluster_idx < len(self.clusters):
-            cluster = self.clusters[self.cluster_idx]
-        else:
-            cluster = [0]
-            
-        if hasattr(self, 'beat_patterns') and self.beat_idx - 1 < len(self.beat_patterns):
-            dom_band = self.beat_patterns[max(0, self.beat_idx - 1)]
-            # Phrase-based variance: Hold pattern for 8 beats to build rhythm, then shift to a new one
-            phrase_idx = self.beat_idx // 8
-            self.current_pattern_mode = self.theme_patterns[(dom_band + self.cluster_idx + phrase_idx) % len(self.theme_patterns)]
-        else:
-            phrase_idx = self.beat_idx // 8
-            self.current_pattern_mode = self.theme_patterns[(self.cluster_idx + phrase_idx) % len(self.theme_patterns)]
-            
-        # Hardest parts = massive density + high intensity
-        base_intensity = min(3, max(1, len(cluster) // 3))
-        peak_mult = 1.0 + global_intensity
-        intensity = int(base_intensity * peak_mult)
+        phrase_idx = self.beat_idx // 8
+        ptype = self.theme_patterns[(self.cluster_idx + phrase_idx) % len(self.theme_patterns)]
         
-        ptype = self.current_pattern_mode
+        # Section-aware scheduling
+        patterns_to_spawn = 1
+        if global_intensity > 0.5: patterns_to_spawn = 2
+        if global_intensity > 0.8: patterns_to_spawn = 3
         
-        # Clamp size to avoid giant unbeatable cubes
-        def clamp_size(sz):
-            max_h = 100  # Much smaller max size so nothing blocks the whole screen
-            return min(max(sz, 10), max_h)
-            
-        # CLEAN BUT DIFFICULT PATTERNS
-        if ptype == 0: # Sweeping Lasers
-            self.obstacles.append(Obstacle(random.randint(100, SCREEN_WIDTH-100), -100, clamp_size(100), 0, 15 + intensity*2, 'rect', 300))
-        elif ptype == 2: # Tracking Missiles
-            if self.app.players:
-                p = random.choice(self.app.players)
-                dx, dy = p.x - (-50), p.y - (-50)
-                mag = math.sqrt(dx*dx + dy*dy) if dx*dx+dy*dy > 0 else 1
-                self.obstacles.append(Obstacle(random.choice([-50, SCREEN_WIDTH+50]), random.choice([-50, SCREEN_HEIGHT+50]), 45, (dx/mag)*(10+intensity*2), (dy/mag)*(10+intensity*2), 'triangle', 200, rot_speed=10))
-        elif ptype == 3: # Bouncing Saws
-            self.obstacles.append(Obstacle(random.randint(100, SCREEN_WIDTH-100), -50, clamp_size(60 + intensity*5), random.choice([-15, 15]), 10 + intensity, 'rect', 0, rot_speed=15))
-        elif ptype == 6: # Zig-Zag Comets
-            self.obstacles.append(Obstacle(random.randint(100, SCREEN_WIDTH-100), -50, 50, 0, 20 + intensity*2, 'circle', 100))
-        elif ptype == 9: # Pulsar Beams
-            self.obstacles.append(Obstacle(-50, random.randint(100, SCREEN_HEIGHT-100), clamp_size(100), 20 + intensity*2, 0, 'rect', 200))
-        elif ptype == 10: # Boomerang Blades
-            self.obstacles.append(Obstacle(SCREEN_WIDTH+50, random.randint(100, SCREEN_HEIGHT-100), clamp_size(70 + intensity*5), -20, 0, 'triangle', 0, rot_speed=15))
-        elif ptype == 11: # Ricochet Triangles
-            self.obstacles.append(Obstacle(-50, random.randint(100, SCREEN_HEIGHT-100), clamp_size(50 + intensity*5), 15 + intensity, random.choice([-20, 20]), 'triangle', 0))
-        elif ptype == 14: # Homing Comets
-            if self.app.players:
-                p = random.choice(self.app.players)
-                dx, dy = p.x + p.speed*10 - random.choice([-50, SCREEN_WIDTH+50]), p.y + p.speed*10 - random.choice([-50, SCREEN_HEIGHT+50])
-                mag = math.sqrt(dx*dx + dy*dy) if dx*dx+dy*dy > 0 else 1
-                self.obstacles.append(Obstacle(random.choice([-50, SCREEN_WIDTH+50]), random.choice([-50, SCREEN_HEIGHT+50]), clamp_size(50+intensity*5), (dx/mag)*(15+intensity*2), (dy/mag)*(15+intensity*2), 'circle', 300))
-        elif ptype == 16: # Pinwheel Spinners
-            self.obstacles.append(Obstacle(random.choice([-100, SCREEN_WIDTH+100]), random.randint(100, SCREEN_HEIGHT-100), clamp_size(100 + intensity*5), 10+intensity, 0, 'rect', 0, rot_speed=10))
-        elif ptype == 17: # Stalker Blades
-            if self.app.players:
-                p = random.choice(self.app.players)
-                start_x, start_y = random.choice([-50, SCREEN_WIDTH+50]), random.choice([-50, SCREEN_HEIGHT+50])
-                dx, dy = p.x - start_x, p.y - start_y
-                mag = math.sqrt(dx*dx + dy*dy) if dx*dx+dy*dy > 0 else 1
-                self.obstacles.append(Obstacle(start_x, start_y, clamp_size(60+intensity*2), (dx/mag)*(5+intensity), (dy/mag)*(5+intensity), 'triangle', 0, rot_speed=5))
+        for _ in range(patterns_to_spawn):
+            if ptype == 0:
+                self.obstacles.append(FullScreenLaser(random.choice(['h', 'v']), random.uniform(0.1, 0.9), warning_ms))
+            elif ptype == 1:
+                self.obstacles.append(WallSlam(random.choice(['top', 'bottom', 'left', 'right']), 0.3, warning_ms))
+            elif ptype == 2:
+                self.obstacles.append(ParticleBurst(random.randint(100, SCREEN_WIDTH-100), random.randint(100, SCREEN_HEIGHT-100), int(12 + global_intensity * 10), 10, warning_ms))
+            elif ptype == 3:
+                num_pillars = int(1 + global_intensity * 3)
+                pxs = [random.randint(100, SCREEN_WIDTH-100) for _ in range(num_pillars)]
+                self.obstacles.append(PillarDrop(pxs, warning_ms))
+            elif ptype == 4:
+                self.obstacles.append(ShockwaveRing(random.randint(200, SCREEN_WIDTH-200), random.randint(200, SCREEN_HEIGHT-200), 1500, 15, 20, warning_ms))
 """
     
     script_path = os.path.join(song_dir, f"{base_name_clean}.py")
